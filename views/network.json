@@ -1,0 +1,21 @@
+{
+    "Global (ou Nom du Site)": {
+        "Routeurs": [
+            "Core-Router-01"
+        ],
+        "Switches": 
+            {
+                "Étage 1": [
+                    "SW-Dist-01",
+                    "SW-Access-01"
+                ],
+                "Étage 2": [
+                    "SW-Access-02"
+                ]
+            }
+        ,
+        "Hosts": [
+            "Serveur-Web-01"
+        ]
+    }
+}
