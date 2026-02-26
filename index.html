@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Document</title>
+    <style>
+      body {
+        margin: 0;
+        padding: 0;
+        overflow: hidden;
+        background-color: #1e1e1e;
+      }
+      .node {
+        cursor: move;
+      }
+      .link {
+        stroke: #999;
+        stroke-opacity: 0.6;
+      }
+      text {
+        font-family: Arial, sans-serif;
+        font-size: 12px;
+        pointer-events: none;
+        fill: #fff;
+      }
+      svg {
+        width: 100vw;
+        height: 100vh;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="graph"></div>
+    <script src="https://d3js.org/d3.v5.min.js"></script>
+    <script type="module" src="main.js"></script>
+  </body>
+</html>
