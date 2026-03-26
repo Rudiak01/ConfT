@@ -31,5 +31,45 @@
       {
     "source": "switch2-1",
     "target": "host1"
+  },
+    {
+    "source": "host2",
+    "target": "switch2-1"
+  },
+      {
+    "source": "switch2-1",
+    "target": "host2"
+  },
+    {
+    "source": "host3",
+    "target": "switch2-1"
+  },
+      {
+    "source": "switch2-1",
+    "target": "host3"
+  },
+    {
+    "source": "host4",
+    "target": "switch2-1"
+  },
+      {
+    "source": "switch2-1",
+    "target": "host4"
+  },
+    {
+    "source": "host5",
+    "target": "switch2-1"
+  },
+      {
+    "source": "switch2-1",
+    "target": "host5"
+  },
+    {
+    "source": "host6",
+    "target": "switch2-1"
+  },
+      {
+    "source": "switch2-1",
+    "target": "host6"
   }
 ]

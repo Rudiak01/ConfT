@@ -40,5 +40,34 @@
     "label": "host1",
     "link_count": 1,
     "color": "#7f7f7f"
+  },
+    {
+    "id": "host2",
+    "label": "host2",
+    "link_count": 1,
+    "color": "#7f7f7f"
+  },  {
+    "id": "host3",
+    "label": "host3",
+    "link_count": 1,
+    "color": "#7f7f7f"
+  },
+    {
+    "id": "host4",
+    "label": "host4",
+    "link_count": 1,
+    "color": "#7f7f7f"
+  },
+    {
+    "id": "host5",
+    "label": "host5",
+    "link_count": 1,
+    "color": "#7f7f7f"
+  },
+    {
+    "id": "host6",
+    "label": "host6",
+    "link_count": 1,
+    "color": "#7f7f7f"
   }
 ]
