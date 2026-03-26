@@ -1,0 +1,39 @@
+{
+    "vlans": [
+        { "vlan_id": "50", "name": "HR" },
+        { "vlan_id": "60", "name": "SERVERS" }
+    ],
+
+    "interfaces": [
+
+        {
+            "interface": "FastEthernet0/3",
+            "description": "Poste_RH_01",
+            "mode": "access",
+            "vlan": "50",
+            "portfast": true
+        },
+
+        {
+            "interface": "FastEthernet0/4",
+            "description": "Poste_RH_02",
+            "mode": "access",
+            "vlan": "50",
+            "portfast": true
+        },
+
+        {
+            "interface": "FastEthernet0/12",
+            "description": "Serveur_Local",
+            "mode": "access",
+            "vlan": "60"
+        },
+
+        {
+            "interface": "FastEthernet0/23",
+            "description": "Uplink_Distribution",
+            "mode": "trunk",
+            "allowed_vlans": "10,20,30,50,60"
+        }
+    ]
+}
