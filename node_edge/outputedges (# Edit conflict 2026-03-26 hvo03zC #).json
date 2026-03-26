@@ -25,11 +25,7 @@
     "target": "router2"
   },
     {
-    "source": "host1",
-    "target": "switch2-1"
-  },
-      {
-    "source": "switch2-1",
+    "source": "switch2-2",
     "target": "host1"
   }
 ]

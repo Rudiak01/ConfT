@@ -3,7 +3,7 @@
     "id": "router1",
     "label": "router1",
     "link_count": 3,
-    "color": "#f000ff"
+    "color": "#7f7f7f"
   },
   {
     "id": "switch1-1",
@@ -32,6 +32,12 @@
   {
     "id": "switch2-2",
     "label": "switch2-2",
+    "link_count": 1,
+    "color": "#7f7f7f"
+  },
+  {
+    "id": "host1",
+    "label": "host1",
     "link_count": 1,
     "color": "#7f7f7f"
   }

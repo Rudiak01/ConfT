@@ -1,38 +1,76 @@
 <!doctype html>
-<html lang="en">
+<html lang="fr">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Document</title>
-    <style>
-      body {
-        margin: 0;
-        padding: 0;
-        overflow: hidden;
-        background-color: #1e1e1e;
-      }
-      .node {
-        cursor: move;
-      }
-      .link {
-        stroke: #999;
-        stroke-opacity: 0.6;
-      }
-      text {
-        font-family: Arial, sans-serif;
-        font-size: 12px;
-        pointer-events: none;
-        fill: #fff;
-      }
-      svg {
-        width: 100vw;
-        height: 100vh;
-      }
-    </style>
+    <title>ConfT</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css" />
   </head>
   <body>
-    <div id="graph"></div>
+    <!-- Landing Page -->
+    <div id="landing-view" class="view active">
+      <div class="glass-panel text-center">
+        <h1 class="title">ConfT</h1>
+        <p class="subtitle">Configurable Orchestration Network Framework Tool</p>
+        <button id="btn-get-config" class="primary-btn">Setup infrastructure config</button>
+      </div>
+    </div>
+    <!-- Main Page -->
+    <div id="app-wrapper" class="hidden">
+      <aside id="sidebar" class="glass-sidebar">
+        <h2 class="sidebar-title">Infrastructure</h2>
+        <div id="menu-container">
+          <div class="menu-group">
+            <h3 class="group-title" data-group="Routers">Routers</h3>
+            <ul class="submenu" id="routers-list"></ul>
+          </div>
+          <div class="menu-group">
+            <h3 class="group-title" data-group="Switches">Switches</h3>
+            <ul class="submenu" id="switches-list"></ul>
+          </div>
+          <div class="menu-group">
+            <h3 class="group-title" data-group="Hosts">Hosts</h3>
+            <ul class="submenu" id="hosts-list"></ul>
+          </div>
+        </div>
+      </aside>
+
+      <main id="main-content">
+        <header class="top-bar glass-bar">
+          <div class="breadcrumb" id="breadcrumb">Topographie du Réseau</div>
+          <button id="btn-back" class="secondary-btn hidden">Retour</button>
+        </header>
+        
+        <div id="main-body" style="display:flex; flex:1; overflow:hidden;">
+          <div id="center-column" style="flex:1; display:flex; flex-direction:column; position:relative;">
+            <div id="graph-container"></div>
+
+            <div id="bottom-panel" class="glass-panel-bottom hidden slide-up">
+              <div class="panel-header">
+                <h3 id="bottom-panel-title">Interfaces Connectés</h3>
+                <button id="btn-close-panel" class="close-btn">&times;</button>
+              </div>
+              <div id="bottom-panel-content">
+              </div>
+            </div>
+          </div>
+          
+          <aside id="right-panel" class="glass-sidebar-right hidden">
+             <div class="panel-header">
+                <h3 id="right-panel-title">Settings</h3>
+                <button id="btn-close-right" class="close-btn">&times;</button>
+             </div>
+             <div id="right-panel-content">
+             </div>
+          </aside>
+        </div>
+      </main>
+    </div>
+
     <script src="https://d3js.org/d3.v5.min.js"></script>
-    <script type="module" src="main.js"></script>
+    <script type="module" src="js/state.js"></script>
+    <script type="module" src="js/graph.js"></script>
+    <script type="module" src="js/app.js"></script>
   </body>
 </html>
