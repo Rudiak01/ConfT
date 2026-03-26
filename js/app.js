@@ -181,35 +181,30 @@ appState.subscribe((state) => {
           <label>IPV4</label>
           <div class="input-wrapper">
             <input type="text" value="${cfg.ipv4}">
-            <button class="icon-btn">⚙️</button>
           </div>
         </div>
         <div class="form-group">
           <label>IPV6</label>
           <div class="input-wrapper">
             <input type="text" value="${cfg.ipv6}">
-            <button class="icon-btn">⚙️</button>
           </div>
         </div>
         <div class="form-group">
           <label>Masque sous-réseau</label>
           <div class="input-wrapper">
-            <input type="text" value="${cfg.mask}">
-            <button class="icon-btn">⚙️</button>
+            <input type="text" value="${cfg.mask}"
           </div>
         </div>
         <div class="form-group">
           <label>Gateway</label>
           <div class="input-wrapper">
             <input type="text" value="${cfg.gateway}">
-            <button class="icon-btn">⚙️</button>
           </div>
         </div>
         <div class="form-group">
           <label>Vlan</label>
           <div class="input-wrapper">
             <input type="text" value="${cfg.vlan}">
-            <button class="icon-btn">⚙️</button>
           </div>
         </div>
       </div>
