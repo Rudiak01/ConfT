@@ -21,31 +21,12 @@ const rightPanel = document.getElementById("right-panel");
 const rightPanelContent = document.getElementById("right-panel-content");
 const btnCloseRight = document.getElementById("btn-close-right");
 
-// Data structures for random config generation
-const generateMockConfig = () => {
-  return {
-    ipv4: `192.168.${Math.floor(Math.random() * 10)}.${Math.floor(Math.random() * 254) + 1}`,
-    ipv6: `fe80::${Math.floor(Math.random() * 9e4)}`,
-    mask: "255.255.255.0",
-    gateway: "192.168.0.1",
-    vlan: Math.floor(Math.random() * 20) + 1,
-  };
-};
-
 async function loadData() {
   try {
-    const resNodes = await fetch("node_edge/outputnodes.json");
-    const nodes = await resNodes.json();
-    const resEdges = await fetch("node_edge/outputedges.json");
-    const edges = await resEdges.json();
-
-    // Add mock configurations to edges to simulate port data
-    edges.forEach((edge, i) => {
-      edge.portId = `port-${i + 1}`;
-      edge.config = generateMockConfig();
-    });
-
-    return { nodes, edges };
+    const res = await fetch("/api/network");
+    if (!res.ok) throw new Error("Failed to load network");
+    const data = await res.json();
+    return { nodes: data.nodes, edges: data.edges };
   } catch (err) {
     console.error("Failed to load data", err);
     return { nodes: [], edges: [] };
@@ -180,39 +161,67 @@ appState.subscribe((state) => {
         <div class="form-group">
           <label>IPV4</label>
           <div class="input-wrapper">
-            <input type="text" value="${cfg.ipv4}">
+            <input id="cfg-ipv4" type="text" value="${cfg.ipv4}">
           </div>
         </div>
         <div class="form-group">
           <label>IPV6</label>
           <div class="input-wrapper">
-            <input type="text" value="${cfg.ipv6}">
+            <input id="cfg-ipv6" type="text" value="${cfg.ipv6}">
           </div>
         </div>
         <div class="form-group">
           <label>Masque sous-réseau</label>
           <div class="input-wrapper">
-            <input type="text" value="${cfg.mask}"
+            <input id="cfg-mask" type="text" value="${cfg.mask}">
           </div>
         </div>
         <div class="form-group">
           <label>Gateway</label>
           <div class="input-wrapper">
-            <input type="text" value="${cfg.gateway}">
+            <input id="cfg-gw" type="text" value="${cfg.gateway}">
           </div>
         </div>
         <div class="form-group">
           <label>Vlan</label>
           <div class="input-wrapper">
-            <input type="text" value="${cfg.vlan}">
+            <input id="cfg-vlan" type="text" value="${cfg.vlan}">
           </div>
         </div>
       </div>
       <div class="bottom-actions" style="margin-top:auto; padding-top:2rem;">
         <button class="secondary-btn">Vérifier</button>
-        <button class="primary-btn" style="margin-top:0;">Appliquer</button>
+        <button id="btn-apply-config" class="primary-btn" style="margin-top:0;">Appliquer</button>
       </div>
     `;
+
+    document.getElementById("btn-apply-config").addEventListener("click", async () => {
+      const btn = document.getElementById("btn-apply-config");
+      btn.textContent = "Saving...";
+      
+      const newConfig = {
+        ipv4: document.getElementById("cfg-ipv4").value,
+        ipv6: document.getElementById("cfg-ipv6").value,
+        mask: document.getElementById("cfg-mask").value,
+        gateway: document.getElementById("cfg-gw").value,
+        vlan: document.getElementById("cfg-vlan").value,
+      };
+
+      try {
+        const res = await fetch(\`/api/config/\${sp.portId}\`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(newConfig),
+        });
+        if (!res.ok) throw new Error("Failed to save config");
+        sp.config = newConfig; // update local state
+        btn.textContent = "Appliqué";
+        setTimeout(() => btn.textContent = "Appliquer", 2000);
+      } catch (err) {
+        console.error(err);
+        btn.textContent = "Erreur";
+      }
+    });
 
     // Resize graph
     setTimeout(() => resizeGraph("graph-container"), 50);
