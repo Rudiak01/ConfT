@@ -1,5 +1,8 @@
 import json
-from ssh_connect import connect
+try:
+    from .ssh_connect import connect
+except ImportError:
+    from ssh_connect import connect
 
 # Interfaces à protéger
 PROTECTED_INTERFACES = [
@@ -62,12 +65,27 @@ def build_commands(data):
     return commands
 
 
+def apply_device_config(connection_params, config_data):
+    try:
+        connection = connect(connection_params)
+        commands = build_commands(config_data)
+        if not commands:
+            connection.disconnect()
+            return True, "No commands to apply"
+            
+        output = connection.send_config_set(commands)
+        connection.save_config()
+        connection.disconnect()
+        return True, output
+    except Exception as e:
+        return False, str(e)
+
 def main():
     with open("desired_config.json", "r") as f:
         data = json.load(f)
 
+    # For manual testing, connect without specific params (uses config.SWITCH)
     connection = connect()
-
     commands = build_commands(data)
 
     print("\n--- Commandes envoyées ---")
@@ -76,12 +94,10 @@ def main():
 
     print("\nApplication de la configuration...")
     output = connection.send_config_set(commands)
-
     connection.save_config()
     connection.disconnect()
 
     print("\nConfiguration appliquée avec succès.")
-
 
 if __name__ == "__main__":
     main()

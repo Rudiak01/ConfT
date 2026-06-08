@@ -8,6 +8,10 @@ class PortConfigSchema(BaseModel):
     mask: str = "255.255.255.0"
     gateway: str = ""
     vlan: str = "1"
+    interface_name: str = ""
+    mode: str = "access"
+    portfast: bool = False
+    allowed_vlans: str = ""
 
 class EdgeSchema(BaseModel):
     source: str
@@ -20,6 +24,7 @@ class NodeSchema(BaseModel):
     label: str
     link_count: int
     color: str
+    device_type: str = "cisco_ios"
 
 class NetworkSchema(BaseModel):
     nodes: List[NodeSchema]
@@ -27,10 +32,12 @@ class NetworkSchema(BaseModel):
 
 # --- SQLAlchemy Models ---
 from sqlalchemy.orm import DeclarativeBase, relationship, Mapped, mapped_column
-from sqlalchemy import create_engine, String, ForeignKey, Integer
+from sqlalchemy import create_engine, String, ForeignKey, Integer, Text, Boolean
 from sqlalchemy.orm import sessionmaker
 
-engine = create_engine("mysql+pymysql://root:test@10.0.2.2:3306/test", pool_pre_ping=True)
+# Force MySQL connection
+engine = create_engine("mysql+pymysql://root:test@localhost:3306/test", pool_pre_ping=True)
+print("Successfully connected to MySQL database.")
 
 class Base(DeclarativeBase):
     pass
@@ -39,8 +46,23 @@ class DBNode(Base):
     __tablename__ = "nodes"
     id: Mapped[str] = mapped_column(String(50), primary_key=True)
     label: Mapped[str] = mapped_column(String(50))
-    link_count: Mapped[int]
-    color: Mapped[str] = mapped_column(String(30))
+    link_count: Mapped[int] = mapped_column(Integer, default=0)
+    color: Mapped[str] = mapped_column(String(30), default="#3498db")
+    
+    # SSH Discovery Fields
+    device_type: Mapped[str] = mapped_column(String(50), default="cisco_ios")
+    mgmt_ip: Mapped[Optional[str]] = mapped_column(String(50), nullable=True)
+    ssh_username: Mapped[Optional[str]] = mapped_column(String(50), nullable=True)
+    ssh_password_encrypted: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    
+    # Configurations
+    running_config_active: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    running_config_draft: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    
+    # Status: pending, completed, failed
+    discovery_status: Mapped[str] = mapped_column(String(20), default="pending")
+    
+    vlans: Mapped[List["DBVlan"]] = relationship(back_populates="node", cascade="all, delete-orphan")
 
 class DBEdge(Base):
     __tablename__ = "edges"
@@ -55,13 +77,40 @@ class DBPortConfig(Base):
     __tablename__ = "port_configs"
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
     edge_id: Mapped[int] = mapped_column(ForeignKey("edges.id"))
+    
+    # App / Draft Config
     ipv4: Mapped[str] = mapped_column(String(50), default="")
     ipv6: Mapped[str] = mapped_column(String(50), default="")
     mask: Mapped[str] = mapped_column(String(50), default="255.255.255.0")
     gateway: Mapped[str] = mapped_column(String(50), default="")
     vlan: Mapped[str] = mapped_column(String(50), default="1")
+    interface_name: Mapped[str] = mapped_column(String(50), default="")
+    mode: Mapped[str] = mapped_column(String(20), default="access")
+    portfast: Mapped[bool] = mapped_column(Boolean, default=False)
+    allowed_vlans: Mapped[str] = mapped_column(String(200), default="")
+    
+    # Active / Physical Config
+    active_ipv4: Mapped[Optional[str]] = mapped_column(String(50), nullable=True)
+    active_ipv6: Mapped[Optional[str]] = mapped_column(String(50), nullable=True)
+    active_mask: Mapped[Optional[str]] = mapped_column(String(50), nullable=True)
+    active_gateway: Mapped[Optional[str]] = mapped_column(String(50), nullable=True)
+    active_vlan: Mapped[Optional[str]] = mapped_column(String(50), nullable=True)
+    active_interface_name: Mapped[Optional[str]] = mapped_column(String(50), nullable=True)
+    active_mode: Mapped[Optional[str]] = mapped_column(String(50), nullable=True)
+    active_portfast: Mapped[Optional[bool]] = mapped_column(Boolean, nullable=True)
+    active_trunk_vlans: Mapped[Optional[str]] = mapped_column(String(200), nullable=True)
     
     edge: Mapped["DBEdge"] = relationship(back_populates="config")
+
+class DBVlan(Base):
+    __tablename__ = "vlans"
+    id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
+    node_id: Mapped[str] = mapped_column(ForeignKey("nodes.id"))
+    vlan_id: Mapped[str] = mapped_column(String(10))
+    name: Mapped[str] = mapped_column(String(50))
+    is_active: Mapped[bool] = mapped_column(Boolean, default=True)
+    
+    node: Mapped["DBNode"] = relationship(back_populates="vlans")
 
 Base.metadata.create_all(engine)
 

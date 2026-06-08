@@ -2,7 +2,7 @@ import { appState } from "./state.js";
 import { initGraph, updateGraphHighlights, resizeGraph } from "./graph.js";
 
 // DOM Elements
-const viewLanding = document.getElementById("landing-view");
+const initOverlay = document.getElementById("init-overlay");
 const viewApp = document.getElementById("app-wrapper");
 const btnGetConfig = document.getElementById("btn-get-config");
 
@@ -22,16 +22,113 @@ const rightPanelContent = document.getElementById("right-panel-content");
 const btnCloseRight = document.getElementById("btn-close-right");
 
 async function loadData() {
-  try {
-    const res = await fetch("/api/network");
-    if (!res.ok) throw new Error("Failed to load network");
-    const data = await res.json();
-    return { nodes: data.nodes, edges: data.edges };
-  } catch (err) {
-    console.error("Failed to load data", err);
-    return { nodes: [], edges: [] };
+  const res = await fetch("/api/network");
+  if (!res.ok) {
+    const text = await res.text();
+    throw new Error(`Failed to load network: ${res.status} ${text}`);
   }
+  const data = await res.json();
+  return { nodes: data.nodes, edges: data.edges };
 }
+
+window.addEventListener("DOMContentLoaded", async () => {
+  try {
+    const data = await loadData();
+    if (data.nodes && data.nodes.length > 0) {
+      document.getElementById("init-overlay").classList.add("hidden");
+      
+      appState.setState({
+        view: "main",
+        nodes: data.nodes,
+        links: data.edges,
+      });
+      setTimeout(() => {
+        initGraph("graph-container", data.nodes, data.edges, (node) => {
+          appState.setState({
+            view: "node",
+            selectedNode: node,
+            selectedPort: null,
+          });
+        });
+      }, 50);
+    }
+  } catch (e) {
+    console.error("No existing network data, waiting for seed input.", e);
+  }
+});
+
+btnGetConfig.addEventListener("click", async () => {
+  const seedIp = document.getElementById("seed-ip").value;
+  if (!seedIp) {
+      alert("Please enter a Seed IP address.");
+      return;
+  }
+  btnGetConfig.textContent = "Starting...";
+  
+  try {
+    const seedData = {
+        seed_ip: seedIp,
+        device_type: document.getElementById("seed-type").value || "cisco_ios",
+        ssh_username: document.getElementById("seed-username").value,
+        ssh_password: document.getElementById("seed-password").value
+    };
+    
+    const res = await fetch("/api/network/seed", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(seedData)
+    });
+    if (!res.ok) throw new Error("Failed to start discovery");
+
+    document.getElementById("init-overlay").classList.add("hidden");
+    
+    const overlay = document.getElementById("discovery-overlay");
+    overlay.classList.remove("hidden");
+    
+    // Start polling status
+    const pollStatus = async () => {
+      try {
+        const statusRes = await fetch("/api/network/status");
+        if (!statusRes.ok) throw new Error("Status endpoint failed");
+        const statusData = await statusRes.json();
+        
+        if (statusData.status === "completed") {
+          overlay.classList.add("hidden");
+          const newData = await loadData();
+          appState.setState({
+            view: "main",
+            nodes: newData.nodes,
+            links: newData.edges,
+          });
+          document.getElementById("graph-container").innerHTML = "";
+          setTimeout(() => {
+            initGraph("graph-container", newData.nodes, newData.edges, (node) => {
+              appState.setState({
+                view: "node",
+                selectedNode: node,
+                selectedPort: null,
+              });
+            });
+          }, 50);
+        } else {
+          const statusText = document.getElementById("discovery-status-text");
+          if (statusText) {
+            statusText.textContent = `Pending: ${statusData.pending && statusData.pending.length ? statusData.pending.join(', ') : 'none'} | Failed: ${statusData.failed && statusData.failed.length ? statusData.failed.join(', ') : 'none'}`;
+          }
+          setTimeout(pollStatus, 2000);
+        }
+      } catch (e) {
+        console.error("Polling error:", e);
+        setTimeout(pollStatus, 2000);
+      }
+    };
+    pollStatus();
+  } catch (err) {
+    btnGetConfig.textContent = "Error! Start Network Discovery";
+    console.error(err);
+    alert("Error: " + err.message);
+  }
+});
 
 function parseSidebarLists(nodes) {
   const routers = nodes.filter((n) => n.id.includes("router"));
@@ -73,11 +170,11 @@ function parseSidebarLists(nodes) {
 appState.subscribe((state) => {
   // 1. Views toggling
   if (state.view === "landing") {
-    viewLanding.classList.add("active");
+    if (initOverlay) initOverlay.classList.remove("hidden");
     viewApp.classList.add("hidden");
     return;
   } else {
-    viewLanding.classList.remove("active");
+    if (initOverlay) initOverlay.classList.add("hidden");
     viewApp.classList.remove("hidden");
   }
 
@@ -108,11 +205,47 @@ appState.subscribe((state) => {
       (l) => l.source.id === sn.id || l.target.id === sn.id,
     );
 
-    // Render links as a table
+    // Render node settings + links as a table
+    let tableHtml = `
+      <div style="margin-bottom: 2rem; background: #2a2a2a; padding: 1rem; border-radius: 8px;">
+        <h4 style="margin-top: 0; color: #aaa;">Device Settings</h4>
+        <div class="config-grid" style="display:flex; gap:1rem; flex-wrap:wrap;">
+          <div class="form-group" style="flex:1;">
+            <label>Device Type</label>
+            <div class="input-wrapper">
+              <input id="node-device_type" type="text" value="${sn.device_type || 'cisco_ios'}" placeholder="e.g. cisco_ios">
+            </div>
+          </div>
+          <div class="form-group" style="flex:1;">
+            <label>Management IP</label>
+            <div class="input-wrapper">
+              <input id="node-mgmt_ip" type="text" value="${sn.mgmt_ip || ''}" placeholder="e.g. 192.168.1.2">
+            </div>
+          </div>
+          <div class="form-group" style="flex:1;">
+            <label>SSH Username</label>
+            <div class="input-wrapper">
+              <input id="node-ssh_username" type="text" value="${sn.ssh_username || ''}" placeholder="e.g. admin">
+            </div>
+          </div>
+          <div class="form-group" style="flex:1;">
+            <label>SSH Password</label>
+            <div class="input-wrapper">
+              <input id="node-ssh_password" type="password" placeholder="Leave blank to keep current">
+            </div>
+          </div>
+          <div style="display:flex; align-items:flex-end;">
+            <button id="btn-save-node" class="primary-btn">Save Device</button>
+          </div>
+        </div>
+      </div>
+    `;
+
     if (connectedLinks.length === 0) {
-      bottomPanelContent.innerHTML = `<p>Pas d'interface connectée.</p>`;
+      tableHtml += `<p>Pas d'interface connectée.</p>`;
+      bottomPanelContent.innerHTML = tableHtml;
     } else {
-      let tableHtml = `<table class="data-table">
+      tableHtml += `<table class="data-table">
           <thead><tr><th>Port</th><th>VLAN</th><th>IP du port</th></tr></thead>
           <tbody>`;
 
@@ -141,6 +274,39 @@ appState.subscribe((state) => {
       });
     }
 
+    // Add event listener for saving node
+    const btnSaveNode = document.getElementById("btn-save-node");
+    if (btnSaveNode) {
+      btnSaveNode.addEventListener("click", async () => {
+        btnSaveNode.textContent = "Saving...";
+        const newSettings = {
+          device_type: document.getElementById("node-device_type").value,
+          mgmt_ip: document.getElementById("node-mgmt_ip").value,
+          ssh_username: document.getElementById("node-ssh_username").value,
+          ssh_password: document.getElementById("node-ssh_password").value
+        };
+        try {
+          const res = await fetch(`/api/node/${sn.id}`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(newSettings),
+          });
+          if (!res.ok) throw new Error("Failed to save node settings");
+          
+          sn.device_type = newSettings.device_type;
+          sn.mgmt_ip = newSettings.mgmt_ip;
+          sn.ssh_username = newSettings.ssh_username;
+          // password isn't stored locally
+          
+          btnSaveNode.textContent = "Saved!";
+          setTimeout(() => btnSaveNode.textContent = "Save Device", 2000);
+        } catch (e) {
+          console.error(e);
+          btnSaveNode.textContent = "Error";
+        }
+      });
+    }
+
     // Resize graph
     setTimeout(() => resizeGraph("graph-container"), 50);
   } else if (state.view === "port" && state.selectedPort) {
@@ -158,6 +324,37 @@ appState.subscribe((state) => {
 
     rightPanelContent.innerHTML = `
       <div class="config-grid" style="display:flex; flex-direction:column; gap:1.5rem;">
+        <div class="form-group">
+          <label>Interface Name (e.g. Gi1/0/1)</label>
+          <div class="input-wrapper">
+            <input id="cfg-interface_name" type="text" value="${cfg.interface_name || ''}">
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Mode</label>
+          <div class="input-wrapper">
+            <select id="cfg-mode" style="width:100%; padding:8px; border-radius:4px; border:1px solid #555; background:#222; color:white;">
+                <option value="access" ${cfg.mode === 'access' ? 'selected' : ''}>Access</option>
+                <option value="trunk" ${cfg.mode === 'trunk' ? 'selected' : ''}>Trunk</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-group" style="display:flex; align-items:center; gap:10px;">
+          <label>Portfast</label>
+          <input id="cfg-portfast" type="checkbox" ${cfg.portfast ? 'checked' : ''}>
+        </div>
+        <div class="form-group">
+          <label>Allowed VLANs (e.g. 10,20,30)</label>
+          <div class="input-wrapper">
+            <input id="cfg-allowed_vlans" type="text" value="${cfg.allowed_vlans || ''}">
+          </div>
+        </div>
+        <div class="form-group">
+          <label>VLAN</label>
+          <div class="input-wrapper">
+            <input id="cfg-vlan" type="text" value="${cfg.vlan}">
+          </div>
+        </div>
         <div class="form-group">
           <label>IPV4</label>
           <div class="input-wrapper">
@@ -182,12 +379,6 @@ appState.subscribe((state) => {
             <input id="cfg-gw" type="text" value="${cfg.gateway}">
           </div>
         </div>
-        <div class="form-group">
-          <label>Vlan</label>
-          <div class="input-wrapper">
-            <input id="cfg-vlan" type="text" value="${cfg.vlan}">
-          </div>
-        </div>
       </div>
       <div class="bottom-actions" style="margin-top:auto; padding-top:2rem;">
         <button class="secondary-btn">Vérifier</button>
@@ -205,10 +396,14 @@ appState.subscribe((state) => {
         mask: document.getElementById("cfg-mask").value,
         gateway: document.getElementById("cfg-gw").value,
         vlan: document.getElementById("cfg-vlan").value,
+        interface_name: document.getElementById("cfg-interface_name").value,
+        mode: document.getElementById("cfg-mode").value,
+        portfast: document.getElementById("cfg-portfast").checked,
+        allowed_vlans: document.getElementById("cfg-allowed_vlans").value,
       };
 
       try {
-        const res = await fetch(\`/api/config/\${sp.portId}\`, {
+        const res = await fetch(`/api/config/${sp.portId}`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(newConfig),
@@ -231,30 +426,146 @@ appState.subscribe((state) => {
   updateGraphHighlights(state);
 });
 
-// Event Listeners
-btnGetConfig.addEventListener("click", async () => {
-  btnGetConfig.textContent = "Loading...";
-  const data = await loadData();
-
-  // First update state to make the container visible
-  appState.setState({
-    view: "main",
-    nodes: data.nodes,
-    links: data.edges,
-  });
-
-  // Wait for the DOM to update to get correct dimensions
-  setTimeout(() => {
-    // Initialize D3 graph
-    initGraph("graph-container", data.nodes, data.edges, (node) => {
-      appState.setState({
-        view: "node",
-        selectedNode: node,
-        selectedPort: null,
+// Admin Assess and Push Logic
+const assessBtn = document.getElementById("btn-assess-push");
+if (assessBtn) {
+  assessBtn.addEventListener("click", async () => {
+    const modal = document.getElementById("assessment-overlay");
+    const content = document.getElementById("assessment-content");
+    modal.classList.remove("hidden");
+    content.innerHTML = "<p>Loading security assessment...</p>";
+    
+    try {
+      const res = await fetch("/api/network/assess");
+      if (!res.ok) throw new Error("Assessment failed to load");
+      const data = await res.json();
+      
+      let html = "";
+      let hasErrors = false;
+      data.forEach(node => {
+        if (node.errors.length > 0 || node.warnings.length > 0) {
+          html += `<div style="margin-bottom: 1rem; padding: 1rem; background: #333; border-left: 4px solid ${node.errors.length > 0 ? '#e74c3c' : '#f39c12'};">
+            <h4 style="margin-top: 0;">${node.label} (${node.node_id})</h4>
+            <ul style="margin: 0; padding-left: 20px; color: #ffcccc;">`;
+          node.errors.forEach(e => html += `<li><strong>ERROR:</strong> ${e}</li>`);
+          node.warnings.forEach(w => html += `<li style="color: #ffebcc;"><strong>WARNING:</strong> ${w}</li>`);
+          html += `</ul></div>`;
+          if (node.errors.length > 0) hasErrors = true;
+        }
       });
-    });
-  }, 50);
-});
+      
+      if (!html) {
+        html = "<p style='color: #2ecc71;'>All clear! No security warnings or configuration errors found.</p>";
+      }
+      
+      if (hasErrors) {
+        html += "<p style='color: #e74c3c; font-weight: bold;'>Cannot push configuration due to critical errors. Please fix them in the draft.</p>";
+        document.getElementById("btn-confirm-push").disabled = true;
+        document.getElementById("btn-confirm-push").style.opacity = "0.5";
+      } else {
+        document.getElementById("btn-confirm-push").disabled = false;
+        document.getElementById("btn-confirm-push").style.opacity = "1";
+      }
+      
+      content.innerHTML = html;
+    } catch (e) {
+      content.innerHTML = `<p style="color: red;">Error: ${e.message}</p>`;
+    }
+  });
+}
+
+const cancelPushBtn = document.getElementById("btn-cancel-push");
+if (cancelPushBtn) {
+  cancelPushBtn.addEventListener("click", () => {
+    document.getElementById("assessment-overlay").classList.add("hidden");
+  });
+}
+
+const confirmPushBtn = document.getElementById("btn-confirm-push");
+if (confirmPushBtn) {
+  confirmPushBtn.addEventListener("click", async () => {
+    document.getElementById("assessment-overlay").classList.add("hidden");
+    const overlay = document.getElementById("discovery-overlay");
+    overlay.classList.remove("hidden");
+    document.getElementById("discovery-status-text").textContent = "Pushing configuration to physical devices...";
+    
+    try {
+      const res = await fetch("/api/network/push", { method: "POST" });
+      if (!res.ok) throw new Error("Push failed");
+      
+      // Poll until push completes (discovery_status -> completed)
+      const pollStatus = async () => {
+        try {
+          const statusRes = await fetch("/api/network/status");
+          const statusData = await statusRes.json();
+          if (statusData.status === "completed") {
+            overlay.classList.add("hidden");
+            alert("Push successful!");
+          } else {
+            setTimeout(pollStatus, 2000);
+          }
+        } catch (e) {
+          setTimeout(pollStatus, 2000);
+        }
+      };
+      setTimeout(pollStatus, 2000);
+    } catch (e) {
+      overlay.classList.add("hidden");
+      alert("Push error: " + e.message);
+    }
+  });
+}
+
+// Event Listeners
+const retryBtn = document.getElementById("btn-retry-discovery");
+if (retryBtn) {
+  retryBtn.addEventListener("click", async () => {
+    const overlay = document.getElementById("discovery-overlay");
+    overlay.classList.remove("hidden");
+    document.getElementById("discovery-status-text").textContent = "Retrying SSH Discovery...";
+    
+    try {
+      await fetch("/api/network/discover", { method: "POST" });
+      
+      const pollStatus = async () => {
+        try {
+          const statusRes = await fetch("/api/network/status");
+          const statusData = await statusRes.json();
+          if (statusData.status === "completed") {
+            overlay.classList.add("hidden");
+            const newData = await loadData();
+            appState.setState({
+              view: "main",
+              nodes: newData.nodes,
+              links: newData.edges,
+            });
+            // Re-init graph with new data
+            document.getElementById("graph-container").innerHTML = "";
+            initGraph("graph-container", newData.nodes, newData.edges, (node) => {
+              appState.setState({
+                view: "node",
+                selectedNode: node,
+                selectedPort: null,
+              });
+            });
+          } else {
+            const statusText = document.getElementById("discovery-status-text");
+            if (statusText) {
+              statusText.textContent = `Pending: ${statusData.pending && statusData.pending.length ? statusData.pending.join(', ') : 'none'} | Failed: ${statusData.failed && statusData.failed.length ? statusData.failed.join(', ') : 'none'}`;
+            }
+            setTimeout(pollStatus, 2000);
+          }
+        } catch (e) {
+          setTimeout(pollStatus, 2000);
+        }
+      };
+      pollStatus();
+    } catch (e) {
+      overlay.classList.add("hidden");
+      alert("Error starting discovery: " + e.message);
+    }
+  });
+}
 
 btnClosePanel.addEventListener("click", () => {
   if (appState.view === "port") {
