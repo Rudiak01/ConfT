@@ -237,6 +237,75 @@ appState.subscribe((state) => {
     // Resize after animating out slightly
     setTimeout(() => resizeGraph("graph-container"), 500);
   } else if (state.view === "node" && state.selectedNode) {
+    const sn = state.selectedNode;
+    const isHost = !(sn.label || "").toLowerCase().includes("router") && !(sn.label || "").toLowerCase().includes("switch");
+
+    if (isHost) {
+      bottomPanel.classList.add("hidden");
+      bottomPanel.classList.remove("active", "port-mode");
+      rightPanel.classList.remove("hidden");
+      btnBack.classList.remove("hidden");
+      breadcrumb.textContent = `Hôte: ${sn.label}`;
+
+      rightPanelContent.innerHTML = `
+        <div class="port-title-large">PC: ${sn.label}</div>
+        <div class="config-grid" style="display:flex; flex-direction:column; gap:1.5rem; margin-top: 1.5rem;">
+          <div class="form-group">
+            <label>Nom</label>
+            <div class="input-wrapper">
+              <input type="text" value="${sn.label}" disabled style="background:#333; color:#aaa; cursor:not-allowed;">
+            </div>
+          </div>
+          <div class="form-group">
+            <label>Adresse IP</label>
+            <div class="input-wrapper">
+              <input id="host-mgmt_ip" type="text" value="${sn.mgmt_ip || ''}" placeholder="ex: 192.168.1.10">
+            </div>
+          </div>
+          <div class="form-group">
+            <label>Masque de sous-réseau</label>
+            <div class="input-wrapper">
+              <input id="host-device_type" type="text" value="${(sn.device_type !== 'cisco_ios' && sn.device_type !== 'host' && sn.device_type !== null) ? sn.device_type : '255.255.255.0'}" placeholder="ex: 255.255.255.0">
+            </div>
+          </div>
+        </div>
+        <div class="bottom-actions" style="margin-top:auto; padding-top:2rem;">
+          <button id="btn-save-host" class="primary-btn" style="margin-top:0;">Appliquer</button>
+        </div>
+      `;
+
+      document.getElementById("btn-save-host").addEventListener("click", async () => {
+        const btn = document.getElementById("btn-save-host");
+        btn.textContent = "Saving...";
+        const newSettings = {
+          device_type: document.getElementById("host-device_type").value,
+          mgmt_ip: document.getElementById("host-mgmt_ip").value,
+          ssh_username: "",
+          ssh_password: ""
+        };
+        try {
+          const res = await fetch(`/api/node/${sn.id}`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(newSettings),
+          });
+          if (!res.ok) throw new Error("Failed to save host settings");
+          
+          sn.device_type = newSettings.device_type;
+          sn.mgmt_ip = newSettings.mgmt_ip;
+          
+          btn.textContent = "Appliqué";
+          setTimeout(() => btn.textContent = "Appliquer", 2000);
+        } catch (e) {
+          console.error(e);
+          btn.textContent = "Erreur";
+        }
+      });
+      setTimeout(() => resizeGraph("graph-container"), 50);
+      updateGraphHighlights(state);
+      return;
+    }
+
     bottomPanel.classList.remove("hidden", "port-mode");
     bottomPanel.classList.add("active");
     rightPanel.classList.add("hidden");
@@ -245,79 +314,80 @@ appState.subscribe((state) => {
     bottomPanelTitle.textContent = `Interfaces Connectées`;
 
     // Find connected links
-    const sn = state.selectedNode;
     const connectedLinks = state.links.filter(
       (l) => l.source.id === sn.id || l.target.id === sn.id,
     );
+    
+    let tableHtml = '';
 
-    // Render node settings + links as a table
-    let tableHtml = `
-      <div style="margin-bottom: 2rem; background: #2a2a2a; padding: 1rem; border-radius: 8px;">
-        <h4 style="margin-top: 0; color: #aaa;">Device Settings</h4>
-        <div class="config-grid" style="display:flex; gap:1rem; flex-wrap:wrap;">
-          <div class="form-group" style="flex:1;">
-            <label>Device Type</label>
-            <div class="input-wrapper">
-              <input id="node-device_type" type="text" value="${sn.device_type || 'cisco_ios'}" placeholder="e.g. cisco_ios">
+    // We don't render the host config in the bottom panel anymore.
+    // Render node settings + links as a table for Routers/Switches
+    tableHtml = `
+        <div style="margin-bottom: 2rem; background: #2a2a2a; padding: 1rem; border-radius: 8px;">
+          <h4 style="margin-top: 0; color: #aaa;">Paramètres de l'Équipement</h4>
+          <div class="config-grid" style="display:flex; gap:1rem; flex-wrap:wrap;">
+            <div class="form-group" style="flex:1;">
+              <label>Device Type</label>
+              <div class="input-wrapper">
+                <input id="node-device_type" type="text" value="${sn.device_type || 'cisco_ios'}" placeholder="e.g. cisco_ios">
+              </div>
             </div>
-          </div>
-          <div class="form-group" style="flex:1;">
-            <label>Management IP</label>
-            <div class="input-wrapper">
-              <input id="node-mgmt_ip" type="text" value="${sn.mgmt_ip || ''}" placeholder="e.g. 192.168.1.2">
+            <div class="form-group" style="flex:1;">
+              <label>Management IP</label>
+              <div class="input-wrapper">
+                <input id="node-mgmt_ip" type="text" value="${sn.mgmt_ip || ''}" placeholder="e.g. 192.168.1.2">
+              </div>
             </div>
-          </div>
-          <div class="form-group" style="flex:1;">
-            <label>SSH Username</label>
-            <div class="input-wrapper">
-              <input id="node-ssh_username" type="text" value="${sn.ssh_username || ''}" placeholder="e.g. admin">
+            <div class="form-group" style="flex:1;">
+              <label>SSH Username</label>
+              <div class="input-wrapper">
+                <input id="node-ssh_username" type="text" value="${sn.ssh_username || ''}" placeholder="e.g. admin">
+              </div>
             </div>
-          </div>
-          <div class="form-group" style="flex:1;">
-            <label>SSH Password</label>
-            <div class="input-wrapper">
-              <input id="node-ssh_password" type="password" placeholder="Leave blank to keep current">
+            <div class="form-group" style="flex:1;">
+              <label>SSH Password</label>
+              <div class="input-wrapper">
+                <input id="node-ssh_password" type="password" placeholder="Leave blank to keep current">
+              </div>
             </div>
-          </div>
-          <div style="display:flex; align-items:flex-end;">
-            <button id="btn-save-node" class="primary-btn">Save Device</button>
+            <div style="display:flex; align-items:flex-end;">
+              <button id="btn-save-node" class="primary-btn">Save Device</button>
+            </div>
           </div>
         </div>
-      </div>
-    `;
+      `;
 
-    if (connectedLinks.length === 0) {
-      tableHtml += `<p>Pas d'interface connectée.</p>`;
-      bottomPanelContent.innerHTML = tableHtml;
-    } else {
-      tableHtml += `<table class="data-table">
-          <thead><tr><th>Port</th><th>VLAN</th><th>IP du port</th></tr></thead>
-          <tbody>`;
+      if (connectedLinks.length === 0) {
+        tableHtml += `<p>Pas d'interface connectée.</p>`;
+        bottomPanelContent.innerHTML = tableHtml;
+      } else {
+        tableHtml += `<table class="data-table">
+            <thead><tr><th>Port</th><th>VLAN</th><th>IP du port</th></tr></thead>
+            <tbody>`;
 
-      connectedLinks.forEach((link, idx) => {
-        // We find index of link amongst connections as port index
-        tableHtml += `<tr data-linkid="${link.portId}" data-portidx="${idx + 1}" class="port-row">
-            <td>Port ${idx + 1} (${link.source.id === sn.id ? link.target.id : link.source.id})</td>
-            <td>${link.config.vlan}</td>
-            <td>${link.config.ipv4}</td>
-          </tr>`;
-      });
-      tableHtml += `</tbody></table>`;
-      bottomPanelContent.innerHTML = tableHtml;
-
-      // Add click listeners to rows
-      document.querySelectorAll(".port-row").forEach((row) => {
-        row.addEventListener("click", () => {
-          const lid = row.getAttribute("data-linkid");
-          const portIndex = row.getAttribute("data-portidx");
-          const pLink = state.links.find((l) => l.portId === lid);
-          if (pLink) {
-            pLink.portNameRendered = `Port ${portIndex}`;
-            appState.setState({ view: "port", selectedPort: pLink });
-          }
+        connectedLinks.forEach((link, idx) => {
+          tableHtml += `<tr data-linkid="${link.portId}" data-portidx="${idx + 1}" class="port-row">
+              <td>Port ${idx + 1} (${link.source.id === sn.id ? link.target.id : link.source.id})</td>
+              <td>${link.config.vlan}</td>
+              <td>${link.config.ipv4}</td>
+            </tr>`;
         });
-      });
-    }
+        tableHtml += `</tbody></table>`;
+        bottomPanelContent.innerHTML = tableHtml;
+
+        // Add click listeners to rows
+        document.querySelectorAll(".port-row").forEach((row) => {
+          row.addEventListener("click", () => {
+            const lid = row.getAttribute("data-linkid");
+            const portIndex = row.getAttribute("data-portidx");
+            const pLink = state.links.find((l) => l.portId === lid);
+            if (pLink) {
+              pLink.portNameRendered = `Port ${portIndex}`;
+              appState.setState({ view: "port", selectedPort: pLink });
+            }
+          });
+        });
+      }
 
     // Add event listener for saving node
     const btnSaveNode = document.getElementById("btn-save-node");
@@ -624,7 +694,11 @@ btnClosePanel.addEventListener("click", () => {
 
 if (btnCloseRight) {
   btnCloseRight.addEventListener("click", () => {
-    appState.setState({ view: "node", selectedPort: null });
+    if (appState.view === "node") {
+      appState.setState({ view: "main", selectedNode: null, selectedPort: null });
+    } else {
+      appState.setState({ view: "node", selectedPort: null });
+    }
   });
 }
 
