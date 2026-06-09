@@ -85,10 +85,9 @@ def run_dynamic_discovery(seed_data):
         db.query(DBVlan).delete()
         db.query(DBNode).delete()
         
-        # Add a dummy pending node so UI shows progress
         seed_node = DBNode(
             id="seed", 
-            label=f"Discovering from {seed_data['seed_ip']}...", 
+            label="Loading Mock Data..." if seed_data.get("mock") else f"Discovering from {seed_data['seed_ip']}...", 
             discovery_status="pending",
             link_count=0,
             color="#7f7f7f"
@@ -96,13 +95,19 @@ def run_dynamic_discovery(seed_data):
         db.add(seed_node)
         db.commit()
         
-        data = crawl_network(seed_data["seed_ip"], credentials)
+        if seed_data.get("mock"):
+            import time
+            time.sleep(1) # simulate small delay
+            with open(BASE_DIR / "back" / "current_state.json", "r") as f:
+                data = json.load(f)
+        else:
+            data = crawl_network(seed_data["seed_ip"], credentials)
         
         # Remove dummy node
         db.query(DBNode).delete()
         db.commit()
         
-        if not data or not data["nodes"]:
+        if not data or not data.get("nodes"):
             # If failed, recreate a dummy failed node
             seed_node = DBNode(
                 id="seed", 
@@ -122,17 +127,21 @@ def run_dynamic_discovery(seed_data):
         for ip, n in nodes.items():
             # Basic sanity check
             node_id = f"node-{ip.replace('.', '-')}"
+            
+            # Compute link count for this node
+            l_count = sum(1 for e in edges if e['source_ip'] == ip or e['target_ip'] == ip)
+            
             db.add(DBNode(
                 id=node_id,
                 label=n["hostname"],
-                device_type=n["device_type"],
+                device_type=n.get("device_type", "cisco_ios"),
                 mgmt_ip=ip,
-                ssh_username=seed_data["ssh_username"],
+                ssh_username=seed_data.get("ssh_username", ""),
                 ssh_password_encrypted=enc_pw,
-                running_config_active=n["running_config"],
-                running_config_draft=n["running_config"],
+                running_config_active=n.get("running_config", ""),
+                running_config_draft=n.get("running_config", ""),
                 discovery_status="completed",
-                link_count=0,
+                link_count=l_count,
                 color="#3498db"
             ))
         db.commit()
@@ -274,6 +283,9 @@ def push_network_task():
     # Trigger rediscovery to update Active configs
     discover_network_task()
 
+@app.get("/api/settings")
+def get_settings():
+    return {"mock_mode": os.environ.get("MOCK_NETWORK") == "1"}
 
 @app.get("/api/network/assess")
 def assess_network(db: Session = Depends(get_db)):
@@ -324,10 +336,11 @@ def read_network(background_tasks: BackgroundTasks, db: Session = Depends(get_db
     return get_network(db)
 
 class SeedSchema(BaseModel):
-    seed_ip: str
+    seed_ip: str = ""
     device_type: str = "cisco_ios"
-    ssh_username: str
-    ssh_password: str
+    ssh_username: str = ""
+    ssh_password: str = ""
+    mock: bool = False
 
 @app.post("/api/network/seed")
 def discover_from_seed(seed_data: SeedSchema, background_tasks: BackgroundTasks, db: Session = Depends(get_db)):
@@ -338,8 +351,10 @@ def discover_from_seed(seed_data: SeedSchema, background_tasks: BackgroundTasks,
     db.query(DBNode).delete()
     db.commit()
     
+    is_mock = os.environ.get("MOCK_NETWORK") == "1" or seed_data.mock
+    
     # Python 3.10+ Pydantic
-    data_dict = {"seed_ip": seed_data.seed_ip, "device_type": seed_data.device_type, "ssh_username": seed_data.ssh_username, "ssh_password": seed_data.ssh_password}
+    data_dict = {"seed_ip": seed_data.seed_ip, "device_type": seed_data.device_type, "ssh_username": seed_data.ssh_username, "ssh_password": seed_data.ssh_password, "mock": is_mock}
     background_tasks.add_task(run_dynamic_discovery, data_dict)
     return {"status": "started"}
 class NodeUpdateSchema(BaseModel):

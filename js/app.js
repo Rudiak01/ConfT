@@ -33,6 +33,35 @@ async function loadData() {
 
 window.addEventListener("DOMContentLoaded", async () => {
   try {
+    const settingsRes = await fetch("/api/settings");
+    if (settingsRes.ok) {
+      const settings = await settingsRes.json();
+      localStorage.setItem("isMock", settings.mock_mode ? "true" : "false");
+    }
+  } catch (e) {
+    console.error("Failed to fetch settings", e);
+  }
+
+  // Handle Mock Mode UI hiding on load if needed
+  const isMock = localStorage.getItem("isMock") === "true";
+  if (isMock) {
+    const seedIpGroup = document.getElementById("seed-ip").closest('.form-group');
+    const seedTypeGroup = document.getElementById("seed-type").closest('.form-group');
+    const seedUserGroup = document.getElementById("seed-username").closest('.form-group');
+    const seedPassGroup = document.getElementById("seed-password").closest('.form-group');
+    const seedInstructions = document.getElementById("seed-instructions");
+    
+    if(seedIpGroup) seedIpGroup.style.display = "none";
+    if(seedTypeGroup) seedTypeGroup.style.display = "none";
+    if(seedUserGroup) seedUserGroup.style.display = "none";
+    if(seedPassGroup) seedPassGroup.style.display = "none";
+    if(seedInstructions) seedInstructions.style.display = "none";
+    
+    const btnGetConfig = document.getElementById("btn-get-config");
+    if (btnGetConfig) btnGetConfig.textContent = "Launch Demo Network";
+  }
+
+  try {
     const data = await loadData();
     if (data.nodes && data.nodes.length > 0) {
       document.getElementById("init-overlay").classList.add("hidden");
@@ -58,8 +87,9 @@ window.addEventListener("DOMContentLoaded", async () => {
 });
 
 btnGetConfig.addEventListener("click", async () => {
+  const isMock = localStorage.getItem("isMock") === "true";
   const seedIp = document.getElementById("seed-ip").value;
-  if (!seedIp) {
+  if (!isMock && !seedIp) {
       alert("Please enter a Seed IP address.");
       return;
   }
@@ -70,7 +100,8 @@ btnGetConfig.addEventListener("click", async () => {
         seed_ip: seedIp,
         device_type: document.getElementById("seed-type").value || "cisco_ios",
         ssh_username: document.getElementById("seed-username").value,
-        ssh_password: document.getElementById("seed-password").value
+        ssh_password: document.getElementById("seed-password").value,
+        mock: isMock
     };
     
     const res = await fetch("/api/network/seed", {
@@ -131,10 +162,10 @@ btnGetConfig.addEventListener("click", async () => {
 });
 
 function parseSidebarLists(nodes) {
-  const routers = nodes.filter((n) => n.id.includes("router"));
-  const switches = nodes.filter((n) => n.id.includes("switch"));
+  const routers = nodes.filter((n) => (n.label || "").toLowerCase().includes("router"));
+  const switches = nodes.filter((n) => (n.label || "").toLowerCase().includes("switch"));
   const hosts = nodes.filter(
-    (n) => !n.id.includes("router") && !n.id.includes("switch"),
+    (n) => !(n.label || "").toLowerCase().includes("router") && !(n.label || "").toLowerCase().includes("switch"),
   ); // If any
 
   const populate = (listEl, items) => {
@@ -176,6 +207,20 @@ appState.subscribe((state) => {
   } else {
     if (initOverlay) initOverlay.classList.add("hidden");
     viewApp.classList.remove("hidden");
+    
+    // Set UI based on mock mode
+    const isMock = localStorage.getItem("isMock") === "true";
+    if (isMock) {
+      const badge = document.getElementById("demo-badge");
+      if (badge) badge.classList.remove("hidden");
+      const retryBtn = document.getElementById("btn-retry-discovery");
+      if (retryBtn) retryBtn.classList.add("hidden");
+    } else {
+      const badge = document.getElementById("demo-badge");
+      if (badge) badge.classList.add("hidden");
+      const retryBtn = document.getElementById("btn-retry-discovery");
+      if (retryBtn) retryBtn.classList.remove("hidden");
+    }
   }
 
   // 2. Sidebar active states

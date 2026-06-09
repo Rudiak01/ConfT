@@ -4,6 +4,34 @@ let svg, g, zoom;
 let simulation, link, node, text;
 let width, height;
 
+function getNodeRadius(d, state = 'normal') {
+  let base = 3;
+  const label = (d.label || "").toLowerCase();
+  
+  if (label.includes("core")) base = 25;
+  else if (label.includes("dist")) base = 15;
+  else if (label.includes("access") || label.includes("switch")) base = 8;
+  else {
+      // Fallback size based on INFRASTRUCTURE connections, not endpoints!
+      if (d.infra_link_count > 3) base = 16;
+      else if (d.infra_link_count > 1) base = 10;
+      else if (d.true_link_count > 1) base = 6; // Standard switch
+      else base = 3; // Host
+  }
+  
+  // Minor dynamic sizing based on infra links, bounded so it NEVER bridges the gap between tiers
+  let dynamic = 0;
+  if (d.infra_link_count > 0) {
+     dynamic = Math.min(Math.sqrt(d.infra_link_count), 4);
+  }
+  
+  let r = base + dynamic;
+  
+  if (state === 'hover') return r * 1.3;
+  if (state === 'selected') return r * 1.5;
+  return r;
+}
+
 export function initGraph(containerId, nodes, links, onNodeClick) {
   const container = document.getElementById(containerId);
   width = container.clientWidth || window.innerWidth - 320;
@@ -22,13 +50,58 @@ export function initGraph(containerId, nodes, links, onNodeClick) {
   });
   svg.call(zoom);
 
+  nodes.forEach(n => {
+    n.true_link_count = links.filter(l => 
+      (l.source.id || l.source) === n.id || 
+      (l.target.id || l.target) === n.id
+    ).length;
+  });
+
+  // Second pass: Calculate connections only to OTHER switches/routers (nodes with >1 connection)
+  nodes.forEach(n => {
+    n.infra_link_count = links.filter(l => {
+      const sid = l.source.id || l.source;
+      const tid = l.target.id || l.target;
+      if (sid !== n.id && tid !== n.id) return false;
+      
+      const neighborId = sid === n.id ? tid : sid;
+      const neighbor = nodes.find(nx => nx.id === neighborId);
+      return neighbor && neighbor.true_link_count > 1;
+    }).length;
+  });
+
+  // Dynamically determine ring sizes based on what's actually in the network
+  const hasCore = nodes.some(n => (n.label || "").toLowerCase().includes("core"));
+  const hasDist = nodes.some(n => (n.label || "").toLowerCase().includes("dist"));
+  
+  let coreRadius = 0, distRadius = 250, accessRadius = 550;
+  if (!hasCore && hasDist) {
+      distRadius = 0;
+      accessRadius = 300;
+  } else if (!hasCore && !hasDist) {
+      accessRadius = 0; // If it's a flat network of just switches, center them
+  }
+
   simulation = d3.forceSimulation(nodes)
     .force("link", d3.forceLink(links).id(d => d.id).distance(d => {
       const sourceLinks = links.filter(l => l.source.id === d.source.id || l.target.id === d.source.id).length;
       const targetLinks = links.filter(l => l.source.id === d.target.id || l.target.id === d.target.id).length;
-      return Math.min(150, Math.max(50, (sourceLinks + targetLinks) * 10));
+      return Math.min(200, Math.max(60, (sourceLinks + targetLinks) * 12));
     }))
-    .force("charge", d3.forceManyBody().strength(-300))
+    .force("charge", d3.forceManyBody().strength(-400))
+    .force("collide", d3.forceCollide().radius(d => getNodeRadius(d, 'normal') + 8).iterations(3))
+    .force("r", d3.forceRadial(d => {
+      const label = (d.label || "").toLowerCase();
+      if (label.includes("core")) return coreRadius;
+      if (label.includes("dist")) return distRadius;
+      return accessRadius; // Access
+    }, width / 2, height / 2).strength(d => {
+      const label = (d.label || "").toLowerCase();
+      if (label.includes("core")) return 1;
+      if (label.includes("dist")) return 0.8;
+      if (label.includes("access") || label.includes("switch")) return 0.5;
+      return 0; // Hosts have 0 radial strength
+    }))
     .force("center", d3.forceCenter(width / 2, height / 2))
     .alphaDecay(0.02)
     .alphaMin(0.001)
@@ -40,7 +113,8 @@ export function initGraph(containerId, nodes, links, onNodeClick) {
     .data(links)
     .enter().append("line")
     .attr("class", "link")
-    .attr("stroke-width", 4)
+    .attr("vector-effect", "non-scaling-stroke")
+    .attr("stroke-width", 1.5)
     .style("stroke", "#999")
     .style("opacity", 0.6);
 
@@ -50,12 +124,12 @@ export function initGraph(containerId, nodes, links, onNodeClick) {
     .data(nodes)
     .enter().append("circle")
     .attr("class", "node")
-    .attr("r", d => 5 + (d.link_count || 1) * 3)
+    .attr("r", d => getNodeRadius(d, 'normal'))
     .attr("fill", d => d.color || "#ccc")
     .on("click", (d) => onNodeClick(d))
     .on("mouseover", function(d) {
       if(appState.view === 'main') {
-        d3.select(this).attr("fill", "var(--accent-color)").attr("r", 10 + (d.link_count || 1) * 2);
+        d3.select(this).attr("fill", "var(--accent-color)").attr("r", d => getNodeRadius(d, 'hover'));
         link.style("stroke", l => l.source === d || l.target === d ? "var(--primary-color)" : "#999")
             .style("opacity", l => l.source === d || l.target === d ? 1 : 0.2);
         node.style("opacity", n => {
@@ -66,8 +140,8 @@ export function initGraph(containerId, nodes, links, onNodeClick) {
     })
     .on("mouseout", function(d) {
       if(appState.view === 'main') {
-        d3.select(this).attr("fill", n => n.color || "#ccc").attr("r", n => 5 + (n.link_count || 1) * 3);
-        link.style("stroke", "#999").style("opacity", 0.6);
+        d3.select(this).attr("fill", n => n.color || "#ccc").attr("r", n => getNodeRadius(n, 'normal'));
+        link.style("stroke", "#999").style("opacity", 0.6).attr("stroke-width", 1.5);
         node.style("opacity", 1);
       }
     });
@@ -106,8 +180,8 @@ export function updateGraphHighlights(state) {
 
   if (state.view === 'main') {
     // Reset highlights
-    node.attr("fill", d => d.color || "#ccc").attr("r", d => 5 + (d.link_count || 1) * 3).style("opacity", 1);
-    link.style("stroke", "#999").style("opacity", 0.6).attr("stroke-width", 4);
+    node.attr("fill", d => d.color || "#ccc").attr("r", d => getNodeRadius(d, 'normal')).style("opacity", 1);
+    link.style("stroke", "#999").style("opacity", 0.6).attr("stroke-width", 1.5);
     text.style("opacity", 1);
     
     // reset zoom
@@ -118,7 +192,7 @@ export function updateGraphHighlights(state) {
     
     // Highlight the selected node and its direct neighbors
     node.attr("fill", d => d === sn ? "var(--accent-color)" : (d.color || "#ccc"))
-        .attr("r", d => d === sn ? 10 + (d.link_count || 1) * 3 : 5 + (d.link_count || 1) * 3)
+        .attr("r", d => d === sn ? getNodeRadius(d, 'selected') : getNodeRadius(d, 'normal'))
         .style("opacity", d => {
           const isConnected = state.links.some(l => (l.source === sn && l.target === d) || (l.target === sn && l.source === d));
           return isConnected || d === sn ? 1 : 0.1;
@@ -126,7 +200,7 @@ export function updateGraphHighlights(state) {
 
     link.style("stroke", l => l.source === sn || l.target === sn ? "var(--primary-color)" : "#999")
         .style("opacity", l => l.source === sn || l.target === sn ? 0.8 : 0.05)
-        .attr("stroke-width", l => l.source === sn || l.target === sn ? 6 : 2);
+        .attr("stroke-width", l => l.source === sn || l.target === sn ? 3 : 1);
     
     text.style("opacity", d => {
        const isConnected = state.links.some(l => (l.source === sn && l.target === d) || (l.target === sn && l.source === d));
@@ -170,5 +244,11 @@ export function resizeGraph(containerId) {
   
   svg.attr("width", width).attr("height", height);
   simulation.force("center", d3.forceCenter(width / 2, height / 2));
+  
+  // Also update radial force center on resize
+  if (simulation.force("r")) {
+      simulation.force("r").x(width / 2).y(height / 2);
+  }
+  
   simulation.alpha(0.3).restart();
 }

@@ -10,10 +10,10 @@
   </head>
   <body>
     <!-- Seed Overlay -->
-    <div id="init-overlay" class="init-overlay">
+    <div id="init-overlay" class="init-overlay" style="position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; display: flex; justify-content: center; align-items: center; z-index: 9999; background: var(--bg-gradient); background-image: url(ConfT.png); background-repeat: no-repeat; background-size: cover; background-position: center; background-blend-mode: multiply;">
       <div class="glass-panel" style="max-width: 500px; text-align: center; display: flex; flex-direction: column; gap: 1rem; align-items: center;">
         <img src="ConfT.png" alt="ConfT Logo" style="max-width: 200px; margin-bottom: 1rem;">
-        <p style="color: #ccc;">Enter a Seed IP to crawl and discover your network.</p>
+        <p id="seed-instructions" style="color: #ccc;">Enter a Seed IP to crawl and discover your network.</p>
         
         <div class="form-group" style="width: 100%; text-align: left;">
             <label>Seed IP Address</label>
@@ -73,7 +73,10 @@
 
       <main id="main-content">
         <header class="top-bar glass-bar">
-          <div class="breadcrumb" id="breadcrumb">Topographie du Réseau</div>
+          <div style="display: flex; align-items: center;">
+            <div class="breadcrumb" id="breadcrumb">Topographie du Réseau</div>
+            <div id="demo-badge" class="badge hidden" style="background: #f39c12; margin-left: 10px; font-size: 0.8rem; padding: 4px 8px;">DEMO MODE</div>
+          </div>
           <div>
               <button id="btn-retry-discovery" class="secondary-btn" style="margin-right: 10px;">Retry SSH Discovery</button>
               <button id="btn-assess-push" class="primary-btn" style="background: #e74c3c; margin-right: 10px;">Admin: Assess & Push to Prod</button>
@@ -120,8 +123,8 @@
     </div>
 
     <script src="https://d3js.org/d3.v5.min.js"></script>
-    <script type="module" src="js/state.js"></script>
-    <script type="module" src="js/graph.js"></script>
-    <script type="module" src="js/app.js"></script>
+    <script type="module" src="js/state.js?v=2"></script>
+    <script type="module" src="js/graph.js?v=11"></script>
+    <script type="module" src="js/app.js?v=11"></script>
   </body>
 </html>

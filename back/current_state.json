@@ -1,203 +1,4047 @@
 {
-    "vlans": [
+  "nodes": {
+    "10.0.0.1": {
+      "hostname": "CoreRouter-Primary",
+      "device_type": "cisco_ios",
+      "running_config": "hostname CoreRouter-Primary\n!\n",
+      "vlans": [
         {
-            "vlan_id": "1",
-            "name": "default"
+          "vlan_id": "1",
+          "name": "default"
         },
         {
-            "vlan_id": "50",
-            "name": "HR"
+          "vlan_id": "10",
+          "name": "Management"
         },
         {
-            "vlan_id": "60",
-            "name": "SERVERS"
+          "vlan_id": "20",
+          "name": "Servers"
         },
         {
-            "vlan_id": "1002",
-            "name": "fddi-default"
+          "vlan_id": "30",
+          "name": "Clients"
         },
         {
-            "vlan_id": "1003",
-            "name": "token-ring-default"
+          "vlan_id": "40",
+          "name": "IoT"
         },
         {
-            "vlan_id": "1004",
-            "name": "fddinet-default"
-        },
-        {
-            "vlan_id": "1005",
-            "name": "trnet-default"
+          "vlan_id": "50",
+          "name": "Guest"
         }
-    ],
-    "interfaces": [
+      ]
+    },
+    "10.0.0.2": {
+      "hostname": "CoreRouter-Backup",
+      "device_type": "cisco_ios",
+      "running_config": "hostname CoreRouter-Backup\n!\n",
+      "vlans": [
         {
-            "name": "Gi1/0/1",
-            "mode": "down",
-            "access_vlan": "1",
-            "trunk_vlans": "ALL"
+          "vlan_id": "1",
+          "name": "default"
         },
         {
-            "name": "Gi1/0/2",
-            "mode": "down",
-            "access_vlan": "1",
-            "trunk_vlans": "ALL"
+          "vlan_id": "10",
+          "name": "Management"
         },
         {
-            "name": "Gi1/0/3",
-            "mode": "down",
-            "access_vlan": "1",
-            "trunk_vlans": "ALL"
+          "vlan_id": "20",
+          "name": "Servers"
         },
         {
-            "name": "Gi1/0/4",
-            "mode": "down",
-            "access_vlan": "1",
-            "trunk_vlans": "ALL"
+          "vlan_id": "30",
+          "name": "Clients"
         },
         {
-            "name": "Gi1/0/5",
-            "mode": "down",
-            "access_vlan": "1",
-            "trunk_vlans": "ALL"
+          "vlan_id": "40",
+          "name": "IoT"
         },
         {
-            "name": "Gi1/0/6",
-            "mode": "down",
-            "access_vlan": "1",
-            "trunk_vlans": "ALL"
-        },
-        {
-            "name": "Gi1/0/7",
-            "mode": "down",
-            "access_vlan": "1",
-            "trunk_vlans": "ALL"
-        },
-        {
-            "name": "Gi1/0/8",
-            "mode": "down",
-            "access_vlan": "1",
-            "trunk_vlans": "ALL"
-        },
-        {
-            "name": "Gi1/0/9",
-            "mode": "down",
-            "access_vlan": "1",
-            "trunk_vlans": "ALL"
-        },
-        {
-            "name": "Gi1/0/10",
-            "mode": "down",
-            "access_vlan": "1",
-            "trunk_vlans": "ALL"
-        },
-        {
-            "name": "Gi1/0/11",
-            "mode": "down",
-            "access_vlan": "1",
-            "trunk_vlans": "ALL"
-        },
-        {
-            "name": "Gi1/0/12",
-            "mode": "down",
-            "access_vlan": "1",
-            "trunk_vlans": "ALL"
-        },
-        {
-            "name": "Gi1/0/13",
-            "mode": "down",
-            "access_vlan": "1",
-            "trunk_vlans": "ALL"
-        },
-        {
-            "name": "Gi1/0/14",
-            "mode": "down",
-            "access_vlan": "1",
-            "trunk_vlans": "ALL"
-        },
-        {
-            "name": "Gi1/0/15",
-            "mode": "down",
-            "access_vlan": "1",
-            "trunk_vlans": "ALL"
-        },
-        {
-            "name": "Gi1/0/16",
-            "mode": "down",
-            "access_vlan": "1",
-            "trunk_vlans": "ALL"
-        },
-        {
-            "name": "Gi1/0/17",
-            "mode": "down",
-            "access_vlan": "1",
-            "trunk_vlans": "ALL"
-        },
-        {
-            "name": "Gi1/0/18",
-            "mode": "down",
-            "access_vlan": "1",
-            "trunk_vlans": "ALL"
-        },
-        {
-            "name": "Gi1/0/19",
-            "mode": "down",
-            "access_vlan": "1",
-            "trunk_vlans": "ALL"
-        },
-        {
-            "name": "Gi1/0/20",
-            "mode": "down",
-            "access_vlan": "1",
-            "trunk_vlans": "ALL"
-        },
-        {
-            "name": "Gi1/0/21",
-            "mode": "down",
-            "access_vlan": "1",
-            "trunk_vlans": "ALL"
-        },
-        {
-            "name": "Gi1/0/22",
-            "mode": "down",
-            "access_vlan": "1",
-            "trunk_vlans": "ALL"
-        },
-        {
-            "name": "Gi1/0/23",
-            "mode": "down",
-            "access_vlan": "1",
-            "trunk_vlans": "ALL"
-        },
-        {
-            "name": "Gi1/0/24",
-            "mode": "static access",
-            "access_vlan": "1",
-            "trunk_vlans": "ALL"
-        },
-        {
-            "name": "Gi1/0/25",
-            "mode": "down",
-            "access_vlan": "1",
-            "trunk_vlans": "ALL"
-        },
-        {
-            "name": "Gi1/0/26",
-            "mode": "down",
-            "access_vlan": "1",
-            "trunk_vlans": "ALL"
-        },
-        {
-            "name": "Gi1/0/27",
-            "mode": "down",
-            "access_vlan": "1",
-            "trunk_vlans": "ALL"
-        },
-        {
-            "name": "Gi1/0/28",
-            "mode": "down",
-            "access_vlan": "1",
-            "trunk_vlans": "ALL"
+          "vlan_id": "50",
+          "name": "Guest"
         }
-    ],
-    "running_config": "Building configuration...\n\nCurrent configuration : 1903 bytes\n!\n! Last configuration change at 10:30:08 UTC Fri Feb 10 2034 by admin\n! NVRAM config last updated at 10:30:09 UTC Fri Feb 10 2034 by admin\n!\nversion 15.2\nno service pad\nservice timestamps debug datetime msec\nservice timestamps log datetime msec\nno service password-encryption\n!\nhostname switch\n!\nboot-start-marker\nboot-end-marker\n!\n!\nusername admin privilege 15 secret 5 $1$j689$tpMuCIhnjHa8nhA.DiTet0\nno aaa new-model\nswitch 1 provision ws-c2960xr-24ts-i\nsystem mtu routing 1500\n!\n!\nip domain-name domain.local\n!\n!\n!\n!\n!\n!\n!\n!\nspanning-tree mode pvst\nspanning-tree extend system-id\n!\n!\n!\n!\nvlan internal allocation policy ascending\n!\n!\n! \n!\n!\n!\n!\n!\n!\n!\n!\ninterface FastEthernet0\n no ip address\n!\ninterface GigabitEthernet1/0/1\n!\ninterface GigabitEthernet1/0/2\n!\ninterface GigabitEthernet1/0/3\n!\ninterface GigabitEthernet1/0/4\n!\ninterface GigabitEthernet1/0/5\n!\ninterface GigabitEthernet1/0/6\n!\ninterface GigabitEthernet1/0/7\n!\ninterface GigabitEthernet1/0/8\n!\ninterface GigabitEthernet1/0/9\n!\ninterface GigabitEthernet1/0/10\n!\ninterface GigabitEthernet1/0/11\n!\ninterface GigabitEthernet1/0/12\n!\ninterface GigabitEthernet1/0/13\n!\ninterface GigabitEthernet1/0/14\n!\ninterface GigabitEthernet1/0/15\n!\ninterface GigabitEthernet1/0/16\n!\ninterface GigabitEthernet1/0/17\n!\ninterface GigabitEthernet1/0/18\n!\ninterface GigabitEthernet1/0/19\n!\ninterface GigabitEthernet1/0/20\n!\ninterface GigabitEthernet1/0/21\n!\ninterface GigabitEthernet1/0/22\n!\ninterface GigabitEthernet1/0/23\n!\ninterface GigabitEthernet1/0/24\n!\ninterface GigabitEthernet1/0/25\n!\ninterface GigabitEthernet1/0/26\n!\ninterface GigabitEthernet1/0/27\n!\ninterface GigabitEthernet1/0/28\n!\ninterface Vlan1\n ip address 192.168.1.2 255.255.255.0\n!\nip default-gateway 192.168.1.1\nip forward-protocol nd\nip http server\nip http secure-server\n!\nip ssh version 2\n!\n!\n!\n!\n!\nline con 0\nline vty 0 4\n login local\n transport input ssh\nline vty 5 15\n login\n!\nend\n"
+      ]
+    },
+    "10.0.1.1": {
+      "hostname": "DistSwitch-1",
+      "device_type": "cisco_ios",
+      "running_config": "hostname DistSwitch-1\n!\n",
+      "vlans": [
+        {
+          "vlan_id": "1",
+          "name": "default"
+        },
+        {
+          "vlan_id": "10",
+          "name": "Management"
+        },
+        {
+          "vlan_id": "20",
+          "name": "Servers"
+        },
+        {
+          "vlan_id": "30",
+          "name": "Clients"
+        },
+        {
+          "vlan_id": "40",
+          "name": "IoT"
+        },
+        {
+          "vlan_id": "50",
+          "name": "Guest"
+        }
+      ]
+    },
+    "10.0.1.2": {
+      "hostname": "DistSwitch-2",
+      "device_type": "cisco_ios",
+      "running_config": "hostname DistSwitch-2\n!\n",
+      "vlans": [
+        {
+          "vlan_id": "1",
+          "name": "default"
+        },
+        {
+          "vlan_id": "10",
+          "name": "Management"
+        },
+        {
+          "vlan_id": "20",
+          "name": "Servers"
+        },
+        {
+          "vlan_id": "30",
+          "name": "Clients"
+        },
+        {
+          "vlan_id": "40",
+          "name": "IoT"
+        },
+        {
+          "vlan_id": "50",
+          "name": "Guest"
+        }
+      ]
+    },
+    "10.0.1.3": {
+      "hostname": "DistSwitch-3",
+      "device_type": "cisco_ios",
+      "running_config": "hostname DistSwitch-3\n!\n",
+      "vlans": [
+        {
+          "vlan_id": "1",
+          "name": "default"
+        },
+        {
+          "vlan_id": "10",
+          "name": "Management"
+        },
+        {
+          "vlan_id": "20",
+          "name": "Servers"
+        },
+        {
+          "vlan_id": "30",
+          "name": "Clients"
+        },
+        {
+          "vlan_id": "40",
+          "name": "IoT"
+        },
+        {
+          "vlan_id": "50",
+          "name": "Guest"
+        }
+      ]
+    },
+    "10.0.1.4": {
+      "hostname": "DistSwitch-4",
+      "device_type": "cisco_ios",
+      "running_config": "hostname DistSwitch-4\n!\n",
+      "vlans": [
+        {
+          "vlan_id": "1",
+          "name": "default"
+        },
+        {
+          "vlan_id": "10",
+          "name": "Management"
+        },
+        {
+          "vlan_id": "20",
+          "name": "Servers"
+        },
+        {
+          "vlan_id": "30",
+          "name": "Clients"
+        },
+        {
+          "vlan_id": "40",
+          "name": "IoT"
+        },
+        {
+          "vlan_id": "50",
+          "name": "Guest"
+        }
+      ]
+    },
+    "10.0.2.1": {
+      "hostname": "AccessSwitch-1",
+      "device_type": "cisco_ios",
+      "running_config": "hostname AccessSwitch-1\n!\n",
+      "vlans": [
+        {
+          "vlan_id": "1",
+          "name": "default"
+        },
+        {
+          "vlan_id": "10",
+          "name": "Management"
+        },
+        {
+          "vlan_id": "20",
+          "name": "Servers"
+        },
+        {
+          "vlan_id": "30",
+          "name": "Clients"
+        },
+        {
+          "vlan_id": "40",
+          "name": "IoT"
+        },
+        {
+          "vlan_id": "50",
+          "name": "Guest"
+        }
+      ]
+    },
+    "10.0.2.2": {
+      "hostname": "AccessSwitch-2",
+      "device_type": "cisco_ios",
+      "running_config": "hostname AccessSwitch-2\n!\n",
+      "vlans": [
+        {
+          "vlan_id": "1",
+          "name": "default"
+        },
+        {
+          "vlan_id": "10",
+          "name": "Management"
+        },
+        {
+          "vlan_id": "20",
+          "name": "Servers"
+        },
+        {
+          "vlan_id": "30",
+          "name": "Clients"
+        },
+        {
+          "vlan_id": "40",
+          "name": "IoT"
+        },
+        {
+          "vlan_id": "50",
+          "name": "Guest"
+        }
+      ]
+    },
+    "10.0.2.3": {
+      "hostname": "AccessSwitch-3",
+      "device_type": "cisco_ios",
+      "running_config": "hostname AccessSwitch-3\n!\n",
+      "vlans": [
+        {
+          "vlan_id": "1",
+          "name": "default"
+        },
+        {
+          "vlan_id": "10",
+          "name": "Management"
+        },
+        {
+          "vlan_id": "20",
+          "name": "Servers"
+        },
+        {
+          "vlan_id": "30",
+          "name": "Clients"
+        },
+        {
+          "vlan_id": "40",
+          "name": "IoT"
+        },
+        {
+          "vlan_id": "50",
+          "name": "Guest"
+        }
+      ]
+    },
+    "10.0.2.4": {
+      "hostname": "AccessSwitch-4",
+      "device_type": "cisco_ios",
+      "running_config": "hostname AccessSwitch-4\n!\n",
+      "vlans": [
+        {
+          "vlan_id": "1",
+          "name": "default"
+        },
+        {
+          "vlan_id": "10",
+          "name": "Management"
+        },
+        {
+          "vlan_id": "20",
+          "name": "Servers"
+        },
+        {
+          "vlan_id": "30",
+          "name": "Clients"
+        },
+        {
+          "vlan_id": "40",
+          "name": "IoT"
+        },
+        {
+          "vlan_id": "50",
+          "name": "Guest"
+        }
+      ]
+    },
+    "10.0.2.5": {
+      "hostname": "AccessSwitch-5",
+      "device_type": "cisco_ios",
+      "running_config": "hostname AccessSwitch-5\n!\n",
+      "vlans": [
+        {
+          "vlan_id": "1",
+          "name": "default"
+        },
+        {
+          "vlan_id": "10",
+          "name": "Management"
+        },
+        {
+          "vlan_id": "20",
+          "name": "Servers"
+        },
+        {
+          "vlan_id": "30",
+          "name": "Clients"
+        },
+        {
+          "vlan_id": "40",
+          "name": "IoT"
+        },
+        {
+          "vlan_id": "50",
+          "name": "Guest"
+        }
+      ]
+    },
+    "10.0.2.6": {
+      "hostname": "AccessSwitch-6",
+      "device_type": "cisco_ios",
+      "running_config": "hostname AccessSwitch-6\n!\n",
+      "vlans": [
+        {
+          "vlan_id": "1",
+          "name": "default"
+        },
+        {
+          "vlan_id": "10",
+          "name": "Management"
+        },
+        {
+          "vlan_id": "20",
+          "name": "Servers"
+        },
+        {
+          "vlan_id": "30",
+          "name": "Clients"
+        },
+        {
+          "vlan_id": "40",
+          "name": "IoT"
+        },
+        {
+          "vlan_id": "50",
+          "name": "Guest"
+        }
+      ]
+    },
+    "10.0.2.7": {
+      "hostname": "AccessSwitch-7",
+      "device_type": "cisco_ios",
+      "running_config": "hostname AccessSwitch-7\n!\n",
+      "vlans": [
+        {
+          "vlan_id": "1",
+          "name": "default"
+        },
+        {
+          "vlan_id": "10",
+          "name": "Management"
+        },
+        {
+          "vlan_id": "20",
+          "name": "Servers"
+        },
+        {
+          "vlan_id": "30",
+          "name": "Clients"
+        },
+        {
+          "vlan_id": "40",
+          "name": "IoT"
+        },
+        {
+          "vlan_id": "50",
+          "name": "Guest"
+        }
+      ]
+    },
+    "10.0.2.8": {
+      "hostname": "AccessSwitch-8",
+      "device_type": "cisco_ios",
+      "running_config": "hostname AccessSwitch-8\n!\n",
+      "vlans": [
+        {
+          "vlan_id": "1",
+          "name": "default"
+        },
+        {
+          "vlan_id": "10",
+          "name": "Management"
+        },
+        {
+          "vlan_id": "20",
+          "name": "Servers"
+        },
+        {
+          "vlan_id": "30",
+          "name": "Clients"
+        },
+        {
+          "vlan_id": "40",
+          "name": "IoT"
+        },
+        {
+          "vlan_id": "50",
+          "name": "Guest"
+        }
+      ]
+    },
+    "10.0.2.9": {
+      "hostname": "AccessSwitch-9",
+      "device_type": "cisco_ios",
+      "running_config": "hostname AccessSwitch-9\n!\n",
+      "vlans": [
+        {
+          "vlan_id": "1",
+          "name": "default"
+        },
+        {
+          "vlan_id": "10",
+          "name": "Management"
+        },
+        {
+          "vlan_id": "20",
+          "name": "Servers"
+        },
+        {
+          "vlan_id": "30",
+          "name": "Clients"
+        },
+        {
+          "vlan_id": "40",
+          "name": "IoT"
+        },
+        {
+          "vlan_id": "50",
+          "name": "Guest"
+        }
+      ]
+    },
+    "10.0.2.10": {
+      "hostname": "AccessSwitch-10",
+      "device_type": "cisco_ios",
+      "running_config": "hostname AccessSwitch-10\n!\n",
+      "vlans": [
+        {
+          "vlan_id": "1",
+          "name": "default"
+        },
+        {
+          "vlan_id": "10",
+          "name": "Management"
+        },
+        {
+          "vlan_id": "20",
+          "name": "Servers"
+        },
+        {
+          "vlan_id": "30",
+          "name": "Clients"
+        },
+        {
+          "vlan_id": "40",
+          "name": "IoT"
+        },
+        {
+          "vlan_id": "50",
+          "name": "Guest"
+        }
+      ]
+    },
+    "10.0.2.11": {
+      "hostname": "AccessSwitch-11",
+      "device_type": "cisco_ios",
+      "running_config": "hostname AccessSwitch-11\n!\n",
+      "vlans": [
+        {
+          "vlan_id": "1",
+          "name": "default"
+        },
+        {
+          "vlan_id": "10",
+          "name": "Management"
+        },
+        {
+          "vlan_id": "20",
+          "name": "Servers"
+        },
+        {
+          "vlan_id": "30",
+          "name": "Clients"
+        },
+        {
+          "vlan_id": "40",
+          "name": "IoT"
+        },
+        {
+          "vlan_id": "50",
+          "name": "Guest"
+        }
+      ]
+    },
+    "10.0.2.12": {
+      "hostname": "AccessSwitch-12",
+      "device_type": "cisco_ios",
+      "running_config": "hostname AccessSwitch-12\n!\n",
+      "vlans": [
+        {
+          "vlan_id": "1",
+          "name": "default"
+        },
+        {
+          "vlan_id": "10",
+          "name": "Management"
+        },
+        {
+          "vlan_id": "20",
+          "name": "Servers"
+        },
+        {
+          "vlan_id": "30",
+          "name": "Clients"
+        },
+        {
+          "vlan_id": "40",
+          "name": "IoT"
+        },
+        {
+          "vlan_id": "50",
+          "name": "Guest"
+        }
+      ]
+    },
+    "10.0.2.13": {
+      "hostname": "AccessSwitch-13",
+      "device_type": "cisco_ios",
+      "running_config": "hostname AccessSwitch-13\n!\n",
+      "vlans": [
+        {
+          "vlan_id": "1",
+          "name": "default"
+        },
+        {
+          "vlan_id": "10",
+          "name": "Management"
+        },
+        {
+          "vlan_id": "20",
+          "name": "Servers"
+        },
+        {
+          "vlan_id": "30",
+          "name": "Clients"
+        },
+        {
+          "vlan_id": "40",
+          "name": "IoT"
+        },
+        {
+          "vlan_id": "50",
+          "name": "Guest"
+        }
+      ]
+    },
+    "10.0.2.14": {
+      "hostname": "AccessSwitch-14",
+      "device_type": "cisco_ios",
+      "running_config": "hostname AccessSwitch-14\n!\n",
+      "vlans": [
+        {
+          "vlan_id": "1",
+          "name": "default"
+        },
+        {
+          "vlan_id": "10",
+          "name": "Management"
+        },
+        {
+          "vlan_id": "20",
+          "name": "Servers"
+        },
+        {
+          "vlan_id": "30",
+          "name": "Clients"
+        },
+        {
+          "vlan_id": "40",
+          "name": "IoT"
+        },
+        {
+          "vlan_id": "50",
+          "name": "Guest"
+        }
+      ]
+    },
+    "10.0.2.15": {
+      "hostname": "AccessSwitch-15",
+      "device_type": "cisco_ios",
+      "running_config": "hostname AccessSwitch-15\n!\n",
+      "vlans": [
+        {
+          "vlan_id": "1",
+          "name": "default"
+        },
+        {
+          "vlan_id": "10",
+          "name": "Management"
+        },
+        {
+          "vlan_id": "20",
+          "name": "Servers"
+        },
+        {
+          "vlan_id": "30",
+          "name": "Clients"
+        },
+        {
+          "vlan_id": "40",
+          "name": "IoT"
+        },
+        {
+          "vlan_id": "50",
+          "name": "Guest"
+        }
+      ]
+    },
+    "10.0.10.1": {
+      "hostname": "Host-1",
+      "device_type": "host",
+      "running_config": "hostname Host-1\n!\n",
+      "vlans": [
+        {
+          "vlan_id": "40",
+          "name": "assigned"
+        }
+      ]
+    },
+    "10.0.10.2": {
+      "hostname": "Host-2",
+      "device_type": "host",
+      "running_config": "hostname Host-2\n!\n",
+      "vlans": [
+        {
+          "vlan_id": "20",
+          "name": "assigned"
+        }
+      ]
+    },
+    "10.0.10.3": {
+      "hostname": "Host-3",
+      "device_type": "host",
+      "running_config": "hostname Host-3\n!\n",
+      "vlans": [
+        {
+          "vlan_id": "40",
+          "name": "assigned"
+        }
+      ]
+    },
+    "10.0.10.4": {
+      "hostname": "Host-4",
+      "device_type": "host",
+      "running_config": "hostname Host-4\n!\n",
+      "vlans": [
+        {
+          "vlan_id": "20",
+          "name": "assigned"
+        }
+      ]
+    },
+    "10.0.10.5": {
+      "hostname": "Host-5",
+      "device_type": "host",
+      "running_config": "hostname Host-5\n!\n",
+      "vlans": [
+        {
+          "vlan_id": "20",
+          "name": "assigned"
+        }
+      ]
+    },
+    "10.0.10.6": {
+      "hostname": "Host-6",
+      "device_type": "host",
+      "running_config": "hostname Host-6\n!\n",
+      "vlans": [
+        {
+          "vlan_id": "50",
+          "name": "assigned"
+        }
+      ]
+    },
+    "10.0.10.7": {
+      "hostname": "Host-7",
+      "device_type": "host",
+      "running_config": "hostname Host-7\n!\n",
+      "vlans": [
+        {
+          "vlan_id": "30",
+          "name": "assigned"
+        }
+      ]
+    },
+    "10.0.10.8": {
+      "hostname": "Host-8",
+      "device_type": "host",
+      "running_config": "hostname Host-8\n!\n",
+      "vlans": [
+        {
+          "vlan_id": "50",
+          "name": "assigned"
+        }
+      ]
+    },
+    "10.0.10.9": {
+      "hostname": "Host-9",
+      "device_type": "host",
+      "running_config": "hostname Host-9\n!\n",
+      "vlans": [
+        {
+          "vlan_id": "50",
+          "name": "assigned"
+        }
+      ]
+    },
+    "10.0.10.10": {
+      "hostname": "Host-10",
+      "device_type": "host",
+      "running_config": "hostname Host-10\n!\n",
+      "vlans": [
+        {
+          "vlan_id": "40",
+          "name": "assigned"
+        }
+      ]
+    },
+    "10.0.10.11": {
+      "hostname": "Host-11",
+      "device_type": "host",
+      "running_config": "hostname Host-11\n!\n",
+      "vlans": [
+        {
+          "vlan_id": "50",
+          "name": "assigned"
+        }
+      ]
+    },
+    "10.0.10.12": {
+      "hostname": "Host-12",
+      "device_type": "host",
+      "running_config": "hostname Host-12\n!\n",
+      "vlans": [
+        {
+          "vlan_id": "20",
+          "name": "assigned"
+        }
+      ]
+    },
+    "10.0.10.13": {
+      "hostname": "Host-13",
+      "device_type": "host",
+      "running_config": "hostname Host-13\n!\n",
+      "vlans": [
+        {
+          "vlan_id": "40",
+          "name": "assigned"
+        }
+      ]
+    },
+    "10.0.10.14": {
+      "hostname": "Host-14",
+      "device_type": "host",
+      "running_config": "hostname Host-14\n!\n",
+      "vlans": [
+        {
+          "vlan_id": "40",
+          "name": "assigned"
+        }
+      ]
+    },
+    "10.0.10.15": {
+      "hostname": "Host-15",
+      "device_type": "host",
+      "running_config": "hostname Host-15\n!\n",
+      "vlans": [
+        {
+          "vlan_id": "30",
+          "name": "assigned"
+        }
+      ]
+    },
+    "10.0.10.16": {
+      "hostname": "Host-16",
+      "device_type": "host",
+      "running_config": "hostname Host-16\n!\n",
+      "vlans": [
+        {
+          "vlan_id": "30",
+          "name": "assigned"
+        }
+      ]
+    },
+    "10.0.10.17": {
+      "hostname": "Host-17",
+      "device_type": "host",
+      "running_config": "hostname Host-17\n!\n",
+      "vlans": [
+        {
+          "vlan_id": "50",
+          "name": "assigned"
+        }
+      ]
+    },
+    "10.0.10.18": {
+      "hostname": "Host-18",
+      "device_type": "host",
+      "running_config": "hostname Host-18\n!\n",
+      "vlans": [
+        {
+          "vlan_id": "40",
+          "name": "assigned"
+        }
+      ]
+    },
+    "10.0.10.19": {
+      "hostname": "Host-19",
+      "device_type": "host",
+      "running_config": "hostname Host-19\n!\n",
+      "vlans": [
+        {
+          "vlan_id": "50",
+          "name": "assigned"
+        }
+      ]
+    },
+    "10.0.10.20": {
+      "hostname": "Host-20",
+      "device_type": "host",
+      "running_config": "hostname Host-20\n!\n",
+      "vlans": [
+        {
+          "vlan_id": "20",
+          "name": "assigned"
+        }
+      ]
+    },
+    "10.0.10.21": {
+      "hostname": "Host-21",
+      "device_type": "host",
+      "running_config": "hostname Host-21\n!\n",
+      "vlans": [
+        {
+          "vlan_id": "30",
+          "name": "assigned"
+        }
+      ]
+    },
+    "10.0.10.22": {
+      "hostname": "Host-22",
+      "device_type": "host",
+      "running_config": "hostname Host-22\n!\n",
+      "vlans": [
+        {
+          "vlan_id": "30",
+          "name": "assigned"
+        }
+      ]
+    },
+    "10.0.10.23": {
+      "hostname": "Host-23",
+      "device_type": "host",
+      "running_config": "hostname Host-23\n!\n",
+      "vlans": [
+        {
+          "vlan_id": "50",
+          "name": "assigned"
+        }
+      ]
+    },
+    "10.0.10.24": {
+      "hostname": "Host-24",
+      "device_type": "host",
+      "running_config": "hostname Host-24\n!\n",
+      "vlans": [
+        {
+          "vlan_id": "40",
+          "name": "assigned"
+        }
+      ]
+    },
+    "10.0.10.25": {
+      "hostname": "Host-25",
+      "device_type": "host",
+      "running_config": "hostname Host-25\n!\n",
+      "vlans": [
+        {
+          "vlan_id": "30",
+          "name": "assigned"
+        }
+      ]
+    },
+    "10.0.10.26": {
+      "hostname": "Host-26",
+      "device_type": "host",
+      "running_config": "hostname Host-26\n!\n",
+      "vlans": [
+        {
+          "vlan_id": "50",
+          "name": "assigned"
+        }
+      ]
+    },
+    "10.0.10.27": {
+      "hostname": "Host-27",
+      "device_type": "host",
+      "running_config": "hostname Host-27\n!\n",
+      "vlans": [
+        {
+          "vlan_id": "20",
+          "name": "assigned"
+        }
+      ]
+    },
+    "10.0.10.28": {
+      "hostname": "Host-28",
+      "device_type": "host",
+      "running_config": "hostname Host-28\n!\n",
+      "vlans": [
+        {
+          "vlan_id": "50",
+          "name": "assigned"
+        }
+      ]
+    },
+    "10.0.10.29": {
+      "hostname": "Host-29",
+      "device_type": "host",
+      "running_config": "hostname Host-29\n!\n",
+      "vlans": [
+        {
+          "vlan_id": "30",
+          "name": "assigned"
+        }
+      ]
+    },
+    "10.0.10.30": {
+      "hostname": "Host-30",
+      "device_type": "host",
+      "running_config": "hostname Host-30\n!\n",
+      "vlans": [
+        {
+          "vlan_id": "20",
+          "name": "assigned"
+        }
+      ]
+    },
+    "10.0.10.31": {
+      "hostname": "Host-31",
+      "device_type": "host",
+      "running_config": "hostname Host-31\n!\n",
+      "vlans": [
+        {
+          "vlan_id": "30",
+          "name": "assigned"
+        }
+      ]
+    },
+    "10.0.10.32": {
+      "hostname": "Host-32",
+      "device_type": "host",
+      "running_config": "hostname Host-32\n!\n",
+      "vlans": [
+        {
+          "vlan_id": "50",
+          "name": "assigned"
+        }
+      ]
+    },
+    "10.0.10.33": {
+      "hostname": "Host-33",
+      "device_type": "host",
+      "running_config": "hostname Host-33\n!\n",
+      "vlans": [
+        {
+          "vlan_id": "30",
+          "name": "assigned"
+        }
+      ]
+    },
+    "10.0.10.34": {
+      "hostname": "Host-34",
+      "device_type": "host",
+      "running_config": "hostname Host-34\n!\n",
+      "vlans": [
+        {
+          "vlan_id": "40",
+          "name": "assigned"
+        }
+      ]
+    },
+    "10.0.10.35": {
+      "hostname": "Host-35",
+      "device_type": "host",
+      "running_config": "hostname Host-35\n!\n",
+      "vlans": [
+        {
+          "vlan_id": "40",
+          "name": "assigned"
+        }
+      ]
+    },
+    "10.0.10.36": {
+      "hostname": "Host-36",
+      "device_type": "host",
+      "running_config": "hostname Host-36\n!\n",
+      "vlans": [
+        {
+          "vlan_id": "50",
+          "name": "assigned"
+        }
+      ]
+    },
+    "10.0.10.37": {
+      "hostname": "Host-37",
+      "device_type": "host",
+      "running_config": "hostname Host-37\n!\n",
+      "vlans": [
+        {
+          "vlan_id": "30",
+          "name": "assigned"
+        }
+      ]
+    },
+    "10.0.10.38": {
+      "hostname": "Host-38",
+      "device_type": "host",
+      "running_config": "hostname Host-38\n!\n",
+      "vlans": [
+        {
+          "vlan_id": "50",
+          "name": "assigned"
+        }
+      ]
+    },
+    "10.0.10.39": {
+      "hostname": "Host-39",
+      "device_type": "host",
+      "running_config": "hostname Host-39\n!\n",
+      "vlans": [
+        {
+          "vlan_id": "40",
+          "name": "assigned"
+        }
+      ]
+    },
+    "10.0.10.40": {
+      "hostname": "Host-40",
+      "device_type": "host",
+      "running_config": "hostname Host-40\n!\n",
+      "vlans": [
+        {
+          "vlan_id": "20",
+          "name": "assigned"
+        }
+      ]
+    },
+    "10.0.10.41": {
+      "hostname": "Host-41",
+      "device_type": "host",
+      "running_config": "hostname Host-41\n!\n",
+      "vlans": [
+        {
+          "vlan_id": "20",
+          "name": "assigned"
+        }
+      ]
+    },
+    "10.0.10.42": {
+      "hostname": "Host-42",
+      "device_type": "host",
+      "running_config": "hostname Host-42\n!\n",
+      "vlans": [
+        {
+          "vlan_id": "30",
+          "name": "assigned"
+        }
+      ]
+    },
+    "10.0.10.43": {
+      "hostname": "Host-43",
+      "device_type": "host",
+      "running_config": "hostname Host-43\n!\n",
+      "vlans": [
+        {
+          "vlan_id": "30",
+          "name": "assigned"
+        }
+      ]
+    },
+    "10.0.10.44": {
+      "hostname": "Host-44",
+      "device_type": "host",
+      "running_config": "hostname Host-44\n!\n",
+      "vlans": [
+        {
+          "vlan_id": "40",
+          "name": "assigned"
+        }
+      ]
+    },
+    "10.0.10.45": {
+      "hostname": "Host-45",
+      "device_type": "host",
+      "running_config": "hostname Host-45\n!\n",
+      "vlans": [
+        {
+          "vlan_id": "30",
+          "name": "assigned"
+        }
+      ]
+    },
+    "10.0.10.46": {
+      "hostname": "Host-46",
+      "device_type": "host",
+      "running_config": "hostname Host-46\n!\n",
+      "vlans": [
+        {
+          "vlan_id": "20",
+          "name": "assigned"
+        }
+      ]
+    },
+    "10.0.10.47": {
+      "hostname": "Host-47",
+      "device_type": "host",
+      "running_config": "hostname Host-47\n!\n",
+      "vlans": [
+        {
+          "vlan_id": "30",
+          "name": "assigned"
+        }
+      ]
+    },
+    "10.0.10.48": {
+      "hostname": "Host-48",
+      "device_type": "host",
+      "running_config": "hostname Host-48\n!\n",
+      "vlans": [
+        {
+          "vlan_id": "30",
+          "name": "assigned"
+        }
+      ]
+    },
+    "10.0.10.49": {
+      "hostname": "Host-49",
+      "device_type": "host",
+      "running_config": "hostname Host-49\n!\n",
+      "vlans": [
+        {
+          "vlan_id": "40",
+          "name": "assigned"
+        }
+      ]
+    },
+    "10.0.10.50": {
+      "hostname": "Host-50",
+      "device_type": "host",
+      "running_config": "hostname Host-50\n!\n",
+      "vlans": [
+        {
+          "vlan_id": "50",
+          "name": "assigned"
+        }
+      ]
+    },
+    "10.0.10.51": {
+      "hostname": "Host-51",
+      "device_type": "host",
+      "running_config": "hostname Host-51\n!\n",
+      "vlans": [
+        {
+          "vlan_id": "20",
+          "name": "assigned"
+        }
+      ]
+    },
+    "10.0.10.52": {
+      "hostname": "Host-52",
+      "device_type": "host",
+      "running_config": "hostname Host-52\n!\n",
+      "vlans": [
+        {
+          "vlan_id": "30",
+          "name": "assigned"
+        }
+      ]
+    },
+    "10.0.10.53": {
+      "hostname": "Host-53",
+      "device_type": "host",
+      "running_config": "hostname Host-53\n!\n",
+      "vlans": [
+        {
+          "vlan_id": "40",
+          "name": "assigned"
+        }
+      ]
+    },
+    "10.0.10.54": {
+      "hostname": "Host-54",
+      "device_type": "host",
+      "running_config": "hostname Host-54\n!\n",
+      "vlans": [
+        {
+          "vlan_id": "50",
+          "name": "assigned"
+        }
+      ]
+    },
+    "10.0.10.55": {
+      "hostname": "Host-55",
+      "device_type": "host",
+      "running_config": "hostname Host-55\n!\n",
+      "vlans": [
+        {
+          "vlan_id": "40",
+          "name": "assigned"
+        }
+      ]
+    },
+    "10.0.10.56": {
+      "hostname": "Host-56",
+      "device_type": "host",
+      "running_config": "hostname Host-56\n!\n",
+      "vlans": [
+        {
+          "vlan_id": "30",
+          "name": "assigned"
+        }
+      ]
+    },
+    "10.0.10.57": {
+      "hostname": "Host-57",
+      "device_type": "host",
+      "running_config": "hostname Host-57\n!\n",
+      "vlans": [
+        {
+          "vlan_id": "20",
+          "name": "assigned"
+        }
+      ]
+    },
+    "10.0.10.58": {
+      "hostname": "Host-58",
+      "device_type": "host",
+      "running_config": "hostname Host-58\n!\n",
+      "vlans": [
+        {
+          "vlan_id": "20",
+          "name": "assigned"
+        }
+      ]
+    },
+    "10.0.10.59": {
+      "hostname": "Host-59",
+      "device_type": "host",
+      "running_config": "hostname Host-59\n!\n",
+      "vlans": [
+        {
+          "vlan_id": "50",
+          "name": "assigned"
+        }
+      ]
+    },
+    "10.0.10.60": {
+      "hostname": "Host-60",
+      "device_type": "host",
+      "running_config": "hostname Host-60\n!\n",
+      "vlans": [
+        {
+          "vlan_id": "30",
+          "name": "assigned"
+        }
+      ]
+    },
+    "10.0.10.61": {
+      "hostname": "Host-61",
+      "device_type": "host",
+      "running_config": "hostname Host-61\n!\n",
+      "vlans": [
+        {
+          "vlan_id": "30",
+          "name": "assigned"
+        }
+      ]
+    },
+    "10.0.10.62": {
+      "hostname": "Host-62",
+      "device_type": "host",
+      "running_config": "hostname Host-62\n!\n",
+      "vlans": [
+        {
+          "vlan_id": "50",
+          "name": "assigned"
+        }
+      ]
+    },
+    "10.0.10.63": {
+      "hostname": "Host-63",
+      "device_type": "host",
+      "running_config": "hostname Host-63\n!\n",
+      "vlans": [
+        {
+          "vlan_id": "30",
+          "name": "assigned"
+        }
+      ]
+    },
+    "10.0.10.64": {
+      "hostname": "Host-64",
+      "device_type": "host",
+      "running_config": "hostname Host-64\n!\n",
+      "vlans": [
+        {
+          "vlan_id": "20",
+          "name": "assigned"
+        }
+      ]
+    },
+    "10.0.10.65": {
+      "hostname": "Host-65",
+      "device_type": "host",
+      "running_config": "hostname Host-65\n!\n",
+      "vlans": [
+        {
+          "vlan_id": "50",
+          "name": "assigned"
+        }
+      ]
+    },
+    "10.0.10.66": {
+      "hostname": "Host-66",
+      "device_type": "host",
+      "running_config": "hostname Host-66\n!\n",
+      "vlans": [
+        {
+          "vlan_id": "40",
+          "name": "assigned"
+        }
+      ]
+    },
+    "10.0.10.67": {
+      "hostname": "Host-67",
+      "device_type": "host",
+      "running_config": "hostname Host-67\n!\n",
+      "vlans": [
+        {
+          "vlan_id": "40",
+          "name": "assigned"
+        }
+      ]
+    },
+    "10.0.10.68": {
+      "hostname": "Host-68",
+      "device_type": "host",
+      "running_config": "hostname Host-68\n!\n",
+      "vlans": [
+        {
+          "vlan_id": "50",
+          "name": "assigned"
+        }
+      ]
+    },
+    "10.0.10.69": {
+      "hostname": "Host-69",
+      "device_type": "host",
+      "running_config": "hostname Host-69\n!\n",
+      "vlans": [
+        {
+          "vlan_id": "30",
+          "name": "assigned"
+        }
+      ]
+    },
+    "10.0.10.70": {
+      "hostname": "Host-70",
+      "device_type": "host",
+      "running_config": "hostname Host-70\n!\n",
+      "vlans": [
+        {
+          "vlan_id": "50",
+          "name": "assigned"
+        }
+      ]
+    },
+    "10.0.10.71": {
+      "hostname": "Host-71",
+      "device_type": "host",
+      "running_config": "hostname Host-71\n!\n",
+      "vlans": [
+        {
+          "vlan_id": "50",
+          "name": "assigned"
+        }
+      ]
+    },
+    "10.0.10.72": {
+      "hostname": "Host-72",
+      "device_type": "host",
+      "running_config": "hostname Host-72\n!\n",
+      "vlans": [
+        {
+          "vlan_id": "50",
+          "name": "assigned"
+        }
+      ]
+    },
+    "10.0.10.73": {
+      "hostname": "Host-73",
+      "device_type": "host",
+      "running_config": "hostname Host-73\n!\n",
+      "vlans": [
+        {
+          "vlan_id": "40",
+          "name": "assigned"
+        }
+      ]
+    },
+    "10.0.10.74": {
+      "hostname": "Host-74",
+      "device_type": "host",
+      "running_config": "hostname Host-74\n!\n",
+      "vlans": [
+        {
+          "vlan_id": "20",
+          "name": "assigned"
+        }
+      ]
+    },
+    "10.0.10.75": {
+      "hostname": "Host-75",
+      "device_type": "host",
+      "running_config": "hostname Host-75\n!\n",
+      "vlans": [
+        {
+          "vlan_id": "20",
+          "name": "assigned"
+        }
+      ]
+    },
+    "10.0.10.76": {
+      "hostname": "Host-76",
+      "device_type": "host",
+      "running_config": "hostname Host-76\n!\n",
+      "vlans": [
+        {
+          "vlan_id": "40",
+          "name": "assigned"
+        }
+      ]
+    },
+    "10.0.10.77": {
+      "hostname": "Host-77",
+      "device_type": "host",
+      "running_config": "hostname Host-77\n!\n",
+      "vlans": [
+        {
+          "vlan_id": "50",
+          "name": "assigned"
+        }
+      ]
+    },
+    "10.0.10.78": {
+      "hostname": "Host-78",
+      "device_type": "host",
+      "running_config": "hostname Host-78\n!\n",
+      "vlans": [
+        {
+          "vlan_id": "40",
+          "name": "assigned"
+        }
+      ]
+    },
+    "10.0.10.79": {
+      "hostname": "Host-79",
+      "device_type": "host",
+      "running_config": "hostname Host-79\n!\n",
+      "vlans": [
+        {
+          "vlan_id": "50",
+          "name": "assigned"
+        }
+      ]
+    },
+    "10.0.10.80": {
+      "hostname": "Host-80",
+      "device_type": "host",
+      "running_config": "hostname Host-80\n!\n",
+      "vlans": [
+        {
+          "vlan_id": "50",
+          "name": "assigned"
+        }
+      ]
+    },
+    "10.0.10.81": {
+      "hostname": "Host-81",
+      "device_type": "host",
+      "running_config": "hostname Host-81\n!\n",
+      "vlans": [
+        {
+          "vlan_id": "40",
+          "name": "assigned"
+        }
+      ]
+    },
+    "10.0.10.82": {
+      "hostname": "Host-82",
+      "device_type": "host",
+      "running_config": "hostname Host-82\n!\n",
+      "vlans": [
+        {
+          "vlan_id": "20",
+          "name": "assigned"
+        }
+      ]
+    },
+    "10.0.10.83": {
+      "hostname": "Host-83",
+      "device_type": "host",
+      "running_config": "hostname Host-83\n!\n",
+      "vlans": [
+        {
+          "vlan_id": "40",
+          "name": "assigned"
+        }
+      ]
+    },
+    "10.0.10.84": {
+      "hostname": "Host-84",
+      "device_type": "host",
+      "running_config": "hostname Host-84\n!\n",
+      "vlans": [
+        {
+          "vlan_id": "20",
+          "name": "assigned"
+        }
+      ]
+    },
+    "10.0.10.85": {
+      "hostname": "Host-85",
+      "device_type": "host",
+      "running_config": "hostname Host-85\n!\n",
+      "vlans": [
+        {
+          "vlan_id": "30",
+          "name": "assigned"
+        }
+      ]
+    },
+    "10.0.10.86": {
+      "hostname": "Host-86",
+      "device_type": "host",
+      "running_config": "hostname Host-86\n!\n",
+      "vlans": [
+        {
+          "vlan_id": "20",
+          "name": "assigned"
+        }
+      ]
+    },
+    "10.0.10.87": {
+      "hostname": "Host-87",
+      "device_type": "host",
+      "running_config": "hostname Host-87\n!\n",
+      "vlans": [
+        {
+          "vlan_id": "50",
+          "name": "assigned"
+        }
+      ]
+    },
+    "10.0.10.88": {
+      "hostname": "Host-88",
+      "device_type": "host",
+      "running_config": "hostname Host-88\n!\n",
+      "vlans": [
+        {
+          "vlan_id": "30",
+          "name": "assigned"
+        }
+      ]
+    },
+    "10.0.10.89": {
+      "hostname": "Host-89",
+      "device_type": "host",
+      "running_config": "hostname Host-89\n!\n",
+      "vlans": [
+        {
+          "vlan_id": "30",
+          "name": "assigned"
+        }
+      ]
+    },
+    "10.0.10.90": {
+      "hostname": "Host-90",
+      "device_type": "host",
+      "running_config": "hostname Host-90\n!\n",
+      "vlans": [
+        {
+          "vlan_id": "40",
+          "name": "assigned"
+        }
+      ]
+    },
+    "10.0.10.91": {
+      "hostname": "Host-91",
+      "device_type": "host",
+      "running_config": "hostname Host-91\n!\n",
+      "vlans": [
+        {
+          "vlan_id": "50",
+          "name": "assigned"
+        }
+      ]
+    },
+    "10.0.10.92": {
+      "hostname": "Host-92",
+      "device_type": "host",
+      "running_config": "hostname Host-92\n!\n",
+      "vlans": [
+        {
+          "vlan_id": "40",
+          "name": "assigned"
+        }
+      ]
+    },
+    "10.0.10.93": {
+      "hostname": "Host-93",
+      "device_type": "host",
+      "running_config": "hostname Host-93\n!\n",
+      "vlans": [
+        {
+          "vlan_id": "40",
+          "name": "assigned"
+        }
+      ]
+    },
+    "10.0.10.94": {
+      "hostname": "Host-94",
+      "device_type": "host",
+      "running_config": "hostname Host-94\n!\n",
+      "vlans": [
+        {
+          "vlan_id": "40",
+          "name": "assigned"
+        }
+      ]
+    },
+    "10.0.10.95": {
+      "hostname": "Host-95",
+      "device_type": "host",
+      "running_config": "hostname Host-95\n!\n",
+      "vlans": [
+        {
+          "vlan_id": "20",
+          "name": "assigned"
+        }
+      ]
+    },
+    "10.0.10.96": {
+      "hostname": "Host-96",
+      "device_type": "host",
+      "running_config": "hostname Host-96\n!\n",
+      "vlans": [
+        {
+          "vlan_id": "20",
+          "name": "assigned"
+        }
+      ]
+    },
+    "10.0.10.97": {
+      "hostname": "Host-97",
+      "device_type": "host",
+      "running_config": "hostname Host-97\n!\n",
+      "vlans": [
+        {
+          "vlan_id": "40",
+          "name": "assigned"
+        }
+      ]
+    },
+    "10.0.10.98": {
+      "hostname": "Host-98",
+      "device_type": "host",
+      "running_config": "hostname Host-98\n!\n",
+      "vlans": [
+        {
+          "vlan_id": "40",
+          "name": "assigned"
+        }
+      ]
+    },
+    "10.0.10.99": {
+      "hostname": "Host-99",
+      "device_type": "host",
+      "running_config": "hostname Host-99\n!\n",
+      "vlans": [
+        {
+          "vlan_id": "20",
+          "name": "assigned"
+        }
+      ]
+    },
+    "10.0.10.100": {
+      "hostname": "Host-100",
+      "device_type": "host",
+      "running_config": "hostname Host-100\n!\n",
+      "vlans": [
+        {
+          "vlan_id": "40",
+          "name": "assigned"
+        }
+      ]
+    },
+    "10.0.10.101": {
+      "hostname": "Host-101",
+      "device_type": "host",
+      "running_config": "hostname Host-101\n!\n",
+      "vlans": [
+        {
+          "vlan_id": "50",
+          "name": "assigned"
+        }
+      ]
+    },
+    "10.0.10.102": {
+      "hostname": "Host-102",
+      "device_type": "host",
+      "running_config": "hostname Host-102\n!\n",
+      "vlans": [
+        {
+          "vlan_id": "30",
+          "name": "assigned"
+        }
+      ]
+    },
+    "10.0.10.103": {
+      "hostname": "Host-103",
+      "device_type": "host",
+      "running_config": "hostname Host-103\n!\n",
+      "vlans": [
+        {
+          "vlan_id": "30",
+          "name": "assigned"
+        }
+      ]
+    },
+    "10.0.10.104": {
+      "hostname": "Host-104",
+      "device_type": "host",
+      "running_config": "hostname Host-104\n!\n",
+      "vlans": [
+        {
+          "vlan_id": "30",
+          "name": "assigned"
+        }
+      ]
+    },
+    "10.0.10.105": {
+      "hostname": "Host-105",
+      "device_type": "host",
+      "running_config": "hostname Host-105\n!\n",
+      "vlans": [
+        {
+          "vlan_id": "30",
+          "name": "assigned"
+        }
+      ]
+    },
+    "10.0.10.106": {
+      "hostname": "Host-106",
+      "device_type": "host",
+      "running_config": "hostname Host-106\n!\n",
+      "vlans": [
+        {
+          "vlan_id": "20",
+          "name": "assigned"
+        }
+      ]
+    },
+    "10.0.10.107": {
+      "hostname": "Host-107",
+      "device_type": "host",
+      "running_config": "hostname Host-107\n!\n",
+      "vlans": [
+        {
+          "vlan_id": "40",
+          "name": "assigned"
+        }
+      ]
+    },
+    "10.0.10.108": {
+      "hostname": "Host-108",
+      "device_type": "host",
+      "running_config": "hostname Host-108\n!\n",
+      "vlans": [
+        {
+          "vlan_id": "20",
+          "name": "assigned"
+        }
+      ]
+    },
+    "10.0.10.109": {
+      "hostname": "Host-109",
+      "device_type": "host",
+      "running_config": "hostname Host-109\n!\n",
+      "vlans": [
+        {
+          "vlan_id": "50",
+          "name": "assigned"
+        }
+      ]
+    },
+    "10.0.10.110": {
+      "hostname": "Host-110",
+      "device_type": "host",
+      "running_config": "hostname Host-110\n!\n",
+      "vlans": [
+        {
+          "vlan_id": "40",
+          "name": "assigned"
+        }
+      ]
+    },
+    "10.0.10.111": {
+      "hostname": "Host-111",
+      "device_type": "host",
+      "running_config": "hostname Host-111\n!\n",
+      "vlans": [
+        {
+          "vlan_id": "50",
+          "name": "assigned"
+        }
+      ]
+    },
+    "10.0.10.112": {
+      "hostname": "Host-112",
+      "device_type": "host",
+      "running_config": "hostname Host-112\n!\n",
+      "vlans": [
+        {
+          "vlan_id": "30",
+          "name": "assigned"
+        }
+      ]
+    },
+    "10.0.10.113": {
+      "hostname": "Host-113",
+      "device_type": "host",
+      "running_config": "hostname Host-113\n!\n",
+      "vlans": [
+        {
+          "vlan_id": "30",
+          "name": "assigned"
+        }
+      ]
+    },
+    "10.0.10.114": {
+      "hostname": "Host-114",
+      "device_type": "host",
+      "running_config": "hostname Host-114\n!\n",
+      "vlans": [
+        {
+          "vlan_id": "20",
+          "name": "assigned"
+        }
+      ]
+    },
+    "10.0.10.115": {
+      "hostname": "Host-115",
+      "device_type": "host",
+      "running_config": "hostname Host-115\n!\n",
+      "vlans": [
+        {
+          "vlan_id": "40",
+          "name": "assigned"
+        }
+      ]
+    },
+    "10.0.10.116": {
+      "hostname": "Host-116",
+      "device_type": "host",
+      "running_config": "hostname Host-116\n!\n",
+      "vlans": [
+        {
+          "vlan_id": "50",
+          "name": "assigned"
+        }
+      ]
+    },
+    "10.0.10.117": {
+      "hostname": "Host-117",
+      "device_type": "host",
+      "running_config": "hostname Host-117\n!\n",
+      "vlans": [
+        {
+          "vlan_id": "40",
+          "name": "assigned"
+        }
+      ]
+    },
+    "10.0.10.118": {
+      "hostname": "Host-118",
+      "device_type": "host",
+      "running_config": "hostname Host-118\n!\n",
+      "vlans": [
+        {
+          "vlan_id": "20",
+          "name": "assigned"
+        }
+      ]
+    },
+    "10.0.10.119": {
+      "hostname": "Host-119",
+      "device_type": "host",
+      "running_config": "hostname Host-119\n!\n",
+      "vlans": [
+        {
+          "vlan_id": "50",
+          "name": "assigned"
+        }
+      ]
+    },
+    "10.0.10.120": {
+      "hostname": "Host-120",
+      "device_type": "host",
+      "running_config": "hostname Host-120\n!\n",
+      "vlans": [
+        {
+          "vlan_id": "20",
+          "name": "assigned"
+        }
+      ]
+    },
+    "10.0.10.121": {
+      "hostname": "Host-121",
+      "device_type": "host",
+      "running_config": "hostname Host-121\n!\n",
+      "vlans": [
+        {
+          "vlan_id": "30",
+          "name": "assigned"
+        }
+      ]
+    },
+    "10.0.10.122": {
+      "hostname": "Host-122",
+      "device_type": "host",
+      "running_config": "hostname Host-122\n!\n",
+      "vlans": [
+        {
+          "vlan_id": "50",
+          "name": "assigned"
+        }
+      ]
+    },
+    "10.0.10.123": {
+      "hostname": "Host-123",
+      "device_type": "host",
+      "running_config": "hostname Host-123\n!\n",
+      "vlans": [
+        {
+          "vlan_id": "40",
+          "name": "assigned"
+        }
+      ]
+    },
+    "10.0.10.124": {
+      "hostname": "Host-124",
+      "device_type": "host",
+      "running_config": "hostname Host-124\n!\n",
+      "vlans": [
+        {
+          "vlan_id": "20",
+          "name": "assigned"
+        }
+      ]
+    },
+    "10.0.10.125": {
+      "hostname": "Host-125",
+      "device_type": "host",
+      "running_config": "hostname Host-125\n!\n",
+      "vlans": [
+        {
+          "vlan_id": "20",
+          "name": "assigned"
+        }
+      ]
+    },
+    "10.0.10.126": {
+      "hostname": "Host-126",
+      "device_type": "host",
+      "running_config": "hostname Host-126\n!\n",
+      "vlans": [
+        {
+          "vlan_id": "50",
+          "name": "assigned"
+        }
+      ]
+    },
+    "10.0.10.127": {
+      "hostname": "Host-127",
+      "device_type": "host",
+      "running_config": "hostname Host-127\n!\n",
+      "vlans": [
+        {
+          "vlan_id": "30",
+          "name": "assigned"
+        }
+      ]
+    },
+    "10.0.10.128": {
+      "hostname": "Host-128",
+      "device_type": "host",
+      "running_config": "hostname Host-128\n!\n",
+      "vlans": [
+        {
+          "vlan_id": "40",
+          "name": "assigned"
+        }
+      ]
+    },
+    "10.0.10.129": {
+      "hostname": "Host-129",
+      "device_type": "host",
+      "running_config": "hostname Host-129\n!\n",
+      "vlans": [
+        {
+          "vlan_id": "30",
+          "name": "assigned"
+        }
+      ]
+    },
+    "10.0.10.130": {
+      "hostname": "Host-130",
+      "device_type": "host",
+      "running_config": "hostname Host-130\n!\n",
+      "vlans": [
+        {
+          "vlan_id": "40",
+          "name": "assigned"
+        }
+      ]
+    },
+    "10.0.10.131": {
+      "hostname": "Host-131",
+      "device_type": "host",
+      "running_config": "hostname Host-131\n!\n",
+      "vlans": [
+        {
+          "vlan_id": "30",
+          "name": "assigned"
+        }
+      ]
+    },
+    "10.0.10.132": {
+      "hostname": "Host-132",
+      "device_type": "host",
+      "running_config": "hostname Host-132\n!\n",
+      "vlans": [
+        {
+          "vlan_id": "40",
+          "name": "assigned"
+        }
+      ]
+    },
+    "10.0.10.133": {
+      "hostname": "Host-133",
+      "device_type": "host",
+      "running_config": "hostname Host-133\n!\n",
+      "vlans": [
+        {
+          "vlan_id": "50",
+          "name": "assigned"
+        }
+      ]
+    },
+    "10.0.10.134": {
+      "hostname": "Host-134",
+      "device_type": "host",
+      "running_config": "hostname Host-134\n!\n",
+      "vlans": [
+        {
+          "vlan_id": "50",
+          "name": "assigned"
+        }
+      ]
+    },
+    "10.0.10.135": {
+      "hostname": "Host-135",
+      "device_type": "host",
+      "running_config": "hostname Host-135\n!\n",
+      "vlans": [
+        {
+          "vlan_id": "50",
+          "name": "assigned"
+        }
+      ]
+    },
+    "10.0.10.136": {
+      "hostname": "Host-136",
+      "device_type": "host",
+      "running_config": "hostname Host-136\n!\n",
+      "vlans": [
+        {
+          "vlan_id": "30",
+          "name": "assigned"
+        }
+      ]
+    },
+    "10.0.10.137": {
+      "hostname": "Host-137",
+      "device_type": "host",
+      "running_config": "hostname Host-137\n!\n",
+      "vlans": [
+        {
+          "vlan_id": "40",
+          "name": "assigned"
+        }
+      ]
+    },
+    "10.0.10.138": {
+      "hostname": "Host-138",
+      "device_type": "host",
+      "running_config": "hostname Host-138\n!\n",
+      "vlans": [
+        {
+          "vlan_id": "30",
+          "name": "assigned"
+        }
+      ]
+    },
+    "10.0.10.139": {
+      "hostname": "Host-139",
+      "device_type": "host",
+      "running_config": "hostname Host-139\n!\n",
+      "vlans": [
+        {
+          "vlan_id": "40",
+          "name": "assigned"
+        }
+      ]
+    },
+    "10.0.10.140": {
+      "hostname": "Host-140",
+      "device_type": "host",
+      "running_config": "hostname Host-140\n!\n",
+      "vlans": [
+        {
+          "vlan_id": "40",
+          "name": "assigned"
+        }
+      ]
+    },
+    "10.0.10.141": {
+      "hostname": "Host-141",
+      "device_type": "host",
+      "running_config": "hostname Host-141\n!\n",
+      "vlans": [
+        {
+          "vlan_id": "20",
+          "name": "assigned"
+        }
+      ]
+    },
+    "10.0.10.142": {
+      "hostname": "Host-142",
+      "device_type": "host",
+      "running_config": "hostname Host-142\n!\n",
+      "vlans": [
+        {
+          "vlan_id": "40",
+          "name": "assigned"
+        }
+      ]
+    },
+    "10.0.10.143": {
+      "hostname": "Host-143",
+      "device_type": "host",
+      "running_config": "hostname Host-143\n!\n",
+      "vlans": [
+        {
+          "vlan_id": "20",
+          "name": "assigned"
+        }
+      ]
+    },
+    "10.0.10.144": {
+      "hostname": "Host-144",
+      "device_type": "host",
+      "running_config": "hostname Host-144\n!\n",
+      "vlans": [
+        {
+          "vlan_id": "20",
+          "name": "assigned"
+        }
+      ]
+    },
+    "10.0.10.145": {
+      "hostname": "Host-145",
+      "device_type": "host",
+      "running_config": "hostname Host-145\n!\n",
+      "vlans": [
+        {
+          "vlan_id": "40",
+          "name": "assigned"
+        }
+      ]
+    },
+    "10.0.10.146": {
+      "hostname": "Host-146",
+      "device_type": "host",
+      "running_config": "hostname Host-146\n!\n",
+      "vlans": [
+        {
+          "vlan_id": "20",
+          "name": "assigned"
+        }
+      ]
+    },
+    "10.0.10.147": {
+      "hostname": "Host-147",
+      "device_type": "host",
+      "running_config": "hostname Host-147\n!\n",
+      "vlans": [
+        {
+          "vlan_id": "50",
+          "name": "assigned"
+        }
+      ]
+    },
+    "10.0.10.148": {
+      "hostname": "Host-148",
+      "device_type": "host",
+      "running_config": "hostname Host-148\n!\n",
+      "vlans": [
+        {
+          "vlan_id": "40",
+          "name": "assigned"
+        }
+      ]
+    },
+    "10.0.10.149": {
+      "hostname": "Host-149",
+      "device_type": "host",
+      "running_config": "hostname Host-149\n!\n",
+      "vlans": [
+        {
+          "vlan_id": "50",
+          "name": "assigned"
+        }
+      ]
+    },
+    "10.0.10.150": {
+      "hostname": "Host-150",
+      "device_type": "host",
+      "running_config": "hostname Host-150\n!\n",
+      "vlans": [
+        {
+          "vlan_id": "40",
+          "name": "assigned"
+        }
+      ]
+    }
+  },
+  "edges": [
+    {
+      "source_ip": "10.0.0.1",
+      "target_ip": "10.0.0.2",
+      "source_port": "Te1/0/1"
+    },
+    {
+      "source_ip": "10.0.0.2",
+      "target_ip": "10.0.0.1",
+      "source_port": "Te1/0/1"
+    },
+    {
+      "source_ip": "10.0.1.1",
+      "target_ip": "10.0.0.1",
+      "source_port": "Te1/0/2"
+    },
+    {
+      "source_ip": "10.0.1.1",
+      "target_ip": "10.0.0.2",
+      "source_port": "Te1/0/3"
+    },
+    {
+      "source_ip": "10.0.0.1",
+      "target_ip": "10.0.1.1",
+      "source_port": "Te1/0/2"
+    },
+    {
+      "source_ip": "10.0.0.2",
+      "target_ip": "10.0.1.1",
+      "source_port": "Te1/0/2"
+    },
+    {
+      "source_ip": "10.0.1.2",
+      "target_ip": "10.0.0.1",
+      "source_port": "Te1/0/2"
+    },
+    {
+      "source_ip": "10.0.1.2",
+      "target_ip": "10.0.0.2",
+      "source_port": "Te1/0/3"
+    },
+    {
+      "source_ip": "10.0.0.1",
+      "target_ip": "10.0.1.2",
+      "source_port": "Te1/0/3"
+    },
+    {
+      "source_ip": "10.0.0.2",
+      "target_ip": "10.0.1.2",
+      "source_port": "Te1/0/3"
+    },
+    {
+      "source_ip": "10.0.1.3",
+      "target_ip": "10.0.0.1",
+      "source_port": "Te1/0/2"
+    },
+    {
+      "source_ip": "10.0.1.3",
+      "target_ip": "10.0.0.2",
+      "source_port": "Te1/0/3"
+    },
+    {
+      "source_ip": "10.0.0.1",
+      "target_ip": "10.0.1.3",
+      "source_port": "Te1/0/4"
+    },
+    {
+      "source_ip": "10.0.0.2",
+      "target_ip": "10.0.1.3",
+      "source_port": "Te1/0/4"
+    },
+    {
+      "source_ip": "10.0.1.4",
+      "target_ip": "10.0.0.1",
+      "source_port": "Te1/0/2"
+    },
+    {
+      "source_ip": "10.0.1.4",
+      "target_ip": "10.0.0.2",
+      "source_port": "Te1/0/3"
+    },
+    {
+      "source_ip": "10.0.0.1",
+      "target_ip": "10.0.1.4",
+      "source_port": "Te1/0/5"
+    },
+    {
+      "source_ip": "10.0.0.2",
+      "target_ip": "10.0.1.4",
+      "source_port": "Te1/0/5"
+    },
+    {
+      "source_ip": "10.0.2.1",
+      "target_ip": "10.0.1.2",
+      "source_port": "Gi1/0/1"
+    },
+    {
+      "source_ip": "10.0.1.2",
+      "target_ip": "10.0.2.1",
+      "source_port": "Gi1/0/11"
+    },
+    {
+      "source_ip": "10.0.2.2",
+      "target_ip": "10.0.1.1",
+      "source_port": "Gi1/0/1"
+    },
+    {
+      "source_ip": "10.0.1.1",
+      "target_ip": "10.0.2.2",
+      "source_port": "Gi1/0/12"
+    },
+    {
+      "source_ip": "10.0.2.3",
+      "target_ip": "10.0.1.1",
+      "source_port": "Gi1/0/1"
+    },
+    {
+      "source_ip": "10.0.1.1",
+      "target_ip": "10.0.2.3",
+      "source_port": "Gi1/0/13"
+    },
+    {
+      "source_ip": "10.0.2.4",
+      "target_ip": "10.0.1.4",
+      "source_port": "Gi1/0/1"
+    },
+    {
+      "source_ip": "10.0.1.4",
+      "target_ip": "10.0.2.4",
+      "source_port": "Gi1/0/14"
+    },
+    {
+      "source_ip": "10.0.2.5",
+      "target_ip": "10.0.1.3",
+      "source_port": "Gi1/0/1"
+    },
+    {
+      "source_ip": "10.0.1.3",
+      "target_ip": "10.0.2.5",
+      "source_port": "Gi1/0/15"
+    },
+    {
+      "source_ip": "10.0.2.6",
+      "target_ip": "10.0.1.4",
+      "source_port": "Gi1/0/1"
+    },
+    {
+      "source_ip": "10.0.1.4",
+      "target_ip": "10.0.2.6",
+      "source_port": "Gi1/0/16"
+    },
+    {
+      "source_ip": "10.0.2.7",
+      "target_ip": "10.0.1.4",
+      "source_port": "Gi1/0/1"
+    },
+    {
+      "source_ip": "10.0.1.4",
+      "target_ip": "10.0.2.7",
+      "source_port": "Gi1/0/17"
+    },
+    {
+      "source_ip": "10.0.2.8",
+      "target_ip": "10.0.1.2",
+      "source_port": "Gi1/0/1"
+    },
+    {
+      "source_ip": "10.0.1.2",
+      "target_ip": "10.0.2.8",
+      "source_port": "Gi1/0/18"
+    },
+    {
+      "source_ip": "10.0.2.9",
+      "target_ip": "10.0.1.4",
+      "source_port": "Gi1/0/1"
+    },
+    {
+      "source_ip": "10.0.1.4",
+      "target_ip": "10.0.2.9",
+      "source_port": "Gi1/0/19"
+    },
+    {
+      "source_ip": "10.0.2.10",
+      "target_ip": "10.0.1.2",
+      "source_port": "Gi1/0/1"
+    },
+    {
+      "source_ip": "10.0.1.2",
+      "target_ip": "10.0.2.10",
+      "source_port": "Gi1/0/20"
+    },
+    {
+      "source_ip": "10.0.2.11",
+      "target_ip": "10.0.1.4",
+      "source_port": "Gi1/0/1"
+    },
+    {
+      "source_ip": "10.0.1.4",
+      "target_ip": "10.0.2.11",
+      "source_port": "Gi1/0/21"
+    },
+    {
+      "source_ip": "10.0.2.12",
+      "target_ip": "10.0.1.2",
+      "source_port": "Gi1/0/1"
+    },
+    {
+      "source_ip": "10.0.1.2",
+      "target_ip": "10.0.2.12",
+      "source_port": "Gi1/0/22"
+    },
+    {
+      "source_ip": "10.0.2.13",
+      "target_ip": "10.0.1.2",
+      "source_port": "Gi1/0/1"
+    },
+    {
+      "source_ip": "10.0.1.2",
+      "target_ip": "10.0.2.13",
+      "source_port": "Gi1/0/23"
+    },
+    {
+      "source_ip": "10.0.2.14",
+      "target_ip": "10.0.1.1",
+      "source_port": "Gi1/0/1"
+    },
+    {
+      "source_ip": "10.0.1.1",
+      "target_ip": "10.0.2.14",
+      "source_port": "Gi1/0/24"
+    },
+    {
+      "source_ip": "10.0.2.15",
+      "target_ip": "10.0.1.3",
+      "source_port": "Gi1/0/1"
+    },
+    {
+      "source_ip": "10.0.1.3",
+      "target_ip": "10.0.2.15",
+      "source_port": "Gi1/0/25"
+    },
+    {
+      "source_ip": "10.0.2.11",
+      "target_ip": "10.0.10.1",
+      "source_port": "Gi1/0/31"
+    },
+    {
+      "source_ip": "10.0.10.1",
+      "target_ip": "10.0.2.11",
+      "source_port": "eth0"
+    },
+    {
+      "source_ip": "10.0.2.6",
+      "target_ip": "10.0.10.2",
+      "source_port": "Gi1/0/14"
+    },
+    {
+      "source_ip": "10.0.10.2",
+      "target_ip": "10.0.2.6",
+      "source_port": "eth0"
+    },
+    {
+      "source_ip": "10.0.2.4",
+      "target_ip": "10.0.10.3",
+      "source_port": "Gi1/0/5"
+    },
+    {
+      "source_ip": "10.0.10.3",
+      "target_ip": "10.0.2.4",
+      "source_port": "eth0"
+    },
+    {
+      "source_ip": "10.0.2.3",
+      "target_ip": "10.0.10.4",
+      "source_port": "Gi1/0/24"
+    },
+    {
+      "source_ip": "10.0.10.4",
+      "target_ip": "10.0.2.3",
+      "source_port": "eth0"
+    },
+    {
+      "source_ip": "10.0.2.6",
+      "target_ip": "10.0.10.5",
+      "source_port": "Gi1/0/33"
+    },
+    {
+      "source_ip": "10.0.10.5",
+      "target_ip": "10.0.2.6",
+      "source_port": "eth0"
+    },
+    {
+      "source_ip": "10.0.2.8",
+      "target_ip": "10.0.10.6",
+      "source_port": "Gi1/0/4"
+    },
+    {
+      "source_ip": "10.0.10.6",
+      "target_ip": "10.0.2.8",
+      "source_port": "eth0"
+    },
+    {
+      "source_ip": "10.0.2.4",
+      "target_ip": "10.0.10.7",
+      "source_port": "Gi1/0/42"
+    },
+    {
+      "source_ip": "10.0.10.7",
+      "target_ip": "10.0.2.4",
+      "source_port": "eth0"
+    },
+    {
+      "source_ip": "10.0.2.12",
+      "target_ip": "10.0.10.8",
+      "source_port": "Gi1/0/47"
+    },
+    {
+      "source_ip": "10.0.10.8",
+      "target_ip": "10.0.2.12",
+      "source_port": "eth0"
+    },
+    {
+      "source_ip": "10.0.2.2",
+      "target_ip": "10.0.10.9",
+      "source_port": "Gi1/0/23"
+    },
+    {
+      "source_ip": "10.0.10.9",
+      "target_ip": "10.0.2.2",
+      "source_port": "eth0"
+    },
+    {
+      "source_ip": "10.0.2.9",
+      "target_ip": "10.0.10.10",
+      "source_port": "Gi1/0/2"
+    },
+    {
+      "source_ip": "10.0.10.10",
+      "target_ip": "10.0.2.9",
+      "source_port": "eth0"
+    },
+    {
+      "source_ip": "10.0.2.10",
+      "target_ip": "10.0.10.11",
+      "source_port": "Gi1/0/26"
+    },
+    {
+      "source_ip": "10.0.10.11",
+      "target_ip": "10.0.2.10",
+      "source_port": "eth0"
+    },
+    {
+      "source_ip": "10.0.2.11",
+      "target_ip": "10.0.10.12",
+      "source_port": "Gi1/0/24"
+    },
+    {
+      "source_ip": "10.0.10.12",
+      "target_ip": "10.0.2.11",
+      "source_port": "eth0"
+    },
+    {
+      "source_ip": "10.0.2.14",
+      "target_ip": "10.0.10.13",
+      "source_port": "Gi1/0/8"
+    },
+    {
+      "source_ip": "10.0.10.13",
+      "target_ip": "10.0.2.14",
+      "source_port": "eth0"
+    },
+    {
+      "source_ip": "10.0.2.14",
+      "target_ip": "10.0.10.14",
+      "source_port": "Gi1/0/46"
+    },
+    {
+      "source_ip": "10.0.10.14",
+      "target_ip": "10.0.2.14",
+      "source_port": "eth0"
+    },
+    {
+      "source_ip": "10.0.2.11",
+      "target_ip": "10.0.10.15",
+      "source_port": "Gi1/0/40"
+    },
+    {
+      "source_ip": "10.0.10.15",
+      "target_ip": "10.0.2.11",
+      "source_port": "eth0"
+    },
+    {
+      "source_ip": "10.0.2.6",
+      "target_ip": "10.0.10.16",
+      "source_port": "Gi1/0/38"
+    },
+    {
+      "source_ip": "10.0.10.16",
+      "target_ip": "10.0.2.6",
+      "source_port": "eth0"
+    },
+    {
+      "source_ip": "10.0.2.11",
+      "target_ip": "10.0.10.17",
+      "source_port": "Gi1/0/23"
+    },
+    {
+      "source_ip": "10.0.10.17",
+      "target_ip": "10.0.2.11",
+      "source_port": "eth0"
+    },
+    {
+      "source_ip": "10.0.2.10",
+      "target_ip": "10.0.10.18",
+      "source_port": "Gi1/0/14"
+    },
+    {
+      "source_ip": "10.0.10.18",
+      "target_ip": "10.0.2.10",
+      "source_port": "eth0"
+    },
+    {
+      "source_ip": "10.0.2.2",
+      "target_ip": "10.0.10.19",
+      "source_port": "Gi1/0/36"
+    },
+    {
+      "source_ip": "10.0.10.19",
+      "target_ip": "10.0.2.2",
+      "source_port": "eth0"
+    },
+    {
+      "source_ip": "10.0.2.4",
+      "target_ip": "10.0.10.20",
+      "source_port": "Gi1/0/19"
+    },
+    {
+      "source_ip": "10.0.10.20",
+      "target_ip": "10.0.2.4",
+      "source_port": "eth0"
+    },
+    {
+      "source_ip": "10.0.2.4",
+      "target_ip": "10.0.10.21",
+      "source_port": "Gi1/0/32"
+    },
+    {
+      "source_ip": "10.0.10.21",
+      "target_ip": "10.0.2.4",
+      "source_port": "eth0"
+    },
+    {
+      "source_ip": "10.0.2.10",
+      "target_ip": "10.0.10.22",
+      "source_port": "Gi1/0/8"
+    },
+    {
+      "source_ip": "10.0.10.22",
+      "target_ip": "10.0.2.10",
+      "source_port": "eth0"
+    },
+    {
+      "source_ip": "10.0.2.8",
+      "target_ip": "10.0.10.23",
+      "source_port": "Gi1/0/4"
+    },
+    {
+      "source_ip": "10.0.10.23",
+      "target_ip": "10.0.2.8",
+      "source_port": "eth0"
+    },
+    {
+      "source_ip": "10.0.2.1",
+      "target_ip": "10.0.10.24",
+      "source_port": "Gi1/0/8"
+    },
+    {
+      "source_ip": "10.0.10.24",
+      "target_ip": "10.0.2.1",
+      "source_port": "eth0"
+    },
+    {
+      "source_ip": "10.0.2.2",
+      "target_ip": "10.0.10.25",
+      "source_port": "Gi1/0/41"
+    },
+    {
+      "source_ip": "10.0.10.25",
+      "target_ip": "10.0.2.2",
+      "source_port": "eth0"
+    },
+    {
+      "source_ip": "10.0.2.1",
+      "target_ip": "10.0.10.26",
+      "source_port": "Gi1/0/9"
+    },
+    {
+      "source_ip": "10.0.10.26",
+      "target_ip": "10.0.2.1",
+      "source_port": "eth0"
+    },
+    {
+      "source_ip": "10.0.2.5",
+      "target_ip": "10.0.10.27",
+      "source_port": "Gi1/0/17"
+    },
+    {
+      "source_ip": "10.0.10.27",
+      "target_ip": "10.0.2.5",
+      "source_port": "eth0"
+    },
+    {
+      "source_ip": "10.0.2.15",
+      "target_ip": "10.0.10.28",
+      "source_port": "Gi1/0/34"
+    },
+    {
+      "source_ip": "10.0.10.28",
+      "target_ip": "10.0.2.15",
+      "source_port": "eth0"
+    },
+    {
+      "source_ip": "10.0.2.5",
+      "target_ip": "10.0.10.29",
+      "source_port": "Gi1/0/5"
+    },
+    {
+      "source_ip": "10.0.10.29",
+      "target_ip": "10.0.2.5",
+      "source_port": "eth0"
+    },
+    {
+      "source_ip": "10.0.2.3",
+      "target_ip": "10.0.10.30",
+      "source_port": "Gi1/0/17"
+    },
+    {
+      "source_ip": "10.0.10.30",
+      "target_ip": "10.0.2.3",
+      "source_port": "eth0"
+    },
+    {
+      "source_ip": "10.0.2.3",
+      "target_ip": "10.0.10.31",
+      "source_port": "Gi1/0/14"
+    },
+    {
+      "source_ip": "10.0.10.31",
+      "target_ip": "10.0.2.3",
+      "source_port": "eth0"
+    },
+    {
+      "source_ip": "10.0.2.7",
+      "target_ip": "10.0.10.32",
+      "source_port": "Gi1/0/20"
+    },
+    {
+      "source_ip": "10.0.10.32",
+      "target_ip": "10.0.2.7",
+      "source_port": "eth0"
+    },
+    {
+      "source_ip": "10.0.2.11",
+      "target_ip": "10.0.10.33",
+      "source_port": "Gi1/0/25"
+    },
+    {
+      "source_ip": "10.0.10.33",
+      "target_ip": "10.0.2.11",
+      "source_port": "eth0"
+    },
+    {
+      "source_ip": "10.0.2.9",
+      "target_ip": "10.0.10.34",
+      "source_port": "Gi1/0/45"
+    },
+    {
+      "source_ip": "10.0.10.34",
+      "target_ip": "10.0.2.9",
+      "source_port": "eth0"
+    },
+    {
+      "source_ip": "10.0.2.14",
+      "target_ip": "10.0.10.35",
+      "source_port": "Gi1/0/16"
+    },
+    {
+      "source_ip": "10.0.10.35",
+      "target_ip": "10.0.2.14",
+      "source_port": "eth0"
+    },
+    {
+      "source_ip": "10.0.2.10",
+      "target_ip": "10.0.10.36",
+      "source_port": "Gi1/0/21"
+    },
+    {
+      "source_ip": "10.0.10.36",
+      "target_ip": "10.0.2.10",
+      "source_port": "eth0"
+    },
+    {
+      "source_ip": "10.0.2.5",
+      "target_ip": "10.0.10.37",
+      "source_port": "Gi1/0/36"
+    },
+    {
+      "source_ip": "10.0.10.37",
+      "target_ip": "10.0.2.5",
+      "source_port": "eth0"
+    },
+    {
+      "source_ip": "10.0.2.12",
+      "target_ip": "10.0.10.38",
+      "source_port": "Gi1/0/4"
+    },
+    {
+      "source_ip": "10.0.10.38",
+      "target_ip": "10.0.2.12",
+      "source_port": "eth0"
+    },
+    {
+      "source_ip": "10.0.2.3",
+      "target_ip": "10.0.10.39",
+      "source_port": "Gi1/0/12"
+    },
+    {
+      "source_ip": "10.0.10.39",
+      "target_ip": "10.0.2.3",
+      "source_port": "eth0"
+    },
+    {
+      "source_ip": "10.0.2.12",
+      "target_ip": "10.0.10.40",
+      "source_port": "Gi1/0/8"
+    },
+    {
+      "source_ip": "10.0.10.40",
+      "target_ip": "10.0.2.12",
+      "source_port": "eth0"
+    },
+    {
+      "source_ip": "10.0.2.3",
+      "target_ip": "10.0.10.41",
+      "source_port": "Gi1/0/44"
+    },
+    {
+      "source_ip": "10.0.10.41",
+      "target_ip": "10.0.2.3",
+      "source_port": "eth0"
+    },
+    {
+      "source_ip": "10.0.2.14",
+      "target_ip": "10.0.10.42",
+      "source_port": "Gi1/0/10"
+    },
+    {
+      "source_ip": "10.0.10.42",
+      "target_ip": "10.0.2.14",
+      "source_port": "eth0"
+    },
+    {
+      "source_ip": "10.0.2.11",
+      "target_ip": "10.0.10.43",
+      "source_port": "Gi1/0/19"
+    },
+    {
+      "source_ip": "10.0.10.43",
+      "target_ip": "10.0.2.11",
+      "source_port": "eth0"
+    },
+    {
+      "source_ip": "10.0.2.5",
+      "target_ip": "10.0.10.44",
+      "source_port": "Gi1/0/24"
+    },
+    {
+      "source_ip": "10.0.10.44",
+      "target_ip": "10.0.2.5",
+      "source_port": "eth0"
+    },
+    {
+      "source_ip": "10.0.2.13",
+      "target_ip": "10.0.10.45",
+      "source_port": "Gi1/0/25"
+    },
+    {
+      "source_ip": "10.0.10.45",
+      "target_ip": "10.0.2.13",
+      "source_port": "eth0"
+    },
+    {
+      "source_ip": "10.0.2.12",
+      "target_ip": "10.0.10.46",
+      "source_port": "Gi1/0/42"
+    },
+    {
+      "source_ip": "10.0.10.46",
+      "target_ip": "10.0.2.12",
+      "source_port": "eth0"
+    },
+    {
+      "source_ip": "10.0.2.4",
+      "target_ip": "10.0.10.47",
+      "source_port": "Gi1/0/22"
+    },
+    {
+      "source_ip": "10.0.10.47",
+      "target_ip": "10.0.2.4",
+      "source_port": "eth0"
+    },
+    {
+      "source_ip": "10.0.2.6",
+      "target_ip": "10.0.10.48",
+      "source_port": "Gi1/0/31"
+    },
+    {
+      "source_ip": "10.0.10.48",
+      "target_ip": "10.0.2.6",
+      "source_port": "eth0"
+    },
+    {
+      "source_ip": "10.0.2.3",
+      "target_ip": "10.0.10.49",
+      "source_port": "Gi1/0/6"
+    },
+    {
+      "source_ip": "10.0.10.49",
+      "target_ip": "10.0.2.3",
+      "source_port": "eth0"
+    },
+    {
+      "source_ip": "10.0.2.8",
+      "target_ip": "10.0.10.50",
+      "source_port": "Gi1/0/34"
+    },
+    {
+      "source_ip": "10.0.10.50",
+      "target_ip": "10.0.2.8",
+      "source_port": "eth0"
+    },
+    {
+      "source_ip": "10.0.2.15",
+      "target_ip": "10.0.10.51",
+      "source_port": "Gi1/0/20"
+    },
+    {
+      "source_ip": "10.0.10.51",
+      "target_ip": "10.0.2.15",
+      "source_port": "eth0"
+    },
+    {
+      "source_ip": "10.0.2.11",
+      "target_ip": "10.0.10.52",
+      "source_port": "Gi1/0/8"
+    },
+    {
+      "source_ip": "10.0.10.52",
+      "target_ip": "10.0.2.11",
+      "source_port": "eth0"
+    },
+    {
+      "source_ip": "10.0.2.9",
+      "target_ip": "10.0.10.53",
+      "source_port": "Gi1/0/13"
+    },
+    {
+      "source_ip": "10.0.10.53",
+      "target_ip": "10.0.2.9",
+      "source_port": "eth0"
+    },
+    {
+      "source_ip": "10.0.2.11",
+      "target_ip": "10.0.10.54",
+      "source_port": "Gi1/0/17"
+    },
+    {
+      "source_ip": "10.0.10.54",
+      "target_ip": "10.0.2.11",
+      "source_port": "eth0"
+    },
+    {
+      "source_ip": "10.0.2.3",
+      "target_ip": "10.0.10.55",
+      "source_port": "Gi1/0/23"
+    },
+    {
+      "source_ip": "10.0.10.55",
+      "target_ip": "10.0.2.3",
+      "source_port": "eth0"
+    },
+    {
+      "source_ip": "10.0.2.14",
+      "target_ip": "10.0.10.56",
+      "source_port": "Gi1/0/9"
+    },
+    {
+      "source_ip": "10.0.10.56",
+      "target_ip": "10.0.2.14",
+      "source_port": "eth0"
+    },
+    {
+      "source_ip": "10.0.2.13",
+      "target_ip": "10.0.10.57",
+      "source_port": "Gi1/0/44"
+    },
+    {
+      "source_ip": "10.0.10.57",
+      "target_ip": "10.0.2.13",
+      "source_port": "eth0"
+    },
+    {
+      "source_ip": "10.0.2.13",
+      "target_ip": "10.0.10.58",
+      "source_port": "Gi1/0/15"
+    },
+    {
+      "source_ip": "10.0.10.58",
+      "target_ip": "10.0.2.13",
+      "source_port": "eth0"
+    },
+    {
+      "source_ip": "10.0.2.10",
+      "target_ip": "10.0.10.59",
+      "source_port": "Gi1/0/17"
+    },
+    {
+      "source_ip": "10.0.10.59",
+      "target_ip": "10.0.2.10",
+      "source_port": "eth0"
+    },
+    {
+      "source_ip": "10.0.2.6",
+      "target_ip": "10.0.10.60",
+      "source_port": "Gi1/0/31"
+    },
+    {
+      "source_ip": "10.0.10.60",
+      "target_ip": "10.0.2.6",
+      "source_port": "eth0"
+    },
+    {
+      "source_ip": "10.0.2.13",
+      "target_ip": "10.0.10.61",
+      "source_port": "Gi1/0/15"
+    },
+    {
+      "source_ip": "10.0.10.61",
+      "target_ip": "10.0.2.13",
+      "source_port": "eth0"
+    },
+    {
+      "source_ip": "10.0.2.9",
+      "target_ip": "10.0.10.62",
+      "source_port": "Gi1/0/25"
+    },
+    {
+      "source_ip": "10.0.10.62",
+      "target_ip": "10.0.2.9",
+      "source_port": "eth0"
+    },
+    {
+      "source_ip": "10.0.2.14",
+      "target_ip": "10.0.10.63",
+      "source_port": "Gi1/0/18"
+    },
+    {
+      "source_ip": "10.0.10.63",
+      "target_ip": "10.0.2.14",
+      "source_port": "eth0"
+    },
+    {
+      "source_ip": "10.0.2.4",
+      "target_ip": "10.0.10.64",
+      "source_port": "Gi1/0/21"
+    },
+    {
+      "source_ip": "10.0.10.64",
+      "target_ip": "10.0.2.4",
+      "source_port": "eth0"
+    },
+    {
+      "source_ip": "10.0.2.4",
+      "target_ip": "10.0.10.65",
+      "source_port": "Gi1/0/22"
+    },
+    {
+      "source_ip": "10.0.10.65",
+      "target_ip": "10.0.2.4",
+      "source_port": "eth0"
+    },
+    {
+      "source_ip": "10.0.2.11",
+      "target_ip": "10.0.10.66",
+      "source_port": "Gi1/0/27"
+    },
+    {
+      "source_ip": "10.0.10.66",
+      "target_ip": "10.0.2.11",
+      "source_port": "eth0"
+    },
+    {
+      "source_ip": "10.0.2.14",
+      "target_ip": "10.0.10.67",
+      "source_port": "Gi1/0/47"
+    },
+    {
+      "source_ip": "10.0.10.67",
+      "target_ip": "10.0.2.14",
+      "source_port": "eth0"
+    },
+    {
+      "source_ip": "10.0.2.2",
+      "target_ip": "10.0.10.68",
+      "source_port": "Gi1/0/8"
+    },
+    {
+      "source_ip": "10.0.10.68",
+      "target_ip": "10.0.2.2",
+      "source_port": "eth0"
+    },
+    {
+      "source_ip": "10.0.2.2",
+      "target_ip": "10.0.10.69",
+      "source_port": "Gi1/0/17"
+    },
+    {
+      "source_ip": "10.0.10.69",
+      "target_ip": "10.0.2.2",
+      "source_port": "eth0"
+    },
+    {
+      "source_ip": "10.0.2.7",
+      "target_ip": "10.0.10.70",
+      "source_port": "Gi1/0/8"
+    },
+    {
+      "source_ip": "10.0.10.70",
+      "target_ip": "10.0.2.7",
+      "source_port": "eth0"
+    },
+    {
+      "source_ip": "10.0.2.3",
+      "target_ip": "10.0.10.71",
+      "source_port": "Gi1/0/21"
+    },
+    {
+      "source_ip": "10.0.10.71",
+      "target_ip": "10.0.2.3",
+      "source_port": "eth0"
+    },
+    {
+      "source_ip": "10.0.2.13",
+      "target_ip": "10.0.10.72",
+      "source_port": "Gi1/0/19"
+    },
+    {
+      "source_ip": "10.0.10.72",
+      "target_ip": "10.0.2.13",
+      "source_port": "eth0"
+    },
+    {
+      "source_ip": "10.0.2.14",
+      "target_ip": "10.0.10.73",
+      "source_port": "Gi1/0/44"
+    },
+    {
+      "source_ip": "10.0.10.73",
+      "target_ip": "10.0.2.14",
+      "source_port": "eth0"
+    },
+    {
+      "source_ip": "10.0.2.7",
+      "target_ip": "10.0.10.74",
+      "source_port": "Gi1/0/10"
+    },
+    {
+      "source_ip": "10.0.10.74",
+      "target_ip": "10.0.2.7",
+      "source_port": "eth0"
+    },
+    {
+      "source_ip": "10.0.2.1",
+      "target_ip": "10.0.10.75",
+      "source_port": "Gi1/0/46"
+    },
+    {
+      "source_ip": "10.0.10.75",
+      "target_ip": "10.0.2.1",
+      "source_port": "eth0"
+    },
+    {
+      "source_ip": "10.0.2.11",
+      "target_ip": "10.0.10.76",
+      "source_port": "Gi1/0/9"
+    },
+    {
+      "source_ip": "10.0.10.76",
+      "target_ip": "10.0.2.11",
+      "source_port": "eth0"
+    },
+    {
+      "source_ip": "10.0.2.15",
+      "target_ip": "10.0.10.77",
+      "source_port": "Gi1/0/25"
+    },
+    {
+      "source_ip": "10.0.10.77",
+      "target_ip": "10.0.2.15",
+      "source_port": "eth0"
+    },
+    {
+      "source_ip": "10.0.2.7",
+      "target_ip": "10.0.10.78",
+      "source_port": "Gi1/0/4"
+    },
+    {
+      "source_ip": "10.0.10.78",
+      "target_ip": "10.0.2.7",
+      "source_port": "eth0"
+    },
+    {
+      "source_ip": "10.0.2.4",
+      "target_ip": "10.0.10.79",
+      "source_port": "Gi1/0/10"
+    },
+    {
+      "source_ip": "10.0.10.79",
+      "target_ip": "10.0.2.4",
+      "source_port": "eth0"
+    },
+    {
+      "source_ip": "10.0.2.14",
+      "target_ip": "10.0.10.80",
+      "source_port": "Gi1/0/16"
+    },
+    {
+      "source_ip": "10.0.10.80",
+      "target_ip": "10.0.2.14",
+      "source_port": "eth0"
+    },
+    {
+      "source_ip": "10.0.2.3",
+      "target_ip": "10.0.10.81",
+      "source_port": "Gi1/0/7"
+    },
+    {
+      "source_ip": "10.0.10.81",
+      "target_ip": "10.0.2.3",
+      "source_port": "eth0"
+    },
+    {
+      "source_ip": "10.0.2.2",
+      "target_ip": "10.0.10.82",
+      "source_port": "Gi1/0/21"
+    },
+    {
+      "source_ip": "10.0.10.82",
+      "target_ip": "10.0.2.2",
+      "source_port": "eth0"
+    },
+    {
+      "source_ip": "10.0.2.11",
+      "target_ip": "10.0.10.83",
+      "source_port": "Gi1/0/40"
+    },
+    {
+      "source_ip": "10.0.10.83",
+      "target_ip": "10.0.2.11",
+      "source_port": "eth0"
+    },
+    {
+      "source_ip": "10.0.2.1",
+      "target_ip": "10.0.10.84",
+      "source_port": "Gi1/0/47"
+    },
+    {
+      "source_ip": "10.0.10.84",
+      "target_ip": "10.0.2.1",
+      "source_port": "eth0"
+    },
+    {
+      "source_ip": "10.0.2.8",
+      "target_ip": "10.0.10.85",
+      "source_port": "Gi1/0/37"
+    },
+    {
+      "source_ip": "10.0.10.85",
+      "target_ip": "10.0.2.8",
+      "source_port": "eth0"
+    },
+    {
+      "source_ip": "10.0.2.8",
+      "target_ip": "10.0.10.86",
+      "source_port": "Gi1/0/33"
+    },
+    {
+      "source_ip": "10.0.10.86",
+      "target_ip": "10.0.2.8",
+      "source_port": "eth0"
+    },
+    {
+      "source_ip": "10.0.2.10",
+      "target_ip": "10.0.10.87",
+      "source_port": "Gi1/0/44"
+    },
+    {
+      "source_ip": "10.0.10.87",
+      "target_ip": "10.0.2.10",
+      "source_port": "eth0"
+    },
+    {
+      "source_ip": "10.0.2.8",
+      "target_ip": "10.0.10.88",
+      "source_port": "Gi1/0/9"
+    },
+    {
+      "source_ip": "10.0.10.88",
+      "target_ip": "10.0.2.8",
+      "source_port": "eth0"
+    },
+    {
+      "source_ip": "10.0.2.1",
+      "target_ip": "10.0.10.89",
+      "source_port": "Gi1/0/26"
+    },
+    {
+      "source_ip": "10.0.10.89",
+      "target_ip": "10.0.2.1",
+      "source_port": "eth0"
+    },
+    {
+      "source_ip": "10.0.2.2",
+      "target_ip": "10.0.10.90",
+      "source_port": "Gi1/0/37"
+    },
+    {
+      "source_ip": "10.0.10.90",
+      "target_ip": "10.0.2.2",
+      "source_port": "eth0"
+    },
+    {
+      "source_ip": "10.0.2.9",
+      "target_ip": "10.0.10.91",
+      "source_port": "Gi1/0/22"
+    },
+    {
+      "source_ip": "10.0.10.91",
+      "target_ip": "10.0.2.9",
+      "source_port": "eth0"
+    },
+    {
+      "source_ip": "10.0.2.13",
+      "target_ip": "10.0.10.92",
+      "source_port": "Gi1/0/12"
+    },
+    {
+      "source_ip": "10.0.10.92",
+      "target_ip": "10.0.2.13",
+      "source_port": "eth0"
+    },
+    {
+      "source_ip": "10.0.2.6",
+      "target_ip": "10.0.10.93",
+      "source_port": "Gi1/0/26"
+    },
+    {
+      "source_ip": "10.0.10.93",
+      "target_ip": "10.0.2.6",
+      "source_port": "eth0"
+    },
+    {
+      "source_ip": "10.0.2.6",
+      "target_ip": "10.0.10.94",
+      "source_port": "Gi1/0/26"
+    },
+    {
+      "source_ip": "10.0.10.94",
+      "target_ip": "10.0.2.6",
+      "source_port": "eth0"
+    },
+    {
+      "source_ip": "10.0.2.12",
+      "target_ip": "10.0.10.95",
+      "source_port": "Gi1/0/5"
+    },
+    {
+      "source_ip": "10.0.10.95",
+      "target_ip": "10.0.2.12",
+      "source_port": "eth0"
+    },
+    {
+      "source_ip": "10.0.2.10",
+      "target_ip": "10.0.10.96",
+      "source_port": "Gi1/0/31"
+    },
+    {
+      "source_ip": "10.0.10.96",
+      "target_ip": "10.0.2.10",
+      "source_port": "eth0"
+    },
+    {
+      "source_ip": "10.0.2.1",
+      "target_ip": "10.0.10.97",
+      "source_port": "Gi1/0/35"
+    },
+    {
+      "source_ip": "10.0.10.97",
+      "target_ip": "10.0.2.1",
+      "source_port": "eth0"
+    },
+    {
+      "source_ip": "10.0.2.7",
+      "target_ip": "10.0.10.98",
+      "source_port": "Gi1/0/6"
+    },
+    {
+      "source_ip": "10.0.10.98",
+      "target_ip": "10.0.2.7",
+      "source_port": "eth0"
+    },
+    {
+      "source_ip": "10.0.2.14",
+      "target_ip": "10.0.10.99",
+      "source_port": "Gi1/0/25"
+    },
+    {
+      "source_ip": "10.0.10.99",
+      "target_ip": "10.0.2.14",
+      "source_port": "eth0"
+    },
+    {
+      "source_ip": "10.0.2.5",
+      "target_ip": "10.0.10.100",
+      "source_port": "Gi1/0/3"
+    },
+    {
+      "source_ip": "10.0.10.100",
+      "target_ip": "10.0.2.5",
+      "source_port": "eth0"
+    },
+    {
+      "source_ip": "10.0.2.3",
+      "target_ip": "10.0.10.101",
+      "source_port": "Gi1/0/13"
+    },
+    {
+      "source_ip": "10.0.10.101",
+      "target_ip": "10.0.2.3",
+      "source_port": "eth0"
+    },
+    {
+      "source_ip": "10.0.2.11",
+      "target_ip": "10.0.10.102",
+      "source_port": "Gi1/0/24"
+    },
+    {
+      "source_ip": "10.0.10.102",
+      "target_ip": "10.0.2.11",
+      "source_port": "eth0"
+    },
+    {
+      "source_ip": "10.0.2.15",
+      "target_ip": "10.0.10.103",
+      "source_port": "Gi1/0/12"
+    },
+    {
+      "source_ip": "10.0.10.103",
+      "target_ip": "10.0.2.15",
+      "source_port": "eth0"
+    },
+    {
+      "source_ip": "10.0.2.5",
+      "target_ip": "10.0.10.104",
+      "source_port": "Gi1/0/2"
+    },
+    {
+      "source_ip": "10.0.10.104",
+      "target_ip": "10.0.2.5",
+      "source_port": "eth0"
+    },
+    {
+      "source_ip": "10.0.2.11",
+      "target_ip": "10.0.10.105",
+      "source_port": "Gi1/0/28"
+    },
+    {
+      "source_ip": "10.0.10.105",
+      "target_ip": "10.0.2.11",
+      "source_port": "eth0"
+    },
+    {
+      "source_ip": "10.0.2.7",
+      "target_ip": "10.0.10.106",
+      "source_port": "Gi1/0/30"
+    },
+    {
+      "source_ip": "10.0.10.106",
+      "target_ip": "10.0.2.7",
+      "source_port": "eth0"
+    },
+    {
+      "source_ip": "10.0.2.7",
+      "target_ip": "10.0.10.107",
+      "source_port": "Gi1/0/30"
+    },
+    {
+      "source_ip": "10.0.10.107",
+      "target_ip": "10.0.2.7",
+      "source_port": "eth0"
+    },
+    {
+      "source_ip": "10.0.2.14",
+      "target_ip": "10.0.10.108",
+      "source_port": "Gi1/0/29"
+    },
+    {
+      "source_ip": "10.0.10.108",
+      "target_ip": "10.0.2.14",
+      "source_port": "eth0"
+    },
+    {
+      "source_ip": "10.0.2.15",
+      "target_ip": "10.0.10.109",
+      "source_port": "Gi1/0/11"
+    },
+    {
+      "source_ip": "10.0.10.109",
+      "target_ip": "10.0.2.15",
+      "source_port": "eth0"
+    },
+    {
+      "source_ip": "10.0.2.5",
+      "target_ip": "10.0.10.110",
+      "source_port": "Gi1/0/42"
+    },
+    {
+      "source_ip": "10.0.10.110",
+      "target_ip": "10.0.2.5",
+      "source_port": "eth0"
+    },
+    {
+      "source_ip": "10.0.2.4",
+      "target_ip": "10.0.10.111",
+      "source_port": "Gi1/0/26"
+    },
+    {
+      "source_ip": "10.0.10.111",
+      "target_ip": "10.0.2.4",
+      "source_port": "eth0"
+    },
+    {
+      "source_ip": "10.0.2.11",
+      "target_ip": "10.0.10.112",
+      "source_port": "Gi1/0/25"
+    },
+    {
+      "source_ip": "10.0.10.112",
+      "target_ip": "10.0.2.11",
+      "source_port": "eth0"
+    },
+    {
+      "source_ip": "10.0.2.3",
+      "target_ip": "10.0.10.113",
+      "source_port": "Gi1/0/2"
+    },
+    {
+      "source_ip": "10.0.10.113",
+      "target_ip": "10.0.2.3",
+      "source_port": "eth0"
+    },
+    {
+      "source_ip": "10.0.2.8",
+      "target_ip": "10.0.10.114",
+      "source_port": "Gi1/0/25"
+    },
+    {
+      "source_ip": "10.0.10.114",
+      "target_ip": "10.0.2.8",
+      "source_port": "eth0"
+    },
+    {
+      "source_ip": "10.0.2.6",
+      "target_ip": "10.0.10.115",
+      "source_port": "Gi1/0/21"
+    },
+    {
+      "source_ip": "10.0.10.115",
+      "target_ip": "10.0.2.6",
+      "source_port": "eth0"
+    },
+    {
+      "source_ip": "10.0.2.10",
+      "target_ip": "10.0.10.116",
+      "source_port": "Gi1/0/23"
+    },
+    {
+      "source_ip": "10.0.10.116",
+      "target_ip": "10.0.2.10",
+      "source_port": "eth0"
+    },
+    {
+      "source_ip": "10.0.2.1",
+      "target_ip": "10.0.10.117",
+      "source_port": "Gi1/0/15"
+    },
+    {
+      "source_ip": "10.0.10.117",
+      "target_ip": "10.0.2.1",
+      "source_port": "eth0"
+    },
+    {
+      "source_ip": "10.0.2.15",
+      "target_ip": "10.0.10.118",
+      "source_port": "Gi1/0/5"
+    },
+    {
+      "source_ip": "10.0.10.118",
+      "target_ip": "10.0.2.15",
+      "source_port": "eth0"
+    },
+    {
+      "source_ip": "10.0.2.8",
+      "target_ip": "10.0.10.119",
+      "source_port": "Gi1/0/7"
+    },
+    {
+      "source_ip": "10.0.10.119",
+      "target_ip": "10.0.2.8",
+      "source_port": "eth0"
+    },
+    {
+      "source_ip": "10.0.2.12",
+      "target_ip": "10.0.10.120",
+      "source_port": "Gi1/0/20"
+    },
+    {
+      "source_ip": "10.0.10.120",
+      "target_ip": "10.0.2.12",
+      "source_port": "eth0"
+    },
+    {
+      "source_ip": "10.0.2.4",
+      "target_ip": "10.0.10.121",
+      "source_port": "Gi1/0/25"
+    },
+    {
+      "source_ip": "10.0.10.121",
+      "target_ip": "10.0.2.4",
+      "source_port": "eth0"
+    },
+    {
+      "source_ip": "10.0.2.12",
+      "target_ip": "10.0.10.122",
+      "source_port": "Gi1/0/46"
+    },
+    {
+      "source_ip": "10.0.10.122",
+      "target_ip": "10.0.2.12",
+      "source_port": "eth0"
+    },
+    {
+      "source_ip": "10.0.2.5",
+      "target_ip": "10.0.10.123",
+      "source_port": "Gi1/0/15"
+    },
+    {
+      "source_ip": "10.0.10.123",
+      "target_ip": "10.0.2.5",
+      "source_port": "eth0"
+    },
+    {
+      "source_ip": "10.0.2.10",
+      "target_ip": "10.0.10.124",
+      "source_port": "Gi1/0/26"
+    },
+    {
+      "source_ip": "10.0.10.124",
+      "target_ip": "10.0.2.10",
+      "source_port": "eth0"
+    },
+    {
+      "source_ip": "10.0.2.5",
+      "target_ip": "10.0.10.125",
+      "source_port": "Gi1/0/39"
+    },
+    {
+      "source_ip": "10.0.10.125",
+      "target_ip": "10.0.2.5",
+      "source_port": "eth0"
+    },
+    {
+      "source_ip": "10.0.2.6",
+      "target_ip": "10.0.10.126",
+      "source_port": "Gi1/0/12"
+    },
+    {
+      "source_ip": "10.0.10.126",
+      "target_ip": "10.0.2.6",
+      "source_port": "eth0"
+    },
+    {
+      "source_ip": "10.0.2.10",
+      "target_ip": "10.0.10.127",
+      "source_port": "Gi1/0/45"
+    },
+    {
+      "source_ip": "10.0.10.127",
+      "target_ip": "10.0.2.10",
+      "source_port": "eth0"
+    },
+    {
+      "source_ip": "10.0.2.10",
+      "target_ip": "10.0.10.128",
+      "source_port": "Gi1/0/14"
+    },
+    {
+      "source_ip": "10.0.10.128",
+      "target_ip": "10.0.2.10",
+      "source_port": "eth0"
+    },
+    {
+      "source_ip": "10.0.2.11",
+      "target_ip": "10.0.10.129",
+      "source_port": "Gi1/0/6"
+    },
+    {
+      "source_ip": "10.0.10.129",
+      "target_ip": "10.0.2.11",
+      "source_port": "eth0"
+    },
+    {
+      "source_ip": "10.0.2.9",
+      "target_ip": "10.0.10.130",
+      "source_port": "Gi1/0/35"
+    },
+    {
+      "source_ip": "10.0.10.130",
+      "target_ip": "10.0.2.9",
+      "source_port": "eth0"
+    },
+    {
+      "source_ip": "10.0.2.4",
+      "target_ip": "10.0.10.131",
+      "source_port": "Gi1/0/12"
+    },
+    {
+      "source_ip": "10.0.10.131",
+      "target_ip": "10.0.2.4",
+      "source_port": "eth0"
+    },
+    {
+      "source_ip": "10.0.2.6",
+      "target_ip": "10.0.10.132",
+      "source_port": "Gi1/0/27"
+    },
+    {
+      "source_ip": "10.0.10.132",
+      "target_ip": "10.0.2.6",
+      "source_port": "eth0"
+    },
+    {
+      "source_ip": "10.0.2.15",
+      "target_ip": "10.0.10.133",
+      "source_port": "Gi1/0/14"
+    },
+    {
+      "source_ip": "10.0.10.133",
+      "target_ip": "10.0.2.15",
+      "source_port": "eth0"
+    },
+    {
+      "source_ip": "10.0.2.14",
+      "target_ip": "10.0.10.134",
+      "source_port": "Gi1/0/10"
+    },
+    {
+      "source_ip": "10.0.10.134",
+      "target_ip": "10.0.2.14",
+      "source_port": "eth0"
+    },
+    {
+      "source_ip": "10.0.2.14",
+      "target_ip": "10.0.10.135",
+      "source_port": "Gi1/0/34"
+    },
+    {
+      "source_ip": "10.0.10.135",
+      "target_ip": "10.0.2.14",
+      "source_port": "eth0"
+    },
+    {
+      "source_ip": "10.0.2.1",
+      "target_ip": "10.0.10.136",
+      "source_port": "Gi1/0/4"
+    },
+    {
+      "source_ip": "10.0.10.136",
+      "target_ip": "10.0.2.1",
+      "source_port": "eth0"
+    },
+    {
+      "source_ip": "10.0.2.1",
+      "target_ip": "10.0.10.137",
+      "source_port": "Gi1/0/7"
+    },
+    {
+      "source_ip": "10.0.10.137",
+      "target_ip": "10.0.2.1",
+      "source_port": "eth0"
+    },
+    {
+      "source_ip": "10.0.2.15",
+      "target_ip": "10.0.10.138",
+      "source_port": "Gi1/0/33"
+    },
+    {
+      "source_ip": "10.0.10.138",
+      "target_ip": "10.0.2.15",
+      "source_port": "eth0"
+    },
+    {
+      "source_ip": "10.0.2.5",
+      "target_ip": "10.0.10.139",
+      "source_port": "Gi1/0/25"
+    },
+    {
+      "source_ip": "10.0.10.139",
+      "target_ip": "10.0.2.5",
+      "source_port": "eth0"
+    },
+    {
+      "source_ip": "10.0.2.9",
+      "target_ip": "10.0.10.140",
+      "source_port": "Gi1/0/20"
+    },
+    {
+      "source_ip": "10.0.10.140",
+      "target_ip": "10.0.2.9",
+      "source_port": "eth0"
+    },
+    {
+      "source_ip": "10.0.2.10",
+      "target_ip": "10.0.10.141",
+      "source_port": "Gi1/0/34"
+    },
+    {
+      "source_ip": "10.0.10.141",
+      "target_ip": "10.0.2.10",
+      "source_port": "eth0"
+    },
+    {
+      "source_ip": "10.0.2.1",
+      "target_ip": "10.0.10.142",
+      "source_port": "Gi1/0/40"
+    },
+    {
+      "source_ip": "10.0.10.142",
+      "target_ip": "10.0.2.1",
+      "source_port": "eth0"
+    },
+    {
+      "source_ip": "10.0.2.1",
+      "target_ip": "10.0.10.143",
+      "source_port": "Gi1/0/20"
+    },
+    {
+      "source_ip": "10.0.10.143",
+      "target_ip": "10.0.2.1",
+      "source_port": "eth0"
+    },
+    {
+      "source_ip": "10.0.2.1",
+      "target_ip": "10.0.10.144",
+      "source_port": "Gi1/0/36"
+    },
+    {
+      "source_ip": "10.0.10.144",
+      "target_ip": "10.0.2.1",
+      "source_port": "eth0"
+    },
+    {
+      "source_ip": "10.0.2.10",
+      "target_ip": "10.0.10.145",
+      "source_port": "Gi1/0/32"
+    },
+    {
+      "source_ip": "10.0.10.145",
+      "target_ip": "10.0.2.10",
+      "source_port": "eth0"
+    },
+    {
+      "source_ip": "10.0.2.9",
+      "target_ip": "10.0.10.146",
+      "source_port": "Gi1/0/7"
+    },
+    {
+      "source_ip": "10.0.10.146",
+      "target_ip": "10.0.2.9",
+      "source_port": "eth0"
+    },
+    {
+      "source_ip": "10.0.2.5",
+      "target_ip": "10.0.10.147",
+      "source_port": "Gi1/0/37"
+    },
+    {
+      "source_ip": "10.0.10.147",
+      "target_ip": "10.0.2.5",
+      "source_port": "eth0"
+    },
+    {
+      "source_ip": "10.0.2.11",
+      "target_ip": "10.0.10.148",
+      "source_port": "Gi1/0/11"
+    },
+    {
+      "source_ip": "10.0.10.148",
+      "target_ip": "10.0.2.11",
+      "source_port": "eth0"
+    },
+    {
+      "source_ip": "10.0.2.9",
+      "target_ip": "10.0.10.149",
+      "source_port": "Gi1/0/41"
+    },
+    {
+      "source_ip": "10.0.10.149",
+      "target_ip": "10.0.2.9",
+      "source_port": "eth0"
+    },
+    {
+      "source_ip": "10.0.2.14",
+      "target_ip": "10.0.10.150",
+      "source_port": "Gi1/0/27"
+    },
+    {
+      "source_ip": "10.0.10.150",
+      "target_ip": "10.0.2.14",
+      "source_port": "eth0"
+    }
+  ]
 }
