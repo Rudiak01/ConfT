@@ -4,6 +4,20 @@ let svg, g, zoom;
 let simulation, link, node, text;
 let width, height;
 
+export let isDragEnabled = false;
+
+export function setDragEnabled(enabled) {
+  isDragEnabled = enabled;
+  if (!enabled && simulation && node) {
+    // Unfix all nodes
+    node.each(function(d) {
+      d.fx = null;
+      d.fy = null;
+    });
+    simulation.alpha(0.3).restart();
+  }
+}
+
 function getNodeRadius(d, state = 'normal') {
   let base = 3;
   const label = (d.label || "").toLowerCase();
@@ -144,7 +158,24 @@ export function initGraph(containerId, nodes, links, onNodeClick) {
         link.style("stroke", "#999").style("opacity", 0.6).attr("stroke-width", 1.5);
         node.style("opacity", 1);
       }
-    });
+    })
+    .call(d3.drag()
+      .on("start", function(d) {
+        if (!isDragEnabled) return;
+        if (!d3.event.active) simulation.alphaTarget(0.3).restart();
+        d.fx = d.x;
+        d.fy = d.y;
+      })
+      .on("drag", function(d) {
+        if (!isDragEnabled) return;
+        d.fx = d3.event.x;
+        d.fy = d3.event.y;
+      })
+      .on("end", function(d) {
+        if (!isDragEnabled) return;
+        if (!d3.event.active) simulation.alphaTarget(0);
+        // keep pinned
+      }));
 
   text = g.append("g")
     .attr("class", "texts")
@@ -156,7 +187,9 @@ export function initGraph(containerId, nodes, links, onNodeClick) {
     .text(d => d.label)
     .style("fill", "#fff")
     .style("font-family", "inherit")
-    .style("font-size", "12px");
+    .style("font-size", "12px")
+    .style("cursor", "pointer")
+    .on("click", (d) => onNodeClick(d));
 
   function ticked() {
     link

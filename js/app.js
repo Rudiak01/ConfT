@@ -1,5 +1,5 @@
 import { appState } from "./state.js";
-import { initGraph, updateGraphHighlights, resizeGraph } from "./graph.js";
+import { initGraph, updateGraphHighlights, resizeGraph, setDragEnabled } from "./graph.js";
 
 // DOM Elements
 const initOverlay = document.getElementById("init-overlay");
@@ -709,3 +709,22 @@ btnBack.addEventListener("click", () => {
     appState.setState({ view: "main", selectedNode: null, selectedPort: null });
   }
 });
+
+let moveNodesEnabled = false;
+const btnToggleMove = document.getElementById("btn-toggle-move");
+if (btnToggleMove) {
+  btnToggleMove.addEventListener("click", () => {
+    moveNodesEnabled = !moveNodesEnabled;
+    btnToggleMove.textContent = moveNodesEnabled ? "Désactiver Déplacement" : "Activer Déplacement";
+    if (moveNodesEnabled) {
+      btnToggleMove.classList.remove("secondary-btn");
+      btnToggleMove.classList.add("primary-btn");
+      btnToggleMove.style.background = "#27ae60";
+    } else {
+      btnToggleMove.classList.remove("primary-btn");
+      btnToggleMove.classList.add("secondary-btn");
+      btnToggleMove.style.background = "";
+    }
+    setDragEnabled(moveNodesEnabled);
+  });
+}
