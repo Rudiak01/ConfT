@@ -2,56 +2,112 @@
 
 VENDOR_SYNTAX = {
     # -----------------------------------------
-    # 1. CISCO IOS (Catalyst, ISR...)
+    # 1. CISCO IOS (Le plus complet via TextFSM)
     # -----------------------------------------
     "cisco_ios": {
         "read": {
             "vlans": "show vlan brief",
             "interfaces": "show interfaces switchport",
-            "running": "show running-config"
+            "mac": "show mac address-table",
+            "arp": "show ip arp",
+            "lldp": "show lldp neighbors detail",
+            "routes": "show ip route",
+            "poe": "show power inline",
+            "port_channels": "show etherchannel summary",
+            "stp": "show spanning-tree",
+            "running": "show running-config" # Toujours en dernier
         },
         "write": {
+            # VLAN & Switchport
             "vlan_create": "vlan {id}",
             "vlan_name": "name {name}",
             "interface": "interface {iface}",
+            "desc": "description {desc}",
             "mode_access": "switchport mode access",
             "access_vlan": "switchport access vlan {vlan}",
+            "voice_vlan": "switchport voice vlan {vlan}",
+            "portfast": "spanning-tree portfast",
             "mode_trunk": "switchport mode trunk",
-            "trunk_allowed": "switchport trunk allowed vlan {vlans}"
+            "trunk_allowed": "switchport trunk allowed vlan {vlans}",
+            # Routage statique
+            "route": "ip route {network} {mask} {nexthop}",
+            # Spanning-Tree global
+            "stp_mode": "spanning-tree mode {mode}", # pvst, rapid-pvst
+            "stp_root": "spanning-tree vlan {vlan} root primary"
         },
         "normalize_keys": {
-            "vlans": {"vlan_id": "vlan_id", "name": "name"},
-            "interfaces": {"interface": "interface", "access_vlan": "vlan", "admin_mode": "mode"}
+            "vlans": {"vlan_id": "vlan_id", "name": "name", "status": "status"},
+            "interfaces": {"interface": "interface", "access_vlan": "vlan", "admin_mode": "mode", "switchport": "enabled"},
+            "mac": {"destination_address": "mac", "vlan": "vlan", "destination_port": "interface"},
+            "arp": {"address": "ip", "mac": "mac", "interface": "interface"},
+            "lldp": {"local_interface": "local_port", "neighbor": "neighbor_name", "neighbor_interface": "remote_port"},
+            "routes": {"network": "network", "mask": "mask", "nexthop_ip": "nexthop", "protocol": "protocol"},
+            "poe": {"interface": "interface", "oper": "status", "power": "watts"},
+            "port_channels": {"po_name": "channel", "po_protocol": "protocol", "ports": "members"},
+            "stp": {"vlan_id": "vlan", "root_mac": "root_bridge", "bridge_mac": "local_bridge"}
         }
     },
 
     # -----------------------------------------
-    # 2. ARISTA EOS (Datacenter)
+    # 2. ARISTA EOS
     # -----------------------------------------
     "arista_eos": {
         "read": {
             "vlans": "show vlan",
             "interfaces": "show interfaces switchport",
+            "mac": "show mac address-table",
+            "arp": "show ip arp",
+            "lldp": "show lldp neighbors",
+            "routes": "show ip route",
             "running": "show running-config"
         },
         "write": {
-            # Arista est un clone quasi-parfait d'IOS pour le CLI de base
             "vlan_create": "vlan {id}",
             "vlan_name": "name {name}",
             "interface": "interface {iface}",
             "mode_access": "switchport mode access",
             "access_vlan": "switchport access vlan {vlan}",
             "mode_trunk": "switchport mode trunk",
-            "trunk_allowed": "switchport trunk allowed vlan {vlans}"
+            "trunk_allowed": "switchport trunk allowed vlan {vlans}",
+            "route": "ip route {network}/{mask} {nexthop}" # Syntaxe CIDR courante chez Arista
         },
         "normalize_keys": {
             "vlans": {"vlan_id": "vlan_id", "name": "name"},
-            "interfaces": {"interface": "interface", "access_vlan": "vlan", "admin_mode": "mode"}
+            "interfaces": {"interface": "interface", "access_vlan": "vlan", "admin_mode": "mode"},
+            "mac": {"mac_address": "mac", "vlan": "vlan", "port": "interface"},
+            "arp": {"address": "ip", "mac_address": "mac", "interface": "interface"},
+            "lldp": {"port": "local_port", "neighbor_device": "neighbor_name", "neighbor_port": "remote_port"},
+            "routes": {"network": "network", "nexthop_ip": "nexthop"}
         }
     },
 
     # -----------------------------------------
-    # 3. HUAWEI VRP (Switches CloudEngine, S-Series)
+    # 3. HP PROCURVE / ARUBA
+    # -----------------------------------------
+    "hp_procurve": {
+        "read": {
+            "vlans": "show vlans",
+            "interfaces": "show interfaces brief",
+            "lldp": "show lldp info remote-device",
+            "mac": "show mac-address",
+            "running": "show running-config"
+        },
+        "write": {
+            "vlan_create": "vlan {id}",
+            "vlan_name": "name {name}",
+            "interface": "interface {iface}",
+            "mode_access": "untagged vlan {vlan}",
+            "mode_trunk": "tagged vlan {vlans}"
+        },
+        "normalize_keys": {
+            "vlans": {"vlan_id": "vlan_id", "name": "name"},
+            "interfaces": {"port": "interface", "untagged": "vlan", "mode": "mode"},
+            "mac": {"mac_address": "mac", "port": "interface"}
+        }
+    },
+
+    # -----------------------------------------
+    # 4. HUAWEI VRP (Switches CloudEngine, S-Series)
     # -----------------------------------------
     "huawei": {
         "read": {
@@ -71,28 +127,6 @@ VENDOR_SYNTAX = {
         "normalize_keys": {
             "vlans": {"vlan_id": "vlan_id", "name": "name"},
             "interfaces": {"interface": "interface", "pvid": "vlan", "link_type": "mode"}
-        }
-    },
-
-    # -----------------------------------------
-    # 4. HP PROCURVE / ARUBA OS-Switch
-    # -----------------------------------------
-    "hp_procurve": {
-        "read": {
-            "vlans": "show vlans",
-            "interfaces": "show interfaces brief",
-            "running": "show running-config"
-        },
-        "write": {
-            "vlan_create": "vlan {id}",
-            "vlan_name": "name {name}",
-            "interface": "interface {iface}",
-            "mode_access": "untagged vlan {vlan}",
-            "mode_trunk": "tagged vlan {vlans}"
-        },
-        "normalize_keys": {
-            "vlans": {"vlan_id": "vlan_id", "name": "name"},
-            "interfaces": {"port": "interface", "untagged": "vlan", "mode": "mode"}
         }
     },
 
