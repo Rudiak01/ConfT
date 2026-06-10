@@ -1,103 +1,81 @@
 import json
-try:
-    from .ssh_connect import connect
-except ImportError:
-    from ssh_connect import connect
+from ssh_connect import connect
+from config import SWITCH, PROTECTED_INTERFACES, VENDOR_SYNTAX
 
-# Interfaces à protéger
-PROTECTED_INTERFACES = [
-    "GigabitEthernet0/1",
-    "GigabitEthernet0/2",
-    "FastEthernet0/24"
-]
-
-
-def build_commands(data):
+def build_commands(data, device_type):
     commands = []
+    # On charge la syntaxe d'écriture correspondant au switch
+    syntax = VENDOR_SYNTAX.get(device_type, VENDOR_SYNTAX["cisco_ios"])["write"]
 
     # -------------------
     # VLANs
     # -------------------
     for vlan in data.get("vlans", []):
-        commands.append(f"vlan {vlan['vlan_id']}")
-        commands.append(f"name {vlan['name']}")
+        commands.append(syntax["vlan_create"].format(id=vlan['vlan_id']))
+        commands.append(syntax["vlan_name"].format(name=vlan['name']))
 
     # -------------------
     # Interfaces
     # -------------------
     for iface in data.get("interfaces", []):
-
         interface_name = iface["interface"]
 
-        # Protection des interfaces critiques
         if interface_name in PROTECTED_INTERFACES:
             print(f"⚠ Interface protégée ignorée : {interface_name}")
             continue
 
-        commands.append(f"interface {interface_name}")
+        commands.append(syntax["interface"].format(iface=interface_name))
 
-        # Description
-        if "description" in iface:
-            commands.append(f"description {iface['description']}")
+        if "description" in iface and "desc" in syntax:
+            commands.append(syntax["desc"].format(desc=iface['description']))
 
         mode = iface.get("mode")
 
         # -------- ACCESS --------
         if mode == "access":
-            commands.append("switchport mode access")
-            commands.append(f"switchport access vlan {iface['vlan']}")
+            commands.append(syntax["mode_access"])
+            # Formatage dynamique via le dictionnaire
+            if "access_vlan" in syntax:
+                commands.append(syntax["access_vlan"].format(vlan=iface['vlan']))
+            
+            if iface.get("voice_vlan") and "voice_vlan" in syntax:
+                commands.append(syntax["voice_vlan"].format(vlan=iface['voice_vlan']))
 
-            if iface.get("voice_vlan"):
-                commands.append(f"switchport voice vlan {iface['voice_vlan']}")
-
-            if iface.get("portfast"):
-                commands.append("spanning-tree portfast")
+            if iface.get("portfast") and "portfast" in syntax:
+                commands.append(syntax["portfast"])
 
         # -------- TRUNK --------
         elif mode == "trunk":
-            commands.append("switchport mode trunk")
-
-            if iface.get("allowed_vlans"):
-                commands.append(
-                    f"switchport trunk allowed vlan {iface['allowed_vlans']}"
-                )
+            commands.append(syntax["mode_trunk"])
+            if iface.get("allowed_vlans") and "trunk_allowed" in syntax:
+                commands.append(syntax["trunk_allowed"].format(vlans=iface['allowed_vlans']))
 
     return commands
-
-
-def apply_device_config(connection_params, config_data):
-    try:
-        connection = connect(connection_params)
-        commands = build_commands(config_data)
-        if not commands:
-            connection.disconnect()
-            return True, "No commands to apply"
-            
-        output = connection.send_config_set(commands)
-        connection.save_config()
-        connection.disconnect()
-        return True, output
-    except Exception as e:
-        return False, str(e)
 
 def main():
     with open("desired_config.json", "r") as f:
         data = json.load(f)
 
-    # For manual testing, connect without specific params (uses config.SWITCH)
-    connection = connect()
-    commands = build_commands(data)
+    device_type = SWITCH.get("device_type", "cisco_ios")
+    commands = build_commands(data, device_type)
 
-    print("\n--- Commandes envoyées ---")
+    print("\n--- Commandes générées ---")
     for cmd in commands:
         print(cmd)
 
     print("\nApplication de la configuration...")
-    output = connection.send_config_set(commands)
-    connection.save_config()
-    connection.disconnect()
-
-    print("\nConfiguration appliquée avec succès.")
+    try:
+        connection = connect(SWITCH)
+        if commands:
+            output = connection.send_config_set(commands)
+            connection.save_config()
+            print("\nConfiguration appliquée avec succès.")
+            print(output)
+        else:
+            print("Aucune commande à envoyer.")
+        connection.disconnect()
+    except Exception as e:
+        print(f"Erreur lors de l'application: {e}")
 
 if __name__ == "__main__":
     main()
