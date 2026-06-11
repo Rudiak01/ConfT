@@ -1,9 +1,9 @@
 # extract_config.py
 import json
 from netmiko.exceptions import NetmikoTimeoutException, NetmikoAuthenticationException
-from ssh_connect import connect
-from config import SWITCH
-from vendor_syntax import VENDOR_SYNTAX
+from .ssh_connect import connect
+from .config import SWITCH
+from .vendor_syntax import VENDOR_SYNTAX
 
 def normalize_data(raw_data, template_mapping):
     """Transforme les clés TextFSM en clés universelles"""

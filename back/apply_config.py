@@ -1,6 +1,7 @@
 import json
-from ssh_connect import connect
-from config import SWITCH, PROTECTED_INTERFACES, VENDOR_SYNTAX
+from .ssh_connect import connect
+from .config import SWITCH, PROTECTED_INTERFACES
+from .vendor_syntax import VENDOR_SYNTAX
 
 def build_commands(data, device_type):
     commands = []
@@ -59,6 +60,21 @@ def build_commands(data, device_type):
             ))
 
     return commands
+
+def apply_device_config(connection_params, config_data): # readded
+    try:
+        connection = connect(connection_params)
+        commands = build_commands(config_data)
+        if not commands:
+            connection.disconnect()
+            return True, "No commands to apply"
+            
+        output = connection.send_config_set(commands)
+        connection.save_config()
+        connection.disconnect()
+        return True, output
+    except Exception as e:
+        return False, str(e)
 
 def main():
     try:
