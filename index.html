@@ -6,13 +6,30 @@
     <title>ConfT</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css" />
-    <link rel="shortcut icon" href="ConfT.png" type="image/x-icon">
+    <link rel="shortcut icon" href="ConfT.svg" type="image/svg+xml">
   </head>
   <body>
+    <!-- Auth Overlay -->
+    <div id="auth-overlay" class="auth-overlay">
+      <div class="glass-panel" style="max-width: 400px; width: 100%; text-align: center;">
+        <h2 style="margin-bottom: 1rem;">Connexion</h2>
+        <div class="form-group" style="text-align: left; margin-bottom: 1rem;">
+          <label>Nom d'utilisateur</label>
+          <div class="input-wrapper"><input id="login-username" type="text" placeholder="admin"></div>
+        </div>
+        <div class="form-group" style="text-align: left; margin-bottom: 1rem;">
+          <label>Mot de passe</label>
+          <div class="input-wrapper"><input id="login-password" type="password" placeholder="admin123"></div>
+        </div>
+        <button id="btn-login" class="primary-btn" style="width: 100%;">Se connecter</button>
+        <p id="login-error" style="color: #e74c3c; margin-top: 1rem; display: none;">Identifiants invalides</p>
+      </div>
+    </div>
+    
     <!-- Seed Overlay -->
-    <div id="init-overlay" class="init-overlay" style="position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; display: flex; justify-content: center; align-items: center; z-index: 9999; background: var(--bg-gradient); background-image: url(ConfT.png); background-repeat: no-repeat; background-size: cover; background-position: center; background-blend-mode: multiply;">
+    <div id="init-overlay" class="init-overlay" style="position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; display: flex; justify-content: center; align-items: center; z-index: 9999; background: var(--bg-gradient); background-image: url(ConfT.svg); background-repeat: no-repeat; background-size: cover; background-position: center; background-blend-mode: multiply;">
       <div class="glass-panel" style="max-width: 500px; text-align: center; display: flex; flex-direction: column; gap: 1rem; align-items: center;">
-        <img src="ConfT.png" alt="ConfT Logo" style="max-width: 200px; margin-bottom: 1rem;">
+        <img src="ConfT.svg" alt="ConfT Logo" style="max-width: 200px; margin-bottom: 1rem;">
         <p id="seed-instructions" style="color: #ccc;">Enter a Seed IP to crawl and discover your network.</p>
         
         <div class="form-group" style="width: 100%; text-align: left;">
@@ -78,6 +95,7 @@
             <div id="demo-badge" class="badge hidden" style="background: #f39c12; margin-left: 10px; font-size: 0.8rem; padding: 4px 8px;">DEMO MODE</div>
           </div>
           <div>
+              <button id="btn-settings" class="secondary-btn" style="margin-right: 10px;">Paramètres</button>
               <button id="btn-toggle-move" class="secondary-btn" style="margin-right: 10px;">Activer Déplacement</button>
               <button id="btn-retry-discovery" class="secondary-btn" style="margin-right: 10px;">Retry SSH Discovery</button>
               <button id="btn-assess-push" class="primary-btn" style="background: #e74c3c; margin-right: 10px;">Admin: Assess & Push to Prod</button>
@@ -93,6 +111,75 @@
             <div style="display: flex; justify-content: flex-end; gap: 10px;">
               <button id="btn-cancel-push" class="secondary-btn">Cancel</button>
               <button id="btn-confirm-push" class="primary-btn" style="background: #27ae60;">Acknowledge & Push</button>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Settings Modal -->
+        <div id="settings-overlay" class="modal-overlay hidden">
+          <div class="modal-content">
+            <h2 style="font-size: 1.8rem; margin-bottom: 1rem;">Paramètres</h2>
+            <div class="modal-tabs">
+              <div class="modal-tab active" data-tab="tab-appearance">Apparence</div>
+              <div class="modal-tab" data-tab="tab-users" id="tab-users-btn" style="display:none;">Utilisateurs</div>
+            </div>
+            
+            <div id="tab-appearance" class="tab-content active">
+              <div class="config-grid">
+                <div class="form-group">
+                  <label>Thème (Clair/Sombre non implémenté entièrement, mais dispo)</label>
+                  <div class="input-wrapper">
+                    <select id="set-theme" style="width:100%; padding:8px; border-radius:4px; background:#222; color:white; border:1px solid #555;">
+                      <option value="dark">Sombre</option>
+                      <option value="light">Clair</option>
+                    </select>
+                  </div>
+                </div>
+                <div class="form-group">
+                  <label>Couleur de fond</label>
+                  <div class="input-wrapper"><input id="set-bg-color" type="color" value="#1e1e1e" style="padding:0; height:38px;"></div>
+                </div>
+                <div class="form-group">
+                  <label>Couleur globale par défaut</label>
+                  <div class="input-wrapper"><input id="set-def-color" type="color" value="#cccccc" style="padding:0; height:38px;"></div>
+                </div>
+                <div class="form-group">
+                  <label>Couleur Routeurs</label>
+                  <div class="input-wrapper"><input id="set-router-color" type="color" value="#3498db" style="padding:0; height:38px;"></div>
+                </div>
+                <div class="form-group">
+                  <label>Couleur Switches</label>
+                  <div class="input-wrapper"><input id="set-switch-color" type="color" value="#2ecc71" style="padding:0; height:38px;"></div>
+                </div>
+                <div class="form-group">
+                  <label>Couleur Hôtes</label>
+                  <div class="input-wrapper"><input id="set-host-color" type="color" value="#9b59b6" style="padding:0; height:38px;"></div>
+                </div>
+                <div class="form-group" style="flex-direction:row; align-items:center;">
+                  <input type="checkbox" id="set-obsidian-bg" checked> <label style="margin-left:8px;">Fond en pointillés (Obsidian)</label>
+                </div>
+              </div>
+              <div style="display: flex; justify-content: flex-end; margin-top: 1rem;">
+                <button id="btn-save-appearance" class="primary-btn">Sauvegarder</button>
+              </div>
+            </div>
+            
+            <div id="tab-users" class="tab-content">
+              <div id="users-list-container" style="margin-bottom: 1rem;">Loading...</div>
+              <h3 style="margin-top:2rem;">Ajouter un utilisateur</h3>
+              <div class="config-grid">
+                <div class="form-group"><label>Nom d'utilisateur</label><div class="input-wrapper"><input id="new-user-name" type="text"></div></div>
+                <div class="form-group"><label>Mot de passe</label><div class="input-wrapper"><input id="new-user-pass" type="password"></div></div>
+                <div class="form-group" style="flex-direction:row; align-items:center;"><input type="checkbox" id="new-user-admin"> <label style="margin-left:8px;">Administrateur</label></div>
+              </div>
+              <div style="display: flex; justify-content: flex-end; margin-top: 1rem;">
+                <button id="btn-create-user" class="primary-btn">Créer Utilisateur</button>
+              </div>
+            </div>
+            
+            <div style="display:flex; justify-content:space-between; margin-top: 2rem;">
+              <button id="btn-close-settings" class="secondary-btn">Fermer</button>
+              <button id="btn-logout" class="secondary-btn" style="color: #e74c3c; border-color: #e74c3c;">Déconnexion</button>
             </div>
           </div>
         </div>

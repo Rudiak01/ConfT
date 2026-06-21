@@ -18,6 +18,23 @@ export function setDragEnabled(enabled) {
   }
 }
 
+
+export function getNodeColor(d) {
+  const set = appState.userSettings;
+  if(!set) return getNodeColor(d);
+  
+  if(set.node_colors && set.node_colors[d.id]) {
+    return set.node_colors[d.id];
+  }
+  
+  const label = (d.label || "").toLowerCase();
+  if(label.includes("router")) return set.router_color;
+  if(label.includes("switch") || label.includes("core") || label.includes("dist") || label.includes("access")) return set.switch_color;
+  if(label.includes("host") || d.true_link_count <= 1) return set.host_color;
+  
+  return set.default_node_color;
+}
+
 function getNodeRadius(d, state = 'normal') {
   let base = 3;
   const label = (d.label || "").toLowerCase();
@@ -139,7 +156,7 @@ export function initGraph(containerId, nodes, links, onNodeClick) {
     .enter().append("circle")
     .attr("class", "node")
     .attr("r", d => getNodeRadius(d, 'normal'))
-    .attr("fill", d => d.color || "#ccc")
+    .attr("fill", d => getNodeColor(d))
     .on("click", (d) => onNodeClick(d))
     .on("mouseover", function(d) {
       if(appState.view === 'main') {
@@ -154,7 +171,7 @@ export function initGraph(containerId, nodes, links, onNodeClick) {
     })
     .on("mouseout", function(d) {
       if(appState.view === 'main') {
-        d3.select(this).attr("fill", n => n.color || "#ccc").attr("r", n => getNodeRadius(n, 'normal'));
+        d3.select(this).attr("fill", n => getNodeColor(n)).attr("r", n => getNodeRadius(n, 'normal'));
         link.style("stroke", "#999").style("opacity", 0.6).attr("stroke-width", 1.5);
         node.style("opacity", 1);
       }
@@ -213,7 +230,7 @@ export function updateGraphHighlights(state) {
 
   if (state.view === 'main') {
     // Reset highlights
-    node.attr("fill", d => d.color || "#ccc").attr("r", d => getNodeRadius(d, 'normal')).style("opacity", 1);
+    node.attr("fill", d => getNodeColor(d)).attr("r", d => getNodeRadius(d, 'normal')).style("opacity", 1);
     link.style("stroke", "#999").style("opacity", 0.6).attr("stroke-width", 1.5);
     text.style("opacity", 1);
     
@@ -224,7 +241,7 @@ export function updateGraphHighlights(state) {
     const sn = state.selectedNode;
     
     // Highlight the selected node and its direct neighbors
-    node.attr("fill", d => d === sn ? "var(--accent-color)" : (d.color || "#ccc"))
+    node.attr("fill", d => d === sn ? "var(--accent-color)" : (getNodeColor(d)))
         .attr("r", d => d === sn ? getNodeRadius(d, 'selected') : getNodeRadius(d, 'normal'))
         .style("opacity", d => {
           const isConnected = state.links.some(l => (l.source === sn && l.target === d) || (l.target === sn && l.source === d));
@@ -251,7 +268,7 @@ export function updateGraphHighlights(state) {
     const sn = state.selectedNode;
     // Show only the selected port (link) and the two connected nodes
     node.style("opacity", d => (d === sp.source || d === sp.target) ? 1 : 0.05)
-        .attr("fill", d => d === sn ? "var(--accent-color)" : (d.color || "#ccc"));
+        .attr("fill", d => d === sn ? "var(--accent-color)" : (getNodeColor(d)));
         
     link.style("stroke", l => l === sp ? "var(--accent-color)" : "#999")
         .style("opacity", l => l === sp ? 1 : 0.02)

@@ -1,6 +1,26 @@
 import { appState } from "./state.js";
 import { initGraph, updateGraphHighlights, resizeGraph, setDragEnabled } from "./graph.js";
 
+const getAuthHeaders = () => {
+  const token = localStorage.getItem("auth_token");
+  return token ? { "Authorization": `Bearer ${token}` } : {};
+};
+
+async function fetchWithAuth(url, options = {}) {
+  options.headers = { ...options.headers, ...getAuthHeaders() };
+  const res = await fetch(url, options);
+  if (res.status === 401) {
+    document.getElementById("auth-overlay").classList.remove("hidden");
+    document.getElementById("app-wrapper").classList.add("hidden");
+    document.getElementById("init-overlay").classList.add("hidden");
+    throw new Error("Unauthorized");
+  }
+  return res;
+}
+
+let globalSettings = null;
+
+
 // DOM Elements
 const initOverlay = document.getElementById("init-overlay");
 const viewApp = document.getElementById("app-wrapper");
@@ -22,7 +42,7 @@ const rightPanelContent = document.getElementById("right-panel-content");
 const btnCloseRight = document.getElementById("btn-close-right");
 
 async function loadData() {
-  const res = await fetch("/api/network");
+  const res = await fetchWithAuth("/api/network");
   if (!res.ok) {
     const text = await res.text();
     throw new Error(`Failed to load network: ${res.status} ${text}`);
@@ -32,8 +52,36 @@ async function loadData() {
 }
 
 window.addEventListener("DOMContentLoaded", async () => {
+   const token = localStorage.getItem("auth_token");
+   if(!token) {
+     document.getElementById("auth-overlay").classList.remove("hidden");
+     document.getElementById("app-wrapper").classList.add("hidden");
+     document.getElementById("init-overlay").classList.add("hidden");
+     return;
+   } else {
+     document.getElementById("auth-overlay").classList.add("hidden");
+   }
+
+   try {
+     const setRes = await fetchWithAuth("/api/users/settings");
+     globalSettings = await setRes.json();
+     appState.userSettings = globalSettings;
+     
+     document.getElementById("set-theme").value = globalSettings.theme;
+     document.getElementById("set-bg-color").value = globalSettings.bg_color;
+     document.getElementById("set-def-color").value = globalSettings.default_node_color;
+     document.getElementById("set-router-color").value = globalSettings.router_color;
+     document.getElementById("set-switch-color").value = globalSettings.switch_color;
+     document.getElementById("set-host-color").value = globalSettings.host_color;
+     
+     document.getElementById("graph-container").style.background = globalSettings.bg_color;
+     if(document.getElementById("set-obsidian-bg").checked) {
+       document.getElementById("graph-container").classList.add("obsidian-bg");
+     }
+   } catch(e) {}
+
   try {
-    const settingsRes = await fetch("/api/settings");
+    const settingsRes = await fetchWithAuth("/api/settings");
     if (settingsRes.ok) {
       const settings = await settingsRes.json();
       localStorage.setItem("isMock", settings.mock_mode ? "true" : "false");
@@ -104,7 +152,7 @@ btnGetConfig.addEventListener("click", async () => {
         mock: isMock
     };
     
-    const res = await fetch("/api/network/seed", {
+    const res = await fetchWithAuth("/api/network/seed", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(seedData)
@@ -119,7 +167,7 @@ btnGetConfig.addEventListener("click", async () => {
     // Start polling status
     const pollStatus = async () => {
       try {
-        const statusRes = await fetch("/api/network/status");
+        const statusRes = await fetchWithAuth("/api/network/status");
         if (!statusRes.ok) throw new Error("Status endpoint failed");
         const statusData = await statusRes.json();
         
@@ -284,7 +332,7 @@ appState.subscribe((state) => {
           ssh_password: ""
         };
         try {
-          const res = await fetch(`/api/node/${sn.id}`, {
+          const res = await fetchWithAuth(`/api/node/${sn.id}`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify(newSettings),
@@ -350,7 +398,32 @@ appState.subscribe((state) => {
                 <input id="node-ssh_password" type="password" placeholder="Leave blank to keep current">
               </div>
             </div>
-            <div style="display:flex; align-items:flex-end;">
+            <div class="form-group" style="flex:1;">
+              <label>STP Mode</label>
+              <div class="input-wrapper">
+                <input id="node-stp_mode" type="text" value="${sn.stp_mode || ''}" placeholder="e.g. rapid-pvst">
+              </div>
+            </div>
+            <div class="form-group" style="flex:1;">
+              <label>Couleur personnalisée</label>
+              <div class="input-wrapper" style="display:flex; gap:10px;">
+                <input id="node-custom-color" type="color" value="${(globalSettings && globalSettings.node_colors && globalSettings.node_colors[sn.id]) || '#cccccc'}" style="padding:0; height:38px; width: 100px;">
+                <button id="btn-save-node-color" class="secondary-btn" style="padding: 0.2rem 1rem;">Appliquer</button>
+              </div>
+            </div>
+            <div class="form-group" style="flex:1;">
+              <label>STP Root VLAN</label>
+              <div class="input-wrapper">
+                <input id="node-stp_root_vlan" type="text" value="${sn.stp_root_vlan || ''}" placeholder="e.g. 10">
+              </div>
+            </div>
+            <div class="form-group" style="flex:1; min-width:100%;">
+              <label>Routes (JSON list of {network, mask, nexthop})</label>
+              <div class="input-wrapper">
+                <textarea id="node-routes_json" style="width:100%; background:#222; color:white; border:1px solid #555; padding:8px;" rows="3" placeholder='[{"network":"10.0.0.0","mask":"255.0.0.0","nexthop":"192.168.1.1"}]'>${sn.routes_json || '[]'}</textarea>
+              </div>
+            </div>
+            <div style="display:flex; align-items:flex-end; width:100%;">
               <button id="btn-save-node" class="primary-btn">Save Device</button>
             </div>
           </div>
@@ -390,6 +463,21 @@ appState.subscribe((state) => {
       }
 
     // Add event listener for saving node
+    const btnSaveNodeColor = document.getElementById("btn-save-node-color");
+    if(btnSaveNodeColor) {
+      btnSaveNodeColor.addEventListener("click", async () => {
+        const c = document.getElementById("node-custom-color").value;
+        await fetchWithAuth(`/api/nodes/${sn.id}/color`, {
+           method: "PUT", headers: {"Content-Type": "application/json"},
+           body: JSON.stringify({color: c})
+        });
+        if(!globalSettings.node_colors) globalSettings.node_colors = {};
+        globalSettings.node_colors[sn.id] = c;
+        appState.userSettings = globalSettings;
+        updateGraphHighlights(appState.getState());
+      });
+    }
+    
     const btnSaveNode = document.getElementById("btn-save-node");
     if (btnSaveNode) {
       btnSaveNode.addEventListener("click", async () => {
@@ -398,10 +486,13 @@ appState.subscribe((state) => {
           device_type: document.getElementById("node-device_type").value,
           mgmt_ip: document.getElementById("node-mgmt_ip").value,
           ssh_username: document.getElementById("node-ssh_username").value,
-          ssh_password: document.getElementById("node-ssh_password").value
+          ssh_password: document.getElementById("node-ssh_password").value,
+          stp_mode: document.getElementById("node-stp_mode").value,
+          stp_root_vlan: document.getElementById("node-stp_root_vlan").value,
+          routes_json: document.getElementById("node-routes_json").value
         };
         try {
-          const res = await fetch(`/api/node/${sn.id}`, {
+          const res = await fetchWithAuth(`/api/node/${sn.id}`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify(newSettings),
@@ -411,6 +502,9 @@ appState.subscribe((state) => {
           sn.device_type = newSettings.device_type;
           sn.mgmt_ip = newSettings.mgmt_ip;
           sn.ssh_username = newSettings.ssh_username;
+          sn.stp_mode = newSettings.stp_mode;
+          sn.stp_root_vlan = newSettings.stp_root_vlan;
+          sn.routes_json = newSettings.routes_json;
           // password isn't stored locally
           
           btnSaveNode.textContent = "Saved!";
@@ -446,6 +540,12 @@ appState.subscribe((state) => {
           </div>
         </div>
         <div class="form-group">
+          <label>Description</label>
+          <div class="input-wrapper">
+            <input id="cfg-description" type="text" value="${cfg.description || ''}">
+          </div>
+        </div>
+        <div class="form-group">
           <label>Mode</label>
           <div class="input-wrapper">
             <select id="cfg-mode" style="width:100%; padding:8px; border-radius:4px; border:1px solid #555; background:#222; color:white;">
@@ -468,6 +568,12 @@ appState.subscribe((state) => {
           <label>VLAN</label>
           <div class="input-wrapper">
             <input id="cfg-vlan" type="text" value="${cfg.vlan}">
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Voice VLAN</label>
+          <div class="input-wrapper">
+            <input id="cfg-voice_vlan" type="text" value="${cfg.voice_vlan || ''}">
           </div>
         </div>
         <div class="form-group">
@@ -515,10 +621,12 @@ appState.subscribe((state) => {
         mode: document.getElementById("cfg-mode").value,
         portfast: document.getElementById("cfg-portfast").checked,
         allowed_vlans: document.getElementById("cfg-allowed_vlans").value,
+        description: document.getElementById("cfg-description").value,
+        voice_vlan: document.getElementById("cfg-voice_vlan").value,
       };
 
       try {
-        const res = await fetch(`/api/config/${sp.portId}`, {
+        const res = await fetchWithAuth(`/api/config/${sp.portId}`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(newConfig),
@@ -551,7 +659,7 @@ if (assessBtn) {
     content.innerHTML = "<p>Loading security assessment...</p>";
     
     try {
-      const res = await fetch("/api/network/assess");
+      const res = await fetchWithAuth("/api/network/assess");
       if (!res.ok) throw new Error("Assessment failed to load");
       const data = await res.json();
       
@@ -605,13 +713,13 @@ if (confirmPushBtn) {
     document.getElementById("discovery-status-text").textContent = "Pushing configuration to physical devices...";
     
     try {
-      const res = await fetch("/api/network/push", { method: "POST" });
+      const res = await fetchWithAuth("/api/network/push", { method: "POST" });
       if (!res.ok) throw new Error("Push failed");
       
       // Poll until push completes (discovery_status -> completed)
       const pollStatus = async () => {
         try {
-          const statusRes = await fetch("/api/network/status");
+          const statusRes = await fetchWithAuth("/api/network/status");
           const statusData = await statusRes.json();
           if (statusData.status === "completed") {
             overlay.classList.add("hidden");
@@ -640,11 +748,11 @@ if (retryBtn) {
     document.getElementById("discovery-status-text").textContent = "Retrying SSH Discovery...";
     
     try {
-      await fetch("/api/network/discover", { method: "POST" });
+      await fetchWithAuth("/api/network/discover", { method: "POST" });
       
       const pollStatus = async () => {
         try {
-          const statusRes = await fetch("/api/network/status");
+          const statusRes = await fetchWithAuth("/api/network/status");
           const statusData = await statusRes.json();
           if (statusData.status === "completed") {
             overlay.classList.add("hidden");
@@ -726,5 +834,107 @@ if (btnToggleMove) {
       btnToggleMove.style.background = "";
     }
     setDragEnabled(moveNodesEnabled);
+  });
+}
+
+// --- AUTH & SETTINGS ---
+const btnLogin = document.getElementById("btn-login");
+if(btnLogin) {
+  btnLogin.addEventListener("click", async () => {
+    const u = document.getElementById("login-username").value;
+    const p = document.getElementById("login-password").value;
+    try {
+      const res = await fetch("/api/auth/login", {
+        method: "POST", headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({username: u, password: p})
+      });
+      if (!res.ok) throw new Error();
+      const data = await res.json();
+      localStorage.setItem("auth_token", data.token);
+      window.location.reload();
+    } catch (e) {
+      document.getElementById("login-error").style.display = "block";
+    }
+  });
+}
+
+const btnLogout = document.getElementById("btn-logout");
+if(btnLogout) {
+  btnLogout.addEventListener("click", () => {
+    localStorage.removeItem("auth_token");
+    window.location.reload();
+  });
+}
+
+const btnSettings = document.getElementById("btn-settings");
+if(btnSettings) {
+  btnSettings.addEventListener("click", async () => {
+    document.getElementById("settings-overlay").classList.remove("hidden");
+    try {
+      const me = await (await fetchWithAuth("/api/auth/me")).json();
+      if(me.is_admin) {
+        document.getElementById("tab-users-btn").style.display = "block";
+        const users = await (await fetchWithAuth("/api/users")).json();
+        document.getElementById("users-list-container").innerHTML = users.map(u => `<div>${u.username} ${u.is_admin ? '(Admin)' : ''}</div>`).join('');
+      }
+    } catch(e) {}
+  });
+}
+
+const btnCloseSettings = document.getElementById("btn-close-settings");
+if(btnCloseSettings) {
+  btnCloseSettings.addEventListener("click", () => {
+    document.getElementById("settings-overlay").classList.add("hidden");
+  });
+}
+
+document.querySelectorAll(".modal-tab").forEach(tab => {
+  tab.addEventListener("click", () => {
+    document.querySelectorAll(".modal-tab").forEach(t => t.classList.remove("active"));
+    document.querySelectorAll(".tab-content").forEach(tc => tc.classList.remove("active"));
+    tab.classList.add("active");
+    document.getElementById(tab.getAttribute("data-tab")).classList.add("active");
+  });
+});
+
+const btnSaveAppearance = document.getElementById("btn-save-appearance");
+if(btnSaveAppearance) {
+  btnSaveAppearance.addEventListener("click", async () => {
+    const newSet = {
+      theme: document.getElementById("set-theme").value,
+      bg_color: document.getElementById("set-bg-color").value,
+      default_node_color: document.getElementById("set-def-color").value,
+      router_color: document.getElementById("set-router-color").value,
+      switch_color: document.getElementById("set-switch-color").value,
+      host_color: document.getElementById("set-host-color").value
+    };
+    await fetchWithAuth("/api/users/settings", {
+      method: "PUT", headers: {"Content-Type": "application/json"},
+      body: JSON.stringify(newSet)
+    });
+    window.location.reload();
+  });
+}
+
+const btnCreateUser = document.getElementById("btn-create-user");
+if(btnCreateUser) {
+  btnCreateUser.addEventListener("click", async () => {
+    const u = document.getElementById("new-user-name").value;
+    const p = document.getElementById("new-user-pass").value;
+    const a = document.getElementById("new-user-admin").checked;
+    await fetchWithAuth("/api/users", {
+      method: "POST", headers: {"Content-Type": "application/json"},
+      body: JSON.stringify({username: u, password: p, is_admin: a})
+    });
+    alert("Utilisateur créé !");
+    document.getElementById("btn-settings").click(); // reload users
+  });
+}
+
+const obsidianCb = document.getElementById("set-obsidian-bg");
+if (obsidianCb) {
+  obsidianCb.addEventListener("change", (e) => {
+    if(e.target.checked) document.getElementById("graph-container").classList.add("obsidian-bg");
+    else document.getElementById("graph-container").classList.remove("obsidian-bg");
   });
 }

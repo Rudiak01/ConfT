@@ -10,8 +10,18 @@ import sys
 
 from .models import NetworkSchema, PortConfigSchema, DBNode, DBEdge, DBPortConfig, SessionLocal, DBVlan
 from .db import get_db, get_network, update_edge_config
+from .auth import router as auth_router, ensure_admin
 
 app = FastAPI()
+app.include_router(auth_router)
+
+@app.on_event("startup")
+def startup_event():
+    db = SessionLocal()
+    try:
+        ensure_admin(db)
+    finally:
+        db.close()
 
 # Get the base directory (ConfT)
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -249,6 +259,21 @@ def push_network_task():
             for vlan in node.vlans:
                 config_data["vlans"].append({"vlan_id": vlan.vlan_id, "name": vlan.name})
                 
+            if node.stp_mode or node.stp_root_vlan:
+                config_data["stp"] = {}
+                if node.stp_mode:
+                    config_data["stp"]["mode"] = node.stp_mode
+                if node.stp_root_vlan:
+                    config_data["stp"]["root_vlan"] = node.stp_root_vlan
+                    
+            if node.routes_json:
+                try:
+                    routes = json.loads(node.routes_json)
+                    if isinstance(routes, list):
+                        config_data["routes"] = routes
+                except Exception:
+                    pass
+                
             edges = db.query(DBEdge).filter((DBEdge.source_id == node.id) | (DBEdge.target_id == node.id)).all()
             for edge in edges:
                 if edge.config:
@@ -263,9 +288,13 @@ def push_network_task():
                     }
                     if c.allowed_vlans:
                         iface["allowed_vlans"] = c.allowed_vlans
+                    if c.description:
+                        iface["description"] = c.description
+                    if c.voice_vlan:
+                        iface["voice_vlan"] = c.voice_vlan
                     config_data["interfaces"].append(iface)
                     
-            if config_data["vlans"] or config_data["interfaces"]:
+            if config_data["vlans"] or config_data["interfaces"] or "stp" in config_data or "routes" in config_data:
                 node.discovery_status = "pushing"
                 db.commit()
                 
@@ -362,6 +391,9 @@ class NodeUpdateSchema(BaseModel):
     mgmt_ip: str = ""
     ssh_username: str = ""
     ssh_password: str = ""
+    stp_mode: str = ""
+    stp_root_vlan: str = ""
+    routes_json: str = "[]"
 
 @app.post("/api/node/{node_id}")
 def update_node(node_id: str, node_data: NodeUpdateSchema, db: Session = Depends(get_db)):
@@ -373,6 +405,9 @@ def update_node(node_id: str, node_data: NodeUpdateSchema, db: Session = Depends
     node.device_type = node_data.device_type
     node.mgmt_ip = node_data.mgmt_ip
     node.ssh_username = node_data.ssh_username
+    node.stp_mode = node_data.stp_mode
+    node.stp_root_vlan = node_data.stp_root_vlan
+    node.routes_json = node_data.routes_json
     if node_data.ssh_password:
         node.ssh_password_encrypted = encrypt_password(node_data.ssh_password)
         

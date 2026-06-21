@@ -3,13 +3,13 @@ echo ===================================================
 echo Starting ConfT - Network Configuration Tool
 echo ===================================================
 
-echo.
-echo [1/3] Starting Docker containers (MariaDB and phpMyAdmin)...
-docker compose up -d
+@REM echo.
+@REM echo [1/3] Starting Docker containers (MariaDB and phpMyAdmin)...
+@REM docker compose up -d
 
-echo.
-echo Waiting 5 seconds for the database to be ready...
-timeout /t 5 /nobreak > NUL
+@REM echo.
+@REM echo Waiting 5 seconds for the database to be ready...
+@REM timeout /t 5 /nobreak > NUL
 
 echo.
 echo [2/3] Activating Python virtual environment...

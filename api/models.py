@@ -12,6 +12,8 @@ class PortConfigSchema(BaseModel):
     mode: str = "access"
     portfast: bool = False
     allowed_vlans: str = ""
+    description: str = ""
+    voice_vlan: str = ""
 
 class EdgeSchema(BaseModel):
     source: str
@@ -25,6 +27,11 @@ class NodeSchema(BaseModel):
     link_count: int
     color: str
     device_type: str = "cisco_ios"
+    mgmt_ip: str = ""
+    ssh_username: str = ""
+    stp_mode: str = ""
+    stp_root_vlan: str = ""
+    routes_json: str = "[]"
 
 class NetworkSchema(BaseModel):
     nodes: List[NodeSchema]
@@ -59,6 +66,11 @@ class DBNode(Base):
     running_config_active: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     running_config_draft: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     
+    # New Backend Capabilities
+    stp_mode: Mapped[Optional[str]] = mapped_column(String(50), nullable=True)
+    stp_root_vlan: Mapped[Optional[str]] = mapped_column(String(50), nullable=True)
+    routes_json: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    
     # Status: pending, completed, failed
     discovery_status: Mapped[str] = mapped_column(String(20), default="pending")
     
@@ -88,6 +100,8 @@ class DBPortConfig(Base):
     mode: Mapped[str] = mapped_column(String(20), default="access")
     portfast: Mapped[bool] = mapped_column(Boolean, default=False)
     allowed_vlans: Mapped[str] = mapped_column(String(200), default="")
+    description: Mapped[str] = mapped_column(String(200), default="")
+    voice_vlan: Mapped[str] = mapped_column(String(50), default="")
     
     # Active / Physical Config
     active_ipv4: Mapped[Optional[str]] = mapped_column(String(50), nullable=True)
@@ -111,6 +125,43 @@ class DBVlan(Base):
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
     
     node: Mapped["DBNode"] = relationship(back_populates="vlans")
+
+class DBUser(Base):
+    __tablename__ = "users"
+    id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
+    username: Mapped[str] = mapped_column(String(50), unique=True)
+    password_hash: Mapped[str] = mapped_column(String(100))
+    is_admin: Mapped[bool] = mapped_column(Boolean, default=False)
+    
+    settings: Mapped["DBUserSettings"] = relationship(back_populates="user", uselist=False, cascade="all, delete-orphan")
+    node_colors: Mapped[List["DBNodeColor"]] = relationship(back_populates="user", cascade="all, delete-orphan")
+
+class DBToken(Base):
+    __tablename__ = "tokens"
+    token: Mapped[str] = mapped_column(String(100), primary_key=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id"))
+
+class DBUserSettings(Base):
+    __tablename__ = "user_settings"
+    id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id"), unique=True)
+    bg_color: Mapped[str] = mapped_column(String(30), default="#1e1e1e")
+    default_node_color: Mapped[str] = mapped_column(String(30), default="#ccc")
+    router_color: Mapped[str] = mapped_column(String(30), default="#3498db")
+    switch_color: Mapped[str] = mapped_column(String(30), default="#2ecc71")
+    host_color: Mapped[str] = mapped_column(String(30), default="#9b59b6")
+    theme: Mapped[str] = mapped_column(String(20), default="dark")
+    
+    user: Mapped["DBUser"] = relationship(back_populates="settings")
+
+class DBNodeColor(Base):
+    __tablename__ = "node_colors"
+    id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id"))
+    node_id: Mapped[str] = mapped_column(ForeignKey("nodes.id"))
+    color: Mapped[str] = mapped_column(String(30))
+    
+    user: Mapped["DBUser"] = relationship(back_populates="node_colors")
 
 Base.metadata.create_all(engine)
 

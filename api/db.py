@@ -19,7 +19,13 @@ def get_network(db: Session) -> NetworkSchema:
             id=n.id,
             label=n.label,
             link_count=n.link_count,
-            color=n.color
+            color=n.color,
+            device_type=n.device_type or "cisco_ios",
+            mgmt_ip=n.mgmt_ip or "",
+            ssh_username=n.ssh_username or "",
+            stp_mode=n.stp_mode or "",
+            stp_root_vlan=n.stp_root_vlan or "",
+            routes_json=n.routes_json or "[]"
         ))
     
     edge_schemas = []
@@ -31,7 +37,13 @@ def get_network(db: Session) -> NetworkSchema:
                 ipv6=cfg.ipv6,
                 mask=cfg.mask,
                 gateway=cfg.gateway,
-                vlan=cfg.vlan
+                vlan=cfg.vlan,
+                interface_name=cfg.interface_name,
+                mode=cfg.mode,
+                portfast=cfg.portfast,
+                allowed_vlans=cfg.allowed_vlans,
+                description=cfg.description,
+                voice_vlan=cfg.voice_vlan
             )
         else:
             config_schema = PortConfigSchema()
@@ -60,6 +72,12 @@ def update_edge_config(db: Session, port_id: str, new_config: PortConfigSchema):
     cfg.mask = new_config.mask
     cfg.gateway = new_config.gateway
     cfg.vlan = new_config.vlan
+    cfg.interface_name = new_config.interface_name
+    cfg.mode = new_config.mode
+    cfg.portfast = new_config.portfast
+    cfg.allowed_vlans = new_config.allowed_vlans
+    cfg.description = new_config.description
+    cfg.voice_vlan = new_config.voice_vlan
     
     db.commit()
     return True

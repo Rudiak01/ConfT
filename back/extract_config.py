@@ -60,6 +60,46 @@ def fetch_device_config(params):
         print(f"❌ Erreur inattendue : {e}")
         return None
 
+def crawl_network(seed_ip, credentials):
+    """
+    Basic discovery that just fetches the seed node (no recursive crawling yet).
+    """
+    params = {
+        "host": seed_ip,
+        "device_type": credentials.get("device_type", "cisco_ios"),
+        "username": credentials.get("username", ""),
+        "password": credentials.get("password", "")
+    }
+    
+    device_data = fetch_device_config(params)
+    if not device_data:
+        return None
+        
+    hostname = "Unknown"
+    running_cfg = device_data.get("running_config", "")
+    # Try to extract hostname from running config
+    for line in running_cfg.splitlines():
+        if line.startswith("hostname "):
+            hostname = line.split(" ")[1]
+            break
+            
+    vlans = []
+    if "vlan" in device_data:
+        for v in device_data["vlan"]:
+            vlans.append({"vlan_id": v.get("vlan_id", ""), "name": v.get("name", "")})
+
+    nodes = {
+        seed_ip: {
+            "hostname": hostname,
+            "device_type": params["device_type"],
+            "running_config": running_cfg,
+            "vlans": vlans
+        }
+    }
+    edges = []
+    
+    return {"nodes": nodes, "edges": edges}
+
 def main():
     print(f"Connexion au switch {SWITCH['host']} ({SWITCH['device_type']})...")
     data = fetch_device_config(SWITCH)
