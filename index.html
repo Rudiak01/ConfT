@@ -222,7 +222,6 @@ class SDNController {
         
         // Initial Setup
         this.initGraph();
-        this.createInitialTopology();
         this.updateUI();
         this.log("Système prêt. Ajoutez des nœuds pour commencer.");
     }
@@ -464,12 +463,8 @@ class SDNController {
         this.nextNodeId = 1;
         this.selectedNode = null;
         
-        // Nettoyer le DOM
-        d3.selectAll(".node").remove();
-        d3.selectAll("line").remove();
-        
-        // Réinitialiser les variables D3
-        this.initGraph(); 
+        this.restartSimulation();
+        this.updateUI();
     }
 
     selectNode(node) {
