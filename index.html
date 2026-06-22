@@ -208,6 +208,7 @@
         <div id="tooltip" class="tooltip"></div>
     </div>
 
+
 <script>
 /**
  * WebSDN Application Logic
@@ -245,96 +246,63 @@ class SDNController {
             .attr("width", "100%")
             .attr("height", "100%")
             .call(d3.zoom().on("zoom", (e) => {
-                g.attr("transform", e.transform);
+                // Correction: Utiliser 'this' pour accéder à g
+                this.g.attr("transform", e.transform);
             }))
             .on("dblclick", () => { 
-                this.selectedNode = null; // Deselect on background click
+                this.selectedNode = null; 
                 d3.selectAll(".node circle").style("stroke-width", 0).style("stroke", "white");
             });
 
-        const g = this.svg.append("g");
+        // Correction: Stocker 'g' comme propriété de l'objet pour y accéder partout
+        this.g = this.svg.append("g");
 
         // Simulation Force-Directed
-        this.simulation = d3.forceSimulation(this.nodes)
-            .force("link", d3.forceLink(this.links).id(d => d.id).distance(150))
+        this.simulation = d3.forceSimulation()
+            .force("link", d3.forceLink().id(d => d.id).distance(150))
             .force("charge", d3.forceManyBody().strength(-400))
             .force("center", d3.forceCenter(this.width / 2, this.height / 2))
             .force("collide", d3.forceCollide().radius(60));
 
         // Draw Links
-        this.link = g.append("g")
-            .selectAll("line")
-            .data(this.links)
-            .enter().append("line")
-            .attr("stroke", "#95a5a6")
-            .attr("stroke-width", 2);
+        this.linkGroup = this.g.append("g").attr("class", "links");
+        this.link = this.linkGroup.selectAll("line");
 
         // Draw Nodes
-        this.node = g.append("g")
-            .selectAll(".node")
-            .data(this.nodes)
-            .enter().append("g")
-            .attr("class", "node")
-            .call(d3.drag()
-                .on("start", (event, d) => this.dragstarted(event, d))
-                .on("drag", (event, d) => this.dragged(event, d))
-                .on("end", (event, d) => this.dragended(event, d)))
-            .on("click", (event, d) => this.selectNode(d));
-
-        // Node Circles
-        this.node.append("circle")
-            .attr("r", d => d.type === 'switch' ? 25 : 15)
-            .attr("fill", d => d.type === 'switch' ? "#e74c3c" : "#2ecc71")
-            .attr("stroke", "white")
-            .attr("stroke-width", 0);
-
-        // Node Labels
-        this.node.append("text")
-            .attr("dx", d => d.type === 'switch' ? 35 : 20)
-            .attr("dy", ".35em")
-            .text(d => d.label)
-            .style("font-size", "14px")
-            .style("font-weight", "bold")
-            .style("pointer-events", "none");
+        this.nodeGroup = this.g.append("g").attr("class", "nodes");
+        this.node = this.nodeGroup.selectAll(".node");
 
         // Tooltip setup
         this.tooltip = d3.select("#tooltip");
 
-        this.node.on("mouseover", (event, d) => {
-            this.tooltip.style("opacity", 1);
-            this.tooltip.html(`ID: ${d.id}<br>Type: ${d.type.toUpperCase()}<br>IP: ${d.ip}`);
-        })
-        .on("mousemove", (event) => {
-            this.tooltip.style("left", (event.pageX + 10) + "px")
-                .style("top", (event.pageY - 28) + "px");
-        })
-        .on("mouseout", () => { this.tooltip.style("opacity", 0); });
+        // Correction: Lier la simulation aux éléments SVG
+        this.simulation
+            .nodes(this.nodes)
+            .on("tick", () => {
+                this.link
+                    .attr("x1", d => d.source.x)
+                    .attr("y1", d => d.source.y)
+                    .attr("x2", d => d.target.x)
+                    .attr("y2", d => d.target.y);
 
-        // Simulation Tick
-        this.simulation.on("tick", () => {
-            this.link
-                .attr("x1", d => d.source.x)
-                .attr("y1", d => d.source.y)
-                .attr("x2", d => d.target.x)
-                .attr("y2", d => d.target.y);
+                this.node
+                    .attr("transform", d => `translate(${d.x},${d.y})`);
+            });
 
-            this.node
-                .attr("transform", d => `translate(${d.x},${d.y})`);
-        });
+        // Lier les liens après avoir initialisé la simulation
+        this.simulation.force("link").links(this.links);
     }
 
     createInitialTopology() {
-        // Create 1 Controller (Root)
-        const controller = { id: "c1", label: "SDN-Ctrl", type: "switch", ip: "10.0.0.254", x: this.width/2, y: this.height/3 };
+        // Correction: Initialiser x/y pour que la simulation ait un point de départ
+        const controller = { id: "c1", label: "SDN-Ctrl", type: "switch", ip: "10.0.0.254" };
         
-        // Create Switches
-        const s1 = { id: `s${this.nextNodeId++}`, label: "S-01", type: "switch", ip: "192.168.1.1", x: Math.random() * 200 + this.width/4, y: Math.random() * 200 + this.height/2 };
-        const s2 = { id: `s${this.nextNodeId++}`, label: "S-02", type: "switch", ip: "192.168.1.2", x: Math.random() * 200 + 3*this.width/4, y: Math.random() * 200 + this.height/2 };
+        const s1 = { id: `s${this.nextNodeId++}`, label: "S-01", type: "switch", ip: "192.168.1.1" };
+        const s2 = { id: `s${this.nextNodeId++}`, label: "S-02", type: "switch", ip: "192.168.1.2" };
 
-        // Create Hosts
-        const h1 = { id: `h${this.nextNodeId++}`, label: "Host A", type: "host", ip: "192.168.1.10", x: s1.x, y: s1.y + 150 };
-        const h2 = { id: `h${this.nextNodeId++}`, label: "Host B", type: "host", ip: "192.168.1.11", x: s1.x + 150, y: s1.y - 100 };
-        const h3 = { id: `h${this.nextNodeId++}`, label: "Serveur Web", type: "host", ip: "192.168.1.20", x: s2.x, y: s2.y + 150 };
+        const h1 = { id: `h${this.nextNodeId++}`, label: "Host A", type: "host", ip: "192.168.1.10" };
+        const h2 = { id: `h${this.nextNodeId++}`, label: "Host B", type: "host", ip: "192.168.1.11" };
+        const h3 = { id: `h${this.nextNodeId++}`, label: "Serveur Web", type: "host", ip: "192.168.1.20" };
 
         this.nodes.push(controller, s1, s2, h1, h2, h3);
 
@@ -346,7 +314,17 @@ class SDNController {
             { source: s2, target: h3 }
         );
 
+        // Correction: Redessiner les éléments avec les nouvelles données
         this.restartSimulation();
+        
+        // Positionner manuellement au centre pour le démarrage
+        this.nodes.forEach(n => {
+            if(!n.x) n.x = this.width / 2 + (Math.random() * 100 - 50);
+            if(!n.y) n.y = this.height / 2 + (Math.random() * 100 - 50);
+        });
+        
+        // Forcer un tick initial pour afficher les éléments
+        this.simulation.alpha(1).restart();
     }
 
     addNode(type) {
@@ -385,11 +363,59 @@ class SDNController {
     }
 
     restartSimulation() {
-        // Reset forces
+        // Mise à jour des données pour les liens
+        this.link = this.linkGroup.selectAll("line").data(this.links);
+        this.link.exit().remove();
+        
+        const linkEnter = this.link.enter().append("line")
+            .attr("stroke", "#95a5a6")
+            .attr("stroke-width", 2);
+            
+        this.link = linkEnter.merge(this.link);
+
+        // Mise à jour des données pour les nœuds
+        this.node = this.nodeGroup.selectAll(".node").data(this.nodes, d => d.id);
+        this.node.exit().remove();
+        
+        const nodeEnter = this.node.enter().append("g")
+            .attr("class", "node")
+            .call(d3.drag()
+                .on("start", (event, d) => this.dragstarted(event, d))
+                .on("drag", (event, d) => this.dragged(event, d))
+                .on("end", (event, d) => this.dragended(event, d)))
+            .on("click", (event, d) => this.selectNode(d));
+
+        nodeEnter.append("circle")
+            .attr("r", d => d.type === 'switch' ? 25 : 15)
+            .attr("fill", d => d.type === 'switch' ? "#e74c3c" : "#2ecc71")
+            .attr("stroke", "white")
+            .attr("stroke-width", 0);
+
+        nodeEnter.append("text")
+            .attr("dx", d => d.type === 'switch' ? 35 : 20)
+            .attr("dy", ".35em")
+            .text(d => d.label)
+            .style("font-size", "14px")
+            .style("font-weight", "bold")
+            .style("pointer-events", "none");
+
+        // Tooltip sur les nouveaux nœuds
+        nodeEnter.on("mouseover", (event, d) => {
+            this.tooltip.style("opacity", 1);
+            this.tooltip.html(`ID: ${d.id}<br>Type: ${d.type.toUpperCase()}<br>IP: ${d.ip}`);
+        })
+        .on("mousemove", (event) => {
+            this.tooltip.style("left", (event.pageX + 10) + "px")
+                .style("top", (event.pageY - 28) + "px");
+        })
+        .on("mouseout", () => { this.tooltip.style("opacity", 0); });
+
+        this.node = nodeEnter.merge(this.node);
+
+        // Mise à jour de la simulation
         this.simulation.nodes(this.nodes)
             .force("link").links(this.links);
-        
-        // Alpha reset to start simulation if static
+            
         this.simulation.alpha(1).restart();
     }
 
@@ -402,17 +428,20 @@ class SDNController {
         let prevSwitch = null;
         for(let i=0; i<switches; i++) {
             const sId = `s${this.nextNodeId++}`;
-            const sNode = { id: sId, label: `S-${i+1}`, type: "switch", ip: `192.168.${i}.1`, x: Math.random() * this.width, y: Math.random() * this.height };
+            // Correction: Initialiser x/y
+            const sNode = { id: sId, label: `S-${i+1}`, type: "switch", ip: `192.168.${i}.1`, 
+                            x: Math.random() * this.width, y: Math.random() * this.height };
             this.nodes.push(sNode);
 
             if(prevSwitch) {
                 this.links.push({ source: prevSwitch, target: sNode });
             }
             
-            // Add hosts to switch
             for(let j=0; j<hostsPerSwitch; j++) {
                 const hId = `h${this.nextNodeId++}`;
-                const hNode = { id: hId, label: `Host ${j+1}`, type: "host", ip: `192.168.${i}.${j+10}`, x: sNode.x + (Math.random()*100 - 50), y: sNode.y + 100 };
+                // Correction: Initialiser x/y
+                const hNode = { id: hId, label: `Host ${j+1}`, type: "host", ip: `192.168.${i}.${j+10}`,
+                                x: sNode.x + (Math.random()*100 - 50), y: sNode.y + 100 };
                 this.nodes.push(hNode);
                 this.links.push({ source: sNode, target: hNode });
             }
@@ -420,7 +449,6 @@ class SDNController {
             prevSwitch = sNode;
         }
         
-        // Connect last to first for loop
         if(switches > 2) {
              this.links.push({ source: this.nodes[0], target: prevSwitch });
         }
@@ -435,9 +463,12 @@ class SDNController {
         this.links = [];
         this.nextNodeId = 1;
         this.selectedNode = null;
+        
+        // Nettoyer le DOM
         d3.selectAll(".node").remove();
         d3.selectAll("line").remove();
-        // Re-bind SVG elements (hacky but works for simple reset)
+        
+        // Réinitialiser les variables D3
         this.initGraph(); 
     }
 
@@ -449,9 +480,14 @@ class SDNController {
         } else {
             // Visual feedback
             d3.selectAll(".node circle").style("stroke-width", 0).style("stroke", "white");
-            d3.select(this.node.nodes().find(n => n.__data__.id === node.id)).select("circle")
-                .style("stroke-width", 4)
-                .style("stroke", "#f1c40f");
+            
+            // Correction: Trouver l'élément SVG correspondant au nœud
+            const nodeElement = this.node.nodes().find(n => n.__data__ && n.__data__.id === node.id);
+            if(nodeElement) {
+                d3.select(nodeElement).select("circle")
+                    .style("stroke-width", 4)
+                    .style("stroke", "#f1c40f");
+            }
 
             this.selectedNode = node;
             this.log(`Sélection : ${node.label} (IP: ${node.ip})`);
@@ -482,7 +518,7 @@ class SDNController {
         if(selectEl) {
             selectEl.innerHTML = '<option value="">-- Sélectionnez un nœud --</option>';
             this.nodes.forEach(n => {
-                if (n.type === 'switch') { // Only switches can route, so let's pretend we link switches
+                if (n.type === 'switch') { 
                     const option = document.createElement('option');
                     option.value = n.id;
                     option.textContent = `${n.label} (${n.type})`;
@@ -500,6 +536,15 @@ class SDNController {
             this.createLink(node1, node2);
         }
     }
+
+    installFlowRule() {
+        this.log("Installation d'une règle de flot... (simulation)");
+    }
+
+    fetchStatistics() {
+        this.log("Récupération des statistiques...");
+        document.getElementById("stats-output").innerText = "Trafic: Normal | Paquets traités: " + Math.floor(Math.random() * 10000);
+    }
 }
 
 // Initialize App
@@ -508,15 +553,9 @@ const app = new SDNController();
 // Helper for UI interaction
 function handleSelectionChange() {
     const val = document.getElementById('nodeSelector').value;
-    // This function is a placeholder if we had a second dropdown
     console.log("Selection changed");
 }
 
-// Link Button Logic (Simple two-click logic implementation via UI)
-function tryCreateLink() {
-    // Since we use clicks on the graph, this is just for reference or future features
-    alert("Utilisez le clic gauche sur la topologie pour sélectionner un nœud.\nCliquez sur un second nœud pour créer un lien.");
-}
 
 </script>
 
@@ -554,4 +593,6 @@ function tryCreateLink() {
     body { margin: 0; overflow: hidden; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #ecf0f1; }
     .node text { pointer-events: none; user-select: none; fill: #333; }
 </style>
+</body>
+</html>
 
