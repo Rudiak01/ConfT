@@ -64,8 +64,7 @@
     <div id="discovery-overlay" class="hidden" style="position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.8); z-index: 9999; display: flex; flex-direction: column; justify-content: center; align-items: center; color: white;">
       <h2 style="font-size: 2rem; margin-bottom: 1rem;">Discovering Network...</h2>
       <p id="discovery-status-text" style="font-size: 1.2rem; margin-bottom: 2rem;">Connecting to devices via SSH</p>
-      <div class="loader" style="border: 4px solid #f3f3f3; border-top: 4px solid #3498db; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite;"></div>
-      <style>@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }</style>
+      <div class="loader"></div>
     </div>
     
     <!-- Main Page -->
@@ -98,7 +97,7 @@
               <button id="btn-settings" class="secondary-btn" style="margin-right: 10px;">Paramètres</button>
               <button id="btn-toggle-move" class="secondary-btn" style="margin-right: 10px;">Activer Déplacement</button>
               <button id="btn-retry-discovery" class="secondary-btn" style="margin-right: 10px;">Retry SSH Discovery</button>
-              <button id="btn-assess-push" class="primary-btn" style="background: #e74c3c; margin-right: 10px;">Admin: Assess & Push to Prod</button>
+              <button id="btn-assess-push" class="danger-btn" style="margin-right: 10px;">Admin: Assess & Push to Prod</button>
               <button id="btn-back" class="secondary-btn hidden">Retour</button>
           </div>
         </header>
@@ -110,7 +109,7 @@
             <div id="assessment-content" style="margin-bottom: 2rem;">Loading assessment...</div>
             <div style="display: flex; justify-content: flex-end; gap: 10px;">
               <button id="btn-cancel-push" class="secondary-btn">Cancel</button>
-              <button id="btn-confirm-push" class="primary-btn" style="background: #27ae60;">Acknowledge & Push</button>
+              <button id="btn-confirm-push" class="primary-btn" style="background: var(--accent-color);">Acknowledge & Push</button>
             </div>
           </div>
         </div>
@@ -179,7 +178,7 @@
             
             <div style="display:flex; justify-content:space-between; margin-top: 2rem;">
               <button id="btn-close-settings" class="secondary-btn">Fermer</button>
-              <button id="btn-logout" class="secondary-btn" style="color: #e74c3c; border-color: #e74c3c;">Déconnexion</button>
+              <button id="btn-logout" class="danger-btn">Déconnexion</button>
             </div>
           </div>
         </div>
