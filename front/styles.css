@@ -1,0 +1,171 @@
+:root {
+    --primary: #2c3e50;
+    --accent: #3498db;
+    --switch-color: #e74c3c;
+    --host-color: #2ecc71;
+    --bg-dark: #f4f6f7;
+    --panel-bg: #ffffff;
+}
+
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    margin: 0;
+    padding: 0;
+    background-color: var(--bg-dark);
+    color: #333;
+    display: flex;
+    height: 100vh;
+    overflow: hidden;
+}
+
+.node text {
+    pointer-events: none;
+    user-select: none;
+    fill: #333;
+}
+/* Sidebar Controls */
+.sidebar {
+    width: 350px;
+    background: var(--panel-bg);
+    border-right: 1px solid #ddd;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
+}
+
+.header {
+    padding: 20px;
+    background: var(--primary);
+    color: white;
+    text-align: center;
+}
+
+.header h1 {
+    margin: 0;
+    font-size: 1.5rem;
+}
+
+.header p {
+    margin: 5px 0 0;
+    font-size: 0.8rem;
+    opacity: 0.8;
+}
+
+.control-panel {
+    flex: 1;
+    padding: 20px;
+    overflow-y: auto;
+    border-bottom: 1px solid #eee;
+}
+
+h3 {
+    border-bottom: 2px solid var(--accent);
+    padding-bottom: 5px;
+    margin-top: 0;
+}
+
+.control-group {
+    margin-bottom: 20px;
+    background: #f8f9fa;
+    padding: 15px;
+    border-radius: 8px;
+    border: 1px solid #eee;
+}
+
+button {
+    background-color: var(--accent);
+    color: white;
+    border: none;
+    padding: 10px;
+    width: 100%;
+    cursor: pointer;
+    border-radius: 5px;
+    transition: background 0.3s;
+    margin-bottom: 10px;
+}
+
+button:hover {
+    background-color: #2980b9;
+}
+
+button.reset {
+    background-color: #e74c3c;
+}
+
+button.reset:hover {
+    background-color: #c0392b;
+}
+
+select,
+input {
+    width: 100%;
+    padding: 8px;
+    margin-bottom: 10px;
+    box-sizing: border-box;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+}
+
+/* Terminal / Logs */
+.terminal {
+    height: 200px;
+    background: #2d3436;
+    color: #00cec9;
+    padding: 15px;
+    font-family: 'Courier New', Courier, monospace;
+    overflow-y: auto;
+    font-size: 0.9rem;
+}
+
+/* Main Visualization Area */
+.main-view {
+    flex: 1;
+    position: relative;
+    background-color: #eef2f5;
+    background-image: radial-gradient(#cbd3da 1px, transparent 1px);
+    background-size: 20px 20px;
+}
+
+#graph-container {
+    width: 100%;
+    height: 100%;
+    display: block;
+}
+
+.tooltip {
+    position: absolute;
+    text-align: center;
+    padding: 8px;
+    font-size: 12px;
+    background: rgba(0, 0, 0, 0.8);
+    color: #fff;
+    border-radius: 4px;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.2s;
+}
+
+.legend {
+    position: absolute;
+    bottom: 20px;
+    left: 20px;
+    background: white;
+    padding: 15px;
+    border-radius: 8px;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+    display: flex;
+    gap: 15px;
+}
+
+.legend-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 14px;
+}
+
+.dot {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+}
