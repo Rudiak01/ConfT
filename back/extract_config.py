@@ -105,7 +105,7 @@ def main():
     data = fetch_device_config(SWITCH)
     
     if data:
-        with open("current_state.json", "w") as f:
+        with open("back/current_state.json", "w") as f:
             json.dump(data, f, indent=4)
         print("\n✅ Extraction et normalisation terminées → current_state.json")
 
