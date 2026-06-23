@@ -78,7 +78,7 @@ def apply_device_config(connection_params, config_data): # readded
 
 def main():
     try:
-        with open("desired_config.json", "r") as f:
+        with open("back/desired_config.json", "r") as f:
             data = json.load(f)
     except FileNotFoundError:
         print("Erreur : desired_config.json introuvable.")
