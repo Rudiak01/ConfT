@@ -96,6 +96,14 @@ button.reset:hover {
     background-color: #c0392b;
 }
 
+button.btn-refresh {
+    background-color: #27ae60;
+}
+
+button.btn-refresh:hover {
+    background-color: #219a52;
+}
+
 select,
 input {
     width: 100%;
@@ -104,6 +112,42 @@ input {
     box-sizing: border-box;
     border: 1px solid #ccc;
     border-radius: 4px;
+}
+
+/* Hint texts (moved from inline styles) */
+.hint-text {
+    font-size: 0.9rem;
+    color: #666;
+    margin: 0 0 10px 0;
+}
+
+.hint-text-small {
+    font-size: 0.8rem;
+    color: #7f8c8d;
+    margin: 5px 0 0 0;
+}
+
+/* Stats output */
+.stats-output {
+    margin-top: 10px;
+    font-family: monospace;
+    color: #666;
+}
+
+/* Instructions */
+.instructions {
+    border-top: 1px solid #eee;
+    padding-top: 10px;
+    margin-top: 10px;
+}
+
+.instructions h4 {
+    margin: 5px 0;
+}
+
+.instructions ul {
+    padding-left: 20px;
+    font-size: 0.9em;
 }
 
 /* Terminal / Logs */

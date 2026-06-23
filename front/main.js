@@ -48,6 +48,7 @@ class SDNController {
 
             // Mettre à jour la simulation avec les nouvelles données
             this.restartSimulation();
+            this.updateUI();
             this.log(`Topologie réelle chargée : ${this.nodes.length} nœuds, ${this.links.length} liens.`);
             
         } catch (error) {
@@ -77,7 +78,6 @@ class SDNController {
             .attr("width", "100%")
             .attr("height", "100%")
             .call(d3.zoom().on("zoom", (e) => {
-                // Correction: Utiliser 'this' pour accéder à g
                 this.g.attr("transform", e.transform);
             }))
             .on("dblclick", () => {
@@ -85,7 +85,6 @@ class SDNController {
                 d3.selectAll(".node circle").style("stroke-width", 0).style("stroke", "white");
             });
 
-        // Correction: Stocker 'g' comme propriété de l'objet pour y accéder partout
         this.g = this.svg.append("g");
 
         // Simulation Force-Directed
@@ -106,7 +105,7 @@ class SDNController {
         // Tooltip setup
         this.tooltip = d3.select("#tooltip");
 
-        // Correction: Lier la simulation aux éléments SVG
+        // Lier la simulation aux éléments SVG
         this.simulation
             .nodes(this.nodes)
             .on("tick", () => {
@@ -125,7 +124,6 @@ class SDNController {
     }
 
     createInitialTopology() {
-        // Correction: Initialiser x/y pour que la simulation ait un point de départ
         const controller = { id: "c1", label: "SDN-Ctrl", type: "switch", ip: "10.0.0.254" };
 
         const s1 = { id: `s${this.nextNodeId++}`, label: "S-01", type: "switch", ip: "192.168.1.1" };
@@ -145,7 +143,6 @@ class SDNController {
             { source: s2, target: h3 }
         );
 
-        // Correction: Redessiner les éléments avec les nouvelles données
         this.restartSimulation();
 
         // Positionner manuellement au centre pour le démarrage
@@ -206,6 +203,21 @@ class SDNController {
         const linkEnter = this.link.enter().append("line")
             .attr("stroke", "#95a5a6")
             .attr("stroke-width", 2);
+
+        // Tooltip sur les liens
+        linkEnter.on("mouseover", (event, d) => {
+            const sourceNode = typeof d.source === 'object' ? d.source : this.nodes.find(n => n.id === d.source);
+            const targetNode = typeof d.target === 'object' ? d.target : this.nodes.find(n => n.id === d.target);
+            if (sourceNode && targetNode) {
+                this.tooltip.style("opacity", 1);
+                this.tooltip.html(`Lien : ${sourceNode.label} ↔ ${targetNode.label}`);
+            }
+        })
+            .on("mousemove", (event) => {
+                this.tooltip.style("left", (event.pageX + 10) + "px")
+                    .style("top", (event.pageY - 28) + "px");
+            })
+            .on("mouseout", () => { this.tooltip.style("opacity", 0); });
 
         this.link = linkEnter.merge(this.link);
 
@@ -319,10 +331,17 @@ class SDNController {
             d3.selectAll(".node circle").style("stroke-width", 0).style("stroke", "white");
             this.log(`Désélection de ${node.label}`);
         } else {
+            if (this.selectedNode) {
+                // Un nœud est déjà sélectionné → créer un lien
+                this.createLink(this.selectedNode, node);
+                d3.selectAll(".node circle").style("stroke-width", 0).style("stroke", "white");
+                this.selectedNode = null;
+                return;
+            }
+
             // Visual feedback
             d3.selectAll(".node circle").style("stroke-width", 0).style("stroke", "white");
 
-            // Correction: Trouver l'élément SVG correspondant au nœud
             const nodeElement = this.node.nodes().find(n => n.__data__ && n.__data__.id === node.id);
             if (nodeElement) {
                 d3.select(nodeElement).select("circle")
@@ -378,65 +397,13 @@ class SDNController {
         const node1 = this.nodes.find(n => n.id === firstId);
         const node2 = this.nodes.find(n => n.id === secondId);
 
-
-
         if (!node1 || !node2) {
             this.log("Erreur : Un ou plusieurs nœuds introuvables.");
             return;
         }
 
-        // Empêcher les liens doubles
-        const existingLink = this.links.find(
-            l =>
-                (l.source.id === node1.id && l.target.id === node2.id) ||
-                (l.source.id === node2.id && l.target.id === node1.id)
-        );
-
-        if (existingLink) {
-            this.log(`Un lien existe déjà entre ${node1.label} et ${node2.label}.`);
-            return;
-        }
-
-        // Créer le lien
         this.createLink(node1, node2);
     }
-
-    createLink(sourceNode, targetNode) {
-        const link = { source: sourceNode.id, target: targetNode.id };
-        this.links.push(link);
-
-        // Mettre à jour l'affichage du lien
-        this.link = this.linkGroup.selectAll(".link").data(this.links, d => `${d.source.id}-${d.target.id}`);
-
-        const linkEnter = this.link.enter().append("line")
-            .attr("class", "link")
-            .attr("stroke", "#999")
-            .attr("stroke-width", 2);
-
-        // Tooltip sur les liens
-        linkEnter.on("mouseover", (event, d) => {
-            const sourceNode = this.nodes.find(n => n.id === d.source);
-            const targetNode = this.nodes.find(n => n.id === d.target);
-            this.tooltip.style("opacity", 1);
-            this.tooltip.html(`Lien : ${sourceNode.label} ↔ ${targetNode.label}`);
-        })
-            .on("mousemove", (event) => {
-                this.tooltip.style("left", (event.pageX + 10) + "px")
-                    .style("top", (event.pageY - 28) + "px");
-            })
-            .on("mouseout", () => { this.tooltip.style("opacity", 0); });
-
-        // Supprimer les liens existants
-        this.link.exit().remove();
-        this.link = linkEnter.merge(this.link);
-
-        // Redémarrer la simulation pour réagencer les nœuds avec le nouveau lien
-        this.simulation.nodes(this.nodes).force("link").links(this.links);
-        this.simulation.alpha(1).restart();
-
-        this.log(`Lien créé entre ${sourceNode.label} et ${targetNode.label}.`);
-    }
-    
 
     installFlowRule() {
         this.log("Installation d'une règle de flot... (simulation)");
@@ -451,9 +418,14 @@ class SDNController {
 // Initialize App
 const app = new SDNController();
 
-// Helper for UI interaction
+// Helper for UI interaction — sélection de nœud depuis le dropdown
 function handleSelectionChange() {
     const val = document.getElementById('nodeSelector').value;
-    console.log("Selection changed");
-}
+    if (!val) return;
 
+    // Trouver le nœud et le sélectionner visuellement
+    const node = app.nodes.find(n => n.id === val);
+    if (node) {
+        app.selectNode(node);
+    }
+}

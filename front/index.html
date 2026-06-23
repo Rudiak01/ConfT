@@ -5,9 +5,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>WebSDN Controller Simulator</title>
+    <meta name="description" content="ConfT - Simulateur de contrôleur SDN avec visualisation de topologie réseau dynamique">
     <script src="https://d3js.org/d3.v7.min.js"></script>
     <link rel="stylesheet" href="styles.css">
-    </script>
 </head>
 
 <body>
@@ -29,10 +29,11 @@
 
             <h3>2. Connexions</h3>
             <div class="control-group">
-                <p style="font-size: 0.9rem; color: #666;">
+                <p class="hint-text">
                     Cliquez sur un nœud, puis sur un autre pour lier les deux (Création de lien physique).
                 </p>
                 <button onclick="app.generateRandomTopology()">⚡ Générer Topo Aléatoire</button>
+                <button id="refresh-topology-btn" class="btn-refresh">🔄 Recharger la topologie (API)</button>
             </div>
 
             <h3>3. Contrôle (Flow Tables)</h3>
@@ -44,7 +45,7 @@
                 <select id="dstHost"></select>
 
                 <button onclick="app.installFlowRule()">⬇ Installer Règle de Flot</button>
-                <p style="font-size: 0.8rem; color: #7f8c8d;">
+                <p class="hint-text-small">
                     *La règle sera envoyée au Switch intermédiaire via l'API virtuelle.
                 </p>
             </div>
@@ -52,9 +53,27 @@
             <h3>4. Statistics (Stats)</h3>
             <div class="control-group">
                 <button onclick="app.fetchStatistics()">📊 Récupérer Stats du Réseau</button>
-                <div id="stats-output" style="margin-top:10px; font-family:monospace; color:#666;">
+                <div id="stats-output" class="stats-output">
                     En attente de données...
                 </div>
+            </div>
+
+            <h3>5. Créer un lien (Switch à Switch)</h3>
+            <div class="control-group">
+                <label for="nodeSelector">Sélectionnez un nœud :</label>
+                <select id="nodeSelector" onchange="handleSelectionChange()">
+                    <option value="">Chargement...</option>
+                </select>
+                <div class="instructions">
+                    <h4>Instructions :</h4>
+                    <ul>
+                        <li><strong>Clic</strong> sur un nœud pour sélectionner.</li>
+                        <li><strong>Clic</strong> sur un second nœud pour relier.</li>
+                        <li><strong>Drag</strong> pour déplacer les nœuds.</li>
+                        <li><strong>Dbl-Clic</strong> arrière-plan pour tout désélectionner.</li>
+                    </ul>
+                </div>
+                <p class="hint-text-small">Ctrl + Roue : Zoom</p>
             </div>
         </div>
 
@@ -80,55 +99,7 @@
         <div id="tooltip" class="tooltip"></div>
     </div>
 
-
-
-
-    <!-- UI Controls Overlay -->
-    <div
-        style="position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: white; padding: 15px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); display: flex; gap: 10px; z-index: 100;">
-        <button onclick="app.addNode('switch')"
-            style="padding: 8px 16px; background-color: #e74c3c; color: white; border: none; border-radius: 4px; cursor: pointer;">+
-            Switch</button>
-        <button onclick="app.addNode('host')"
-            style="padding: 8px 16px; background-color: #2ecc71; color: white; border: none; border-radius: 4px; cursor: pointer;">+
-            Host</button>
-        <button onclick="app.generateRandomTopology()"
-            style="padding: 8px 16px; background-color: #3498db; color: white; border: none; border-radius: 4px; cursor: pointer;">Générer
-            Topo</button>
-        <div style="display:flex; align-items:center; font-size:0.9em; color:#555;">
-            Ctrl + Roue : Zoom
-        </div>
-    </div>
-
-    <div
-        style="position: fixed; top: 20px; right: 20px; width: 250px; background: white; padding: 15px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
-        <h3 style="margin-top:0; color:#333;">Console de Contrôle</h3>
-        <p style="font-size:0.9em; color:#666;">Sélectionnez un Switch pour voir ses détails. Cliquez sur deux nœuds
-            successivement (ou utilisez l'outil ci-dessous) pour établir une connexion physique.</p>
-
-        <label for="nodeSelector" style="display:block; margin-bottom:5px; font-weight:bold;">Créer un lien (Switch à
-            Switch):</label>
-        <select id="nodeSelector" onchange="handleSelectionChange()"
-            style="width: 100%; padding: 8px; margin-bottom: 10px;">
-            <option value="">Chargement...</option>
-        </select>
-
-        <div style="border-top:1px solid #eee; padding-top:10px;">
-            <h4 style="margin:5px 0;">Instructions:</h4>
-            <ul style="padding-left:20px; font-size:0.9em;">
-                <li><strong>Clic</strong> sur un nœud pour sélectionner.</li>
-                <li><strong>Clic</strong> sur un second nœud pour relier.</li>
-                <li><strong>Drag</strong> pour déplacer les nœuds.</li>
-                <li><strong>Dbl-Clic</strong> arrière-plan pour tout désélectionner.</li>
-                <button id="refresh-topology-btn" class="btn btn-primary">
-  🔄 Recharger la topologie (API)
-</button>
-            </ul>
-        </div>
-    </div>
-    </div>
-
+    <script src="main.js"></script>
 </body>
-<script src="main.js"></script>
 
 </html>

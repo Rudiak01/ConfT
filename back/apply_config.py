@@ -64,7 +64,8 @@ def build_commands(data, device_type):
 def apply_device_config(connection_params, config_data): # readded
     try:
         connection = connect(connection_params)
-        commands = build_commands(config_data)
+        device_type = connection_params.get("device_type", "cisco_ios")
+        commands = build_commands(config_data, device_type)
         if not commands:
             connection.disconnect()
             return True, "No commands to apply"

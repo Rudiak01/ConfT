@@ -13,6 +13,8 @@ def run_ssh_command(ssh, cmd):
 def discover_device(ip: str) -> dict:
     try:
         ssh = paramiko.SSHClient()
+        # TODO SÉCURITÉ: AutoAddPolicy accepte n'importe quelle clé SSH (vulnérable MITM).
+        # En production, utiliser paramiko.RejectPolicy() + un fichier known_hosts vérifié.
         ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
         ssh.connect(
             ip,

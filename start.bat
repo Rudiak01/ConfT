@@ -23,6 +23,7 @@ echo.
 echo [3/3] Starting FastAPI server...
 echo The application will be available at: http://localhost:8000
 echo.
-python -m uvicorn api.main:app --reload --host 0.0.0.0 --port 8000
+cd api
+python app.py
 
 pause
