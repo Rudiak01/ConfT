@@ -30,22 +30,38 @@ def fetch_device_config(params):
         for feature, command in syntax["read"].items():
             print(f"Extraction de : {feature}...")
             
-            if feature == "running":
-                # La conf brute n'est jamais parsée par TextFSM
-                extracted_data["running_config"] = connection.send_command(command)
-                continue
+            # --- NOUVEAU : Bloc sécurisé pour chaque commande ---
+            try:
+                # 1. Gestion spécifique pour le running-config (pas de TextFSM)
+                if feature == "running":
+                    extracted_data["running_config"] = connection.send_command(command)
+                    continue
 
-            # Pour le reste, on utilise la magie TextFSM
-            raw_output = connection.send_command(command, use_textfsm=True)
+                # 2. Tentative d'extraction TextFSM
+                raw_output = connection.send_command(command, use_textfsm=True)
+
+                # 3. Vérification si on a eu une erreur de syntaxe (Cisco renvoie souvent le texte d'erreur)
+                if isinstance(raw_output, str) and "% Invalid input" in raw_output:
+                    print(f"  ⚠ Commande '{feature}' non supportée par ce modèle (Ignorée).")
+                    continue
+
+                # 4. Normalisation
+                if isinstance(raw_output, list):
+                    mapping = syntax["normalize_keys"].get(feature, {})
+                    extracted_data[feature] = normalize_data(raw_output, mapping)
+                else:
+                    # Résultat vide (comme poe/port-channel)
+                    extracted_data[feature] = []
             
-            # Si TextFSM réussit, il renvoie une liste de dictionnaires
-            if isinstance(raw_output, list):
-                mapping = syntax["normalize_keys"].get(feature, {})
-                extracted_data[feature] = normalize_data(raw_output, mapping)
-            else:
-                # Si ntc-templates n'a pas de template pour cette commande/version
-                print(f"  ⚠ Impossible de parser {feature} avec TextFSM (Template manquant).")
-                extracted_data[feature] = [] # On laisse une liste vide pour le Front-End
+            except Exception as e:
+                print(f"  ❌ Erreur lors de l'extraction de {feature}: {e}")
+            
+            # --- DEBUG ---
+            #if feature == "vlans":
+            #    print(f"\n--- DEBUG : Sortie brute de TextFSM pour 'vlans' ---")
+            #    print(raw_output)
+            #    print("----------------------------------------------------\n")
+            # ----------------------------
 
         connection.disconnect()
         return extracted_data

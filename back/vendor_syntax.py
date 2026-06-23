@@ -10,7 +10,7 @@ VENDOR_SYNTAX = {
             "interfaces": "show interfaces switchport",
             "mac": "show mac address-table",
             "arp": "show ip arp",
-            "lldp": "show lldp neighbors detail",
+            "lldp": "show cdp neighbors", # lldp pas supporté/activé
             "routes": "show ip route",
             "poe": "show power inline",
             "port_channels": "show etherchannel summary",
@@ -36,11 +36,12 @@ VENDOR_SYNTAX = {
             "stp_root": "spanning-tree vlan {vlan} root primary"
         },
         "normalize_keys": {
-            "vlans": {"vlan_id": "vlan_id", "name": "name", "status": "status"},
+            "vlans": {"vlan_id": "vlan_id", "vlan_name": "name", "status": "status"},
             "interfaces": {"interface": "interface", "access_vlan": "vlan", "admin_mode": "mode", "switchport": "enabled"},
             "mac": {"destination_address": "mac", "vlan": "vlan", "destination_port": "interface"},
             "arp": {"address": "ip", "mac": "mac", "interface": "interface"},
-            "lldp": {"local_interface": "local_port", "neighbor": "neighbor_name", "neighbor_interface": "remote_port"},
+        #"lldp": {"local_interface": "local_port", "neighbor": "neighbor_name", "neighbor_interface": "remote_port"},
+            "cdp": {"destination_host": "neighbor_name", "local_interface": "local_port", "neighbor_interface": "remote_port"},
             "routes": {"network": "network", "mask": "mask", "nexthop_ip": "nexthop", "protocol": "protocol"},
             "poe": {"interface": "interface", "oper": "status", "power": "watts"},
             "port_channels": {"po_name": "channel", "po_protocol": "protocol", "ports": "members"},
