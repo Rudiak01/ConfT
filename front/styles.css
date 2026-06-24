@@ -104,6 +104,11 @@ button.btn-refresh:hover {
     background-color: #219a52;
 }
 
+button.active {
+    background-color: #f39c12;
+    border: 2px solid #e67e22;
+}
+
 select,
 input {
     width: 100%;

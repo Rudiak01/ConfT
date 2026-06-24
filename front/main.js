@@ -8,6 +8,7 @@ class SDNController {
         this.links = [];
         this.selectedNode = null;
         this.nextNodeId = 1;
+        this.connectionMode = false;
 
         // Initial Setup
         this.initGraph();
@@ -66,6 +67,26 @@ class SDNController {
         entry.textContent = `> [${time}] ${message}`;
         consoleEl.appendChild(entry);
         consoleEl.scrollTop = consoleEl.scrollHeight;
+    }
+
+    toggleConnectionMode() {
+        this.connectionMode = !this.connectionMode;
+        const btn = document.getElementById('btn-connection-mode');
+        if (this.connectionMode) {
+            if(btn) {
+                btn.classList.add('active');
+                btn.textContent = "Mode Connexion: Actif";
+            }
+            this.log("Mode connexion activé. Cliquez sur deux nœuds pour les relier.");
+        } else {
+            if(btn) {
+                btn.classList.remove('active');
+                btn.textContent = "Activer Mode Connexion";
+            }
+            this.selectedNode = null;
+            d3.selectAll(".node circle").style("stroke-width", 0).style("stroke", "white");
+            this.log("Mode connexion désactivé.");
+        }
     }
 
     initGraph() {
@@ -332,11 +353,14 @@ class SDNController {
             this.log(`Désélection de ${node.label}`);
         } else {
             if (this.selectedNode) {
-                // Un nœud est déjà sélectionné → créer un lien
-                this.createLink(this.selectedNode, node);
-                d3.selectAll(".node circle").style("stroke-width", 0).style("stroke", "white");
-                this.selectedNode = null;
-                return;
+                if (this.connectionMode) {
+                    // Un nœud est déjà sélectionné et on est en mode connexion → créer un lien
+                    this.createLink(this.selectedNode, node);
+                    d3.selectAll(".node circle").style("stroke-width", 0).style("stroke", "white");
+                    this.selectedNode = null;
+                    return;
+                }
+                // Si pas en mode connexion, on change simplement la sélection
             }
 
             // Visual feedback

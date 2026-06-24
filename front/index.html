@@ -24,16 +24,17 @@
             <div class="control-group">
                 <button onclick="app.addNode('switch')">+ Ajouter Switch (OpenFlow)</button>
                 <button onclick="app.addNode('host')">+ Ajouter Hôte (Client/Serveur)</button>
-                <button class="reset" onclick="app.resetNetwork()">❌ Réinitialiser la Topologie</button>
+                <button class="reset" onclick="app.resetNetwork()">Réinitialiser la Topologie</button>
             </div>
 
             <h3>2. Connexions</h3>
             <div class="control-group">
                 <p class="hint-text">
-                    Cliquez sur un nœud, puis sur un autre pour lier les deux (Création de lien physique).
+                    Activez le mode connexion puis cliquez sur deux nœuds pour les lier.
                 </p>
-                <button onclick="app.generateRandomTopology()">⚡ Générer Topo Aléatoire</button>
-                <button id="refresh-topology-btn" class="btn-refresh">🔄 Recharger la topologie (API)</button>
+                <button id="btn-connection-mode" onclick="app.toggleConnectionMode()">Activer Mode Connexion</button>
+                <button onclick="app.generateRandomTopology()">Générer Topo Aléatoire</button>
+                <button id="refresh-topology-btn" class="btn-refresh">Recharger la topologie (API)</button>
             </div>
 
             <h3>3. Contrôle (Flow Tables)</h3>
@@ -68,7 +69,7 @@
                     <h4>Instructions :</h4>
                     <ul>
                         <li><strong>Clic</strong> sur un nœud pour sélectionner.</li>
-                        <li><strong>Clic</strong> sur un second nœud pour relier.</li>
+                        <li><strong>Mode Connexion</strong> + Clic sur 2 nœuds pour les relier.</li>
                         <li><strong>Drag</strong> pour déplacer les nœuds.</li>
                         <li><strong>Dbl-Clic</strong> arrière-plan pour tout désélectionner.</li>
                     </ul>
