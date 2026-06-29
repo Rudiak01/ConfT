@@ -1,44 +1,130 @@
-from sqlalchemy import Column, Integer, String, Text, DateTime, ForeignKey, JSON
-from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import relationship
+from pydantic import BaseModel, ConfigDict, Field
 from datetime import datetime
+from pydantic_extra_types import color as colorType
 
-Base = declarative_base()
+from pydantic import BaseModel, Field
+from typing import Optional, List, Dict, Any
 
-class Device(Base):
-    __tablename__ = 'devices'
+class DeviceCredentials(BaseModel):
+    host: str
+    username: str
+    password: str
+    device_type: str = "cisco_ios"
 
-    id = Column(Integer, primary_key=True)
-    ip = Column(String(45), unique=True, nullable=False)  # IPv4/IPv6
-    hostname = Column(String(255))
-    os_type = Column(String(100))  # e.g., "cisco_ios", "linux"
-    model = Column(String(255))
-    mac_address = Column(String(17))
-    uptime = Column(String(100))
-    interfaces = relationship("Interface", back_populates="device", cascade="all, delete-orphan")
-    neighbors = relationship("Neighbor", back_populates="device", cascade="all, delete-orphan")
+class InterfaceCreate(BaseModel):
+    name: str
+    description: Optional[str] = None
+    mode: Optional[str] = None  # access/trunk
+    vlan_id: Optional[int] = None
+    allowed_vlans: Optional[str] = None
 
-class Interface(Base):
-    __tablename__ = 'interfaces'
+class NodeCreate(BaseModel):
+    ip_address: str
+    hostname: Optional[str] = None
+    device_type: Optional[str] = None
 
-    id = Column(Integer, primary_key=True)
-    device_id = Column(Integer, ForeignKey('devices.id', ondelete='CASCADE'))
-    name = Column(String(100))
-    ip_address = Column(String(45))
-    mac_address = Column(String(17))
-    status = Column(String(20))  # up/down
-    speed = Column(String(50))
-    description = Column(Text)
-    device = relationship("Device", back_populates="interfaces")
+class TopologyNode(BaseModel):
+    id: int
+    ip_address: str
+    hostname: str
+    device_type: str
 
-class Neighbor(Base):
-    __tablename__ = 'neighbors'
+class InterfaceSchema(BaseModel):
+    id: int
+    name: str
+    description: Optional[str]
+    mode: Optional[str]
+    vlan_id: Optional[int]
+    allowed_vlans: Optional[str]
 
-    id = Column(Integer, primary_key=True)
-    device_id = Column(Integer, ForeignKey('devices.id', ondelete='CASCADE'))
-    neighbor_ip = Column(String(45))
-    neighbor_hostname = Column(String(255))
-    local_interface = Column(String(100))
-    remote_interface = Column(String(100))
-    protocol = Column(String(50))  # e.g., "lldp", "cdp"
-    device = relationship("Device", back_populates="neighbors")
+class TopologyLink(BaseModel):
+    source_ip: str
+    target_ip: str
+    source_interface: Optional[str]
+    target_interface: Optional[str]
+
+class TopologyGraph(BaseModel):
+    nodes: List[TopologyNode]
+    links: List[TopologyLink]
+
+
+class ModelUser(BaseModel):
+    """
+    Model for user
+    """
+    first_name: str = Field(max_length=100)
+    last_name: str = Field(None, max_length=100)
+    email: str = Field(max_length=100)
+    login: str = Field(max_length=50, min_length=1)
+    password: str = Field(max_length=200, min_length=2)
+    role: str | None = "user"
+
+
+class UserUpdate(BaseModel):
+    """
+    Model for user update
+    """
+    first_name: str | None = Field(None, max_length=100)
+    last_name: str | None = Field(None, max_length=100)
+    email: str | None = Field(None, max_length=100)
+    login: str | None = Field(None, max_length=50, min_length=1)
+    password: str | None = Field(None, max_length=200, min_length=1)
+    current_password: str | None = Field(None, max_length=200)
+
+
+class UserRole(BaseModel):
+    """
+    Model for role update
+    """
+    role: str | None = "user"
+
+
+class Token(BaseModel):
+    """
+    Model for token
+    """
+    access_token: str
+    token_type: str
+    must_change_password: bool
+
+
+class TokenData(BaseModel):
+    """
+    Model for token data converted
+    """
+    rowid: int | None = None
+    role: str | None = None
+    action: str | None = None
+
+
+class ModelResponseGetConnectedUser(BaseModel):
+    """
+    Model for connected user result
+    """
+    id: int
+    first_name: str
+    last_name: str | None
+    email: str
+    login: str
+    role: str
+
+class UserBase(BaseModel):
+    username: str
+
+class UserCreate(UserBase):
+    password: str
+    is_admin: bool = False
+
+class UserOut(UserBase):
+    id: int
+    is_admin: bool
+
+    class Config:
+        from_attributes = True
+
+class Token(BaseModel):
+    access_token: str
+    token_type: str
+
+class TokenData(BaseModel):
+    username: str | None = None
