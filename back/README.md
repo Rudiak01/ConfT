@@ -1,15 +1,16 @@
-Prérequis Système :
+Prérequis : Python 3.8 ou supérieur.
 
-Python 3.8 ou supérieur.
+- Ouvrez un terminal dans le dossier du projet
+- Faire un environnement python : 
+    py -m venv env
+- Activer les scripts :
+    (Linux/Mac)
+        source env/bin/activate
+    (Windows)
+        env\Scripts\activate
+- Installez les librairies : 
+    python3 -m pip install -r back/requirements.txt
+- Lancer les scripts avec : 
+    python3 -m back.nomduscript
 
-Installation des dépendances :
-
-Ouvrez un terminal dans le dossier du projet.
-
-(Recommandé) Créez un environnement virtuel : python -m venv venv
-
-Activez-le : source venv/bin/activate (Linux/Mac) ou venv\Scripts\activate (Windows).
-
-Installez les librairies : pip install -r requirements.txt
-
-Important : Pour que Netmiko trouve les templates TextFSM, définissez la variable d'environnement NET_TEXTFSM pointant vers le dossier des templates (Netmiko s'en charge souvent tout seul si ntc-templates est installé via pip, mais c'est bon à savoir en cas d'erreur).
+En cas d'erreur avec les templates TextFSM, définissez la variable d'environnement NET_TEXTFSM pointant vers le dossier des templates (Netmiko s'en charge normalement tout seul si ntc-templates est installé via pip).
