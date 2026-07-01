@@ -1,9 +1,9 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
-from ..db.session import get_db
-from ..db.models import Node, Interface
-from ..schemas.network import TopologyNode, TopologyLink, TopologyGraph, InterfaceSchema
+from api.dependencies import get_db
+from backend.db.models import Node, Interface
+from ..models import TopologyNode, TopologyLink, TopologyGraph, InterfaceSchema
 
 router = APIRouter(prefix="/api/network", tags=["topology"])
 
