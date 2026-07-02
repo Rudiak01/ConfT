@@ -15,8 +15,6 @@ def token(form_data):
     access_token, operator_id = login(
         form_data.username, form_data.password
     )
-    u = User()
-    u.update_last_connection(operator_id)
     return {
         "access_token": access_token,
         "token_type": "bearer",
@@ -49,6 +47,9 @@ def get_user_by_token(token):
     """
     # New user
     u = User()
+    print(type(token))
+    print(token)
+    print(token.model_dump())
     res = u.get_user(token.rowid)
     if res is None:
         # Token is valid but the user no longer exists (e.g. DB reset):

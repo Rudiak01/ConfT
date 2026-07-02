@@ -27,9 +27,9 @@ async def lifespan(app: FastAPI):
     if get_admin_account() is False:
         dataModel = {
             "first_name": "administrateur",
-            "email": os.environ.get("SERIEMATRIX_SOCIETY_ADMIN_EMAIL"),
+            "email": os.environ.get("SOCIETY_ADMIN_EMAIL"),
             "login": "admin",
-            "password": os.environ.get("admin123"),
+            "password": "admin123",
             "role": "admin",
         }
         add_admin_account(ModelUser(**dataModel))
@@ -66,49 +66,6 @@ async def _login(form_data: Annotated[OAuth2PasswordRequestForm, Depends()]) -> 
     """
     return token(form_data)
 
-class StatusCodeFilter(logging.Filter):
-    def filter(self, record):
-        try:
-            message = record.getMessage()
-
-            # Extract HTTP status code
-            match = re.search(r'" (\d{3})', message)
-            if not match:
-                return True
-
-            status = int(match.group(1))
-
-            if 100 <= status < 200:
-                level = logging.DEBUG
-                name = "DEBUG"
-            elif 200 <= status < 400:
-                level = logging.INFO
-                name = "INFO"
-            elif 400 <= status < 500:
-                level = logging.WARNING
-                name = "WARNING"
-            else:  # 500+
-                level = logging.ERROR
-                name = "ERROR"
-
-            record.levelno = level
-            record.levelname = name
-
-        except Exception:
-            pass
-
-        return True
-
-
-class EndpointFilter(logging.Filter):
-    def filter(self, record):
-        message = record.getMessage()
-
-        if "/metrics" in message or "/health" in message:
-            return False
-
-        return True
-
 
 if __name__ == "__main__":
 
@@ -119,16 +76,6 @@ if __name__ == "__main__":
         "trace_id=%(otelTraceID)s span_id=%(otelSpanID)s service=%(otelServiceName)s | "
         "%(message)s"
     )
-
-    log_config["filters"] = {
-        "endpoint_filter": {
-            "()": EndpointFilter,
-        },
-        "status_code_filter": {
-            "()": StatusCodeFilter,
-        },
-    }
-    log_config["loggers"]["uvicorn.access"]["filters"] = ["endpoint_filter"]
 
     uvicorn.run(
         "api.main:app",

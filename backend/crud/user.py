@@ -41,7 +41,6 @@ class User:
                         TableUser.email,
                         TableUser.login,
                         TableUser.role,
-                        TableUser.last_connection,
                     )
                 )
                 .mappings()
@@ -108,52 +107,3 @@ class User:
             session.commit()
         return True
 
-    def user_theme(self, operator_id):
-        """
-        return the theme settings of the operator_id
-        """
-        stmt = select(
-            TableUser.theme,
-            TableUser.color,
-            TableUser.background,
-            TableUser.background_style,
-            TableUser.background_color,
-        ).where(TableUser.id == operator_id)
-        with SessionLocal() as session:
-            return session.execute(stmt).first()
-
-    def update_theme(self, data, operator_id):
-        """
-        update the user theme
-        """
-        with SessionLocal() as session:
-            session.execute(
-                update(TableUser).values(data).where(TableUser.id == operator_id)
-            )
-            session.commit()
-        return True
-
-    def update_user_password_change_date(self, operator_id):
-        """
-        change the date when the user password has last been changed
-        """
-        with SessionLocal() as session:
-            session.execute(
-                update(TableUser)
-                .values(last_password_change=datetime.now())
-                .where(TableUser.id == operator_id)
-            )
-            session.commit()
-        return True
-
-    def update_last_connection(self, operator_id):
-        """
-        Update the field 'last_connection' to now
-        """
-        with SessionLocal() as session:
-            session.execute(
-                update(TableUser)
-                .where(TableUser.id == operator_id)
-                .values(last_connection=datetime.now())
-            )
-            session.commit()

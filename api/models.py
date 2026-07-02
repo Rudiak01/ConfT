@@ -1,6 +1,5 @@
 from pydantic import BaseModel, ConfigDict, Field
 from datetime import datetime
-from pydantic_extra_types import color as colorType
 
 from pydantic import BaseModel, Field
 from typing import Optional, List, Dict, Any
@@ -85,7 +84,6 @@ class Token(BaseModel):
     """
     access_token: str
     token_type: str
-    must_change_password: bool
 
 
 class TokenData(BaseModel):
@@ -94,7 +92,6 @@ class TokenData(BaseModel):
     """
     rowid: int | None = None
     role: str | None = None
-    action: str | None = None
 
 
 class ModelResponseGetConnectedUser(BaseModel):
@@ -125,6 +122,3 @@ class UserOut(UserBase):
 class Token(BaseModel):
     access_token: str
     token_type: str
-
-class TokenData(BaseModel):
-    username: str | None = None

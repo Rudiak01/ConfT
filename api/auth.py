@@ -5,7 +5,7 @@ import jwt
 from fastapi.security import OAuth2PasswordBearer
 from fastapi import Depends, HTTPException, status
 from jwt.exceptions import InvalidTokenError
-from backend.crud import user, auth, society
+from backend.crud import user, auth
 from pwdlib import PasswordHash
 from api.models import TokenData
 
@@ -52,25 +52,6 @@ def get_user_by_id(user_id):
     res = u.get_user(user_id)
     return res
 
-
-def last_pass_change(operator_id):
-    """
-    Get the last password update date
-    """
-    a = auth.Auth()
-    res = a.pass_update_date(operator_id)
-    return res
-
-
-def get_timedelta_pass_update():
-    """
-    get the society defined intervale between password update
-    """
-    s = society.Society()
-    res = s.get_pass_timedelta()
-    return res
-
-
 def authenticated_user(login: str, password: str):
     """
     Verify login informations
@@ -88,21 +69,6 @@ def authenticated_user(login: str, password: str):
             headers={"WWW-Authenticate": "Bearer"},
         )
     return user
-
-
-def is_pass_update(operator_id):
-    """
-    verify if the password change date has been exceeded
-    """
-    if get_timedelta_pass_update() is None:
-        return False
-    if (
-        last_pass_change(operator_id) + timedelta(days=get_timedelta_pass_update())
-        > datetime.now()
-    ):
-        return False
-    else:
-        return True
 
 
 def create_access_token(data: dict, expires_delta: timedelta | None = None):
@@ -134,11 +100,8 @@ def get_current_user(token: Annotated[str, Depends(oauth2_scheme)]):
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
         rowid = int(payload.get("rowid"))
         role = str(payload.get("role"))
-        scope = str(payload.get("scope"))
         if rowid is None:
             raise credentials_exception
-        if scope == "password_update":
-            return TokenData(rowid=rowid, action="force_password_change")
         token_data = TokenData(rowid=rowid, role=role)
     except InvalidTokenError:
         raise credentials_exception
