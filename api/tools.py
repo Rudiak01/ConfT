@@ -10,8 +10,8 @@ from api.auth import (
     login,
 )
 from fastapi import HTTPException, status
-
-
+from back.extract_config import crawl_network
+from back.apply_config import apply_device_config
 def topology_db():
     _db = DB()
     res = _db.topology_from_db()
@@ -227,4 +227,43 @@ def delete_user(user_id, token):
     else:
         return False
 
+
+def run_discovery(credentials_host: str, credentials_data: dict):
+    try:
+        result = crawl_network(credentials_host, credentials_data)
+        if not result:
+            raise HTTPException(status_code=400, detail="Discovery failed")
+        
+        _db = DB()
+        nodes_created = _db.upsert_discovered_nodes(result.get("nodes", {}))
+
+        return {
+            "status": "success",
+            "nodes_discovered": len(nodes_created),
+            "details": nodes_created
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+def push_config(device_ip: str, config_data: dict):
+    db = DB()
+    node = db.get_node_by_ip(device_ip)
+    
+    if not node:
+        raise HTTPException(status_code=404, detail="Node not found")
+        
+    connection_params = {
+        "host": device_ip,
+        "device_type": node.device_type or "cisco_ios",
+        "username": "admin", # Default username, should be fetched from config or request ideally
+        "password": "password" # Default password
+    }
+    
+    success, msg = apply_device_config(connection_params, config_data)
+    
+    if not success:
+        raise HTTPException(status_code=500, detail=msg)
+    
+    return {"status": "success", "message": msg}
 
