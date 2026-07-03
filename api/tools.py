@@ -1,4 +1,6 @@
 from backend.crud.user import User
+from backend.crud.topology import DB
+from models import TopologyNode, InterfaceSchema
 
 from api.auth import (
     get_password_hash,
@@ -8,6 +10,52 @@ from api.auth import (
     login,
 )
 from fastapi import HTTPException, status
+
+
+def topology_db():
+    _db = DB()
+    res = _db.topology_from_db()
+    return res
+
+def get_nodes():
+    _db = DB()
+    nodes = _db.get_nodes()
+    routers = [n for n in nodes if "router" in (n.device_type or "").lower()]
+    switches = [n for n in nodes if "switch" in (n.device_type or "").lower()]
+    hosts = []  # À compléter selon votre logique métier
+
+    return {
+        "Routers": [
+            TopologyNode(id=n.id, ip_address=n.ip_address, hostname=n.hostname or "", device_type=n.device_type or "")
+            for n in routers
+        ],
+        "Switches": [
+            TopologyNode(id=n.id, ip_address=n.ip_address, hostname=n.hostname or "", device_type=n.device_type or "")
+            for n in switches
+        ],
+        "Hosts": hosts
+    }
+
+def get_node_interfaces(id: int):
+    _db = DB()
+    node = _db.get_node_interfaces(id)
+    
+    if not node:
+        raise HTTPException(status_code=404, detail="Node not found")
+    
+    return [
+        InterfaceSchema(
+            id=i.id,
+            name=i.name,
+            description=i.description,
+            mode=i.mode,
+            vlan_id=i.vlan_id,
+            allowed_vlans=i.allowed_vlans
+        ) for i in node.interfaces
+    ]
+
+
+
 def token(form_data):
     """
     return the token of the user
