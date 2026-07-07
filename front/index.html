@@ -5,7 +5,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>WebSDN Controller Simulator</title>
-    <meta name="description" content="ConfT - Simulateur de contrôleur SDN avec visualisation de topologie réseau dynamique">
+    <meta name="description"
+        content="ConfT - Simulateur de contrôleur SDN avec visualisation de topologie réseau dynamique">
     <script src="https://d3js.org/d3.v7.min.js"></script>
     <link rel="stylesheet" href="styles.css">
 </head>
@@ -22,68 +23,33 @@
         <div class="control-panel">
             <h3>1. Infrastructure (Nodes)</h3>
             <div class="control-group">
-                <button onclick="app.addNode('switch')">+ Ajouter Switch (OpenFlow)</button>
-                <button onclick="app.addNode('host')">+ Ajouter Hôte (Client/Serveur)</button>
-                <button class="reset" onclick="app.resetNetwork()">Réinitialiser la Topologie</button>
-            </div>
-
-            <h3>2. Connexions</h3>
-            <div class="control-group">
-                <p class="hint-text">
-                    Activez le mode connexion puis cliquez sur deux nœuds pour les lier.
-                </p>
-                <button id="btn-connection-mode" onclick="app.toggleConnectionMode()">Activer Mode Connexion</button>
-                <button onclick="app.generateRandomTopology()">Générer Topo Aléatoire</button>
                 <button id="refresh-topology-btn" class="btn-refresh">Recharger la topologie (API)</button>
+                <!--
+                refetch network
+                fetch selected node
+                
+                -->
+
             </div>
 
-            <h3>3. Contrôle (Flow Tables)</h3>
+
             <div class="control-group">
-                <label for="srcHost">Source Hôte:</label>
-                <select id="srcHost"></select>
-
-                <label for="dstHost">Destination Hôte:</label>
-                <select id="dstHost"></select>
-
-                <button onclick="app.installFlowRule()">⬇ Installer Règle de Flot</button>
-                <p class="hint-text-small">
-                    *La règle sera envoyée au Switch intermédiaire via l'API virtuelle.
-                </p>
+                <button onclick="app.fetchSelectedNode()">Afficher les interfaces de la node sélectionnée</button>
+                <div id="selected-node-info"></div>
             </div>
 
-            <h3>4. Statistics (Stats)</h3>
+            <h3>demo</h3>
             <div class="control-group">
-                <button onclick="app.fetchStatistics()">📊 Récupérer Stats du Réseau</button>
-                <div id="stats-output" class="stats-output">
-                    En attente de données...
-                </div>
+                <button onclick="app.generateRandomTopology()">Générer Topo Aléatoire</button>
             </div>
 
-            <h3>5. Créer un lien (Switch à Switch)</h3>
-            <div class="control-group">
-                <label for="nodeSelector">Sélectionnez un nœud :</label>
-                <select id="nodeSelector" onchange="handleSelectionChange()">
-                    <option value="">Chargement...</option>
-                </select>
-                <div class="instructions">
-                    <h4>Instructions :</h4>
-                    <ul>
-                        <li><strong>Clic</strong> sur un nœud pour sélectionner.</li>
-                        <li><strong>Mode Connexion</strong> + Clic sur 2 nœuds pour les relier.</li>
-                        <li><strong>Drag</strong> pour déplacer les nœuds.</li>
-                        <li><strong>Dbl-Clic</strong> arrière-plan pour tout désélectionner.</li>
-                    </ul>
-                </div>
-                <p class="hint-text-small">Ctrl + Roue : Zoom</p>
-            </div>
-        </div>
 
-        <div class="terminal" id="console-log">
-            <div>> Initialisation du contrôleur SDN...</div>
-            <div>> Connecté à l'interface REST API (8080)</div>
+            <div class="terminal" id="console-log">
+                <div>> Initialisation du contrôleur SDN...</div>
+                <div>> Connecté à l'interface REST API (8080)</div>
+            </div>
         </div>
     </div>
-
     <!-- Main Graph Area -->
     <div class="main-view">
         <div id="graph-container"></div>

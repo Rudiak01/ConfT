@@ -1,6 +1,6 @@
 from backend.crud.user import User
 from backend.crud.topology import DB
-from models import TopologyNode, InterfaceSchema
+from .models import TopologyNode, InterfaceSchema
 
 from api.auth import (
     get_password_hash,

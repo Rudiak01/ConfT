@@ -4,7 +4,7 @@ from sqlalchemy.orm import Session
 from backend.db.models import Node, Interface
 from ..models import TopologyNode, TopologyLink, TopologyGraph, InterfaceSchema
 
-from tools import topology_db, get_nodes, get_node_interfaces
+from ..tools import topology_db, get_nodes, get_node_interfaces
 
 router = APIRouter(prefix="/db", tags=["topology"])
 
