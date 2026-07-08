@@ -100,19 +100,42 @@ def crawl_network(seed_ip, credentials):
             break
             
     vlans = []
-    if "vlan" in device_data:
-        for v in device_data["vlan"]:
+    if "vlans" in device_data:
+        for v in device_data["vlans"]:
             vlans.append({"vlan_id": v.get("vlan_id", ""), "name": v.get("name", "")})
+
+    interfaces = device_data.get("interfaces", [])
 
     nodes = {
         seed_ip: {
             "hostname": hostname,
             "device_type": params["device_type"],
             "running_config": running_cfg,
-            "vlans": vlans
+            "vlans": vlans,
+            "interfaces": interfaces
         }
     }
+    
     edges = []
+    # In vendor_syntax.py, "lldp" maps to "show cdp neighbors" and "cdp" normalizes the keys
+    # But wait, TextFSM returns the raw key if there's no normalizer for "lldp".
+    # Wait, the normalize_keys has "cdp", but the read command is "lldp". So it might not be normalized!
+    # Let's just safely extract both possibilities
+    neighbors = device_data.get("lldp", []) or device_data.get("cdp", [])
+    
+    for neighbor in neighbors:
+        # Depending on if it was normalized or not
+        remote_host = neighbor.get("neighbor_name") or neighbor.get("destination_host") or neighbor.get("neighbor")
+        local_port = neighbor.get("local_port") or neighbor.get("local_interface")
+        remote_port = neighbor.get("remote_port") or neighbor.get("neighbor_interface") or neighbor.get("port_id")
+        
+        if remote_host:
+            edges.append({
+                "source_ip": seed_ip,
+                "target_hostname": remote_host,
+                "source_port": local_port,
+                "target_port": remote_port
+            })
     
     return {"nodes": nodes, "edges": edges}
 

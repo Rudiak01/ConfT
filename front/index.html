@@ -34,7 +34,6 @@
 
 
             <div class="control-group">
-                <button onclick="app.fetchSelectedNode()">Afficher les interfaces de la node sélectionnée</button>
                 <div id="selected-node-info"></div>
             </div>
 
@@ -64,9 +63,20 @@
         </div>
 
         <div id="tooltip" class="tooltip"></div>
+        
+        <!-- Bottom Panel for Interfaces -->
+        <div id="bottom-panel" class="bottom-panel">
+            <div class="panel-header">
+                <h3 id="panel-title">Interfaces</h3>
+                <button id="close-panel-btn" class="close-btn" onclick="app.closePanel()">×</button>
+            </div>
+            <div class="panel-content" id="interfaces-list">
+                <!-- Interface cards will be generated here -->
+            </div>
+        </div>
     </div>
 
-    <script src="main.js"></script>
+    <script src="main.js?v=2"></script>
 </body>
 
 </html>

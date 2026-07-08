@@ -2,9 +2,9 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
 from backend.db.models import Node, Interface
-from ..models import TopologyNode, TopologyLink, TopologyGraph, InterfaceSchema
+from ..models import TopologyNode, TopologyLink, TopologyGraph, InterfaceSchema, TopologySyncRequest, InterfaceUpdate
 
-from ..tools import topology_db, get_nodes, get_node_interfaces
+from ..tools import topology_db, get_nodes, get_node_interfaces, sync_random_topology
 
 router = APIRouter(prefix="/db", tags=["topology"])
 
@@ -23,3 +23,15 @@ def _get_nodes():
 def _get_node_interfaces(id: int):
 
     return get_node_interfaces(id)
+
+@router.post("/topology/random")
+def _sync_random_topology(data: TopologySyncRequest):
+    """
+    Sync randomly generated topology with the database
+    """
+    return sync_random_topology(data)
+
+@router.put("/interface/{interface_id}")
+def update_interface_route(interface_id: int, data: InterfaceUpdate):
+    from api.tools import update_interface
+    return update_interface(interface_id, data)

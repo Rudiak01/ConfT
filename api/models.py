@@ -17,6 +17,13 @@ class InterfaceCreate(BaseModel):
     vlan_id: Optional[int] = None
     allowed_vlans: Optional[str] = None
 
+class InterfaceUpdate(BaseModel):
+    name: Optional[str] = None
+    description: Optional[str] = None
+    mode: Optional[str] = None
+    vlan_id: Optional[int] = None
+    allowed_vlans: Optional[str] = None
+
 class NodeCreate(BaseModel):
     ip_address: str
     hostname: Optional[str] = None
@@ -109,3 +116,23 @@ class ModelResponseGetConnectedUser(BaseModel):
 class Token(BaseModel):
     access_token: str
     token_type: str
+
+class MockInterface(BaseModel):
+    name: str
+    description: Optional[str] = None
+    mode: Optional[str] = None
+    vlan_id: Optional[int] = None
+
+class MockNode(BaseModel):
+    ip: str
+    label: str
+    type: str
+    interfaces: List[MockInterface] = []
+
+class MockLink(BaseModel):
+    source_ip: str
+    target_ip: str
+
+class TopologySyncRequest(BaseModel):
+    nodes: List[MockNode]
+    links: List[MockLink]

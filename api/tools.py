@@ -1,6 +1,6 @@
 from backend.crud.user import User
 from backend.crud.topology import DB
-from .models import TopologyNode, InterfaceSchema
+from .models import TopologyNode, TopologyLink, InterfaceSchema, TopologySyncRequest
 
 from api.auth import (
     get_password_hash,
@@ -14,8 +14,40 @@ from back.extract_config import crawl_network
 from back.apply_config import apply_device_config
 def topology_db():
     _db = DB()
-    res = _db.topology_from_db()
-    return res
+    data = _db.topology_from_db()
+    
+    nodes = data.get("nodes", [])
+    links = data.get("links", [])
+    
+    topology_nodes = []
+    node_id_to_ip = {}
+    for n in nodes:
+        topology_nodes.append(TopologyNode(
+            id=n.id,
+            ip_address=n.ip_address,
+            hostname=n.hostname or "",
+            device_type=n.device_type or ""
+        ))
+        node_id_to_ip[n.id] = n.ip_address
+        
+    topology_links = []
+    for l in links:
+        topology_links.append(TopologyLink(
+            source_ip=node_id_to_ip.get(l.source_id, ""),
+            target_ip=l.target_ip,
+            source_interface=l.source_interface,
+            target_interface=l.target_interface
+        ))
+        
+    return {"nodes": topology_nodes, "links": topology_links}
+
+def sync_random_topology(data: TopologySyncRequest):
+    _db = DB()
+    try:
+        _db.reset_and_save_topology(data)
+        return {"status": "success", "message": "Topology synced successfully"}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
 
 def get_nodes():
     _db = DB()
@@ -55,6 +87,16 @@ def get_node_interfaces(id: int):
     ]
 
 
+
+def update_interface(interface_id: int, data):
+    _db = DB()
+    try:
+        updated_iface = _db.update_interface(interface_id, data.model_dump(exclude_unset=True))
+        if not updated_iface:
+            raise HTTPException(status_code=404, detail="Interface not found")
+        return {"status": "success", "message": "Interface updated"}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 def token(form_data):
     """
@@ -233,9 +275,8 @@ def run_discovery(credentials_host: str, credentials_data: dict):
         result = crawl_network(credentials_host, credentials_data)
         if not result:
             raise HTTPException(status_code=400, detail="Discovery failed")
-        
         _db = DB()
-        nodes_created = _db.upsert_discovered_nodes(result.get("nodes", {}))
+        nodes_created = _db.upsert_discovered_nodes(result.get("nodes", {}), result.get("edges", []))
 
         return {
             "status": "success",

@@ -1,4 +1,6 @@
 
+const API_BASE = window.location.port === '5500' ? 'http://localhost:8000' : '';
+
 /**
  * WebSDN Application Logic
  */
@@ -12,7 +14,7 @@ class SDNController {
 
         // Initial Setup
         this.initGraph();
-        this.updateUI();
+
         this.log("Système prêt. Ajoutez des nœuds pour commencer.");
         document.getElementById('refresh-topology-btn')?.addEventListener('click', () => {
             this.fetchRealTopology();
@@ -22,7 +24,7 @@ class SDNController {
         try {
             this.log("Récupération de la topologie réelle via l'API...");
             
-            const response = await fetch('/api/topology');
+            const response = await fetch(`${API_BASE}/db/topology`);
             if (!response.ok) throw new Error(`HTTP ${response.status}`);
             
             const data = await response.json();
@@ -34,22 +36,28 @@ class SDNController {
 
             this.nodes = data.nodes.map(n => ({
                 id: n.id,
-                label: n.label,
-                type: n.type,
-                ip: n.ip,
+                label: n.hostname || n.label,
+                type: n.device_type || n.type,
+                ip: n.ip_address || n.ip,
                 // Initialiser x/y pour éviter les bugs de position
                 x: (Math.random() * 200) + (this.width / 2 - 100),
                 y: (Math.random() * 200) + (this.height / 2 - 100)
             }));
             
-            this.links = data.links.map(l => ({
-                source: l.source,
-                target: l.target
-            }));
+            this.links = data.links.map(l => {
+                // Find node ID by IP since backend link uses IP
+                const sourceNode = this.nodes.find(n => n.ip === l.source_ip) || {id: l.source || l.source_ip};
+                const targetNode = this.nodes.find(n => n.ip === l.target_ip) || {id: l.target || l.target_ip};
+                return {
+                    source: sourceNode.id,
+                    target: targetNode.id,
+                    source_interface: l.source_interface,
+                    target_interface: l.target_interface
+                };
+            });
 
             // Mettre à jour la simulation avec les nouvelles données
             this.restartSimulation();
-            this.updateUI();
             this.log(`Topologie réelle chargée : ${this.nodes.length} nœuds, ${this.links.length} liens.`);
             
         } catch (error) {
@@ -104,6 +112,7 @@ class SDNController {
             .on("dblclick", () => {
                 this.selectedNode = null;
                 d3.selectAll(".node circle").style("stroke-width", 0).style("stroke", "white");
+                this.closePanel();
             });
 
         this.g = this.svg.append("g");
@@ -194,27 +203,8 @@ class SDNController {
         this.nodes.push(newNode);
         this.log(`Nouveau nœud créé : ${label} (${type})`);
         this.restartSimulation();
-        this.updateUI();
     }
 
-    createLink(nodeA, nodeB) {
-        if (!nodeA || !nodeB || nodeA === nodeB) return;
-
-        // Check if link exists
-        const exists = this.links.some(l => {
-            const sId = typeof l.source === 'object' ? l.source.id : l.source;
-            const tId = typeof l.target === 'object' ? l.target.id : l.target;
-            return (sId === nodeA.id && tId === nodeB.id) || (sId === nodeB.id && tId === nodeA.id);
-        });
-
-        if (!exists) {
-            this.links.push({ source: nodeA.id, target: nodeB.id });
-            this.log(`Lien créé entre ${nodeA.label} et ${nodeB.label}`);
-            this.restartSimulation();
-        } else {
-            this.log("Erreur : Une connexion existe déjà entre ces nœuds.");
-        }
-    }
 
     restartSimulation() {
         // Mise à jour des données pour les liens
@@ -331,9 +321,84 @@ class SDNController {
             this.links.push({ source: this.nodes[0].id, target: prevSwitch.id });
         }
 
-        this.log("Topologie aléatoire générée.");
+        this.log("Topologie aléatoire générée localement. Synchronisation avec la DB...");
         this.restartSimulation();
-        this.updateUI();
+
+        // Sync with backend
+        const payloadNodes = this.nodes.map(n => {
+            let interfaces = [];
+            
+            // Compter le nombre exact de liens connectés à ce nœud
+            const connectedLinksCount = this.links.filter(l => 
+                (typeof l.source === 'object' ? l.source.id : l.source) === n.id || 
+                (typeof l.target === 'object' ? l.target.id : l.target) === n.id
+            ).length;
+
+            if (n.type === 'switch') {
+                for (let k = 1; k <= connectedLinksCount; k++) {
+                    interfaces.push({
+                        name: `FastEthernet0/${k}`,
+                        description: "Auto-generated",
+                        mode: Math.random() > 0.5 ? "access" : "trunk",
+                        vlan_id: Math.floor(Math.random() * 100) + 1
+                    });
+                }
+            } else {
+                for (let k = 1; k <= (connectedLinksCount || 1); k++) {
+                    interfaces.push({
+                        name: k === 1 ? "eth0" : `eth${k-1}`,
+                        description: "Auto-generated host interface",
+                        mode: "access",
+                        vlan_id: 1
+                    });
+                }
+            }
+            return {
+                ip: n.ip,
+                label: n.label,
+                type: n.type,
+                interfaces: interfaces
+            };
+        });
+
+        const ifaceCounter = {};
+        const payloadLinks = this.links.map(l => {
+            const sNode = this.nodes.find(n => n.id === (typeof l.source === 'object' ? l.source.id : l.source));
+            const tNode = this.nodes.find(n => n.id === (typeof l.target === 'object' ? l.target.id : l.target));
+            
+            let sIface = "", tIface = "";
+            if (sNode) {
+                ifaceCounter[sNode.id] = (ifaceCounter[sNode.id] || 0) + 1;
+                sIface = sNode.type === 'switch' ? `FastEthernet0/${ifaceCounter[sNode.id]}` : (ifaceCounter[sNode.id] === 1 ? "eth0" : `eth${ifaceCounter[sNode.id]-1}`);
+            }
+            if (tNode) {
+                ifaceCounter[tNode.id] = (ifaceCounter[tNode.id] || 0) + 1;
+                tIface = tNode.type === 'switch' ? `FastEthernet0/${ifaceCounter[tNode.id]}` : (ifaceCounter[tNode.id] === 1 ? "eth0" : `eth${ifaceCounter[tNode.id]-1}`);
+            }
+
+            return {
+                source_ip: sNode ? sNode.ip : "",
+                target_ip: tNode ? tNode.ip : "",
+                source_interface: sIface,
+                target_interface: tIface
+            };
+        });
+
+        fetch(`${API_BASE}/db/topology/random`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ nodes: payloadNodes, links: payloadLinks })
+        }).then(res => {
+            if (res.ok) {
+                this.log("Topologie aléatoire synchronisée avec la base de données.");
+                // Re-fetch to get the real integer IDs from the database
+                this.fetchRealTopology();
+            } else {
+                this.log("Erreur de synchronisation avec la DB.");
+            }
+        }).catch(err => {
+            this.log("Erreur réseau (Sync DB): " + err.message);
+        });
     }
 
     resetNetwork() {
@@ -343,7 +408,6 @@ class SDNController {
         this.selectedNode = null;
 
         this.restartSimulation();
-        this.updateUI();
     }
 
     selectNode(node) {
@@ -351,19 +415,12 @@ class SDNController {
             this.selectedNode = null;
             d3.selectAll(".node circle").style("stroke-width", 0).style("stroke", "white");
             this.log(`Désélection de ${node.label}`);
+            this.closePanel();
         } else {
             if (this.selectedNode) {
-                if (this.connectionMode) {
-                    // Un nœud est déjà sélectionné et on est en mode connexion → créer un lien
-                    this.createLink(this.selectedNode, node);
-                    d3.selectAll(".node circle").style("stroke-width", 0).style("stroke", "white");
-                    this.selectedNode = null;
-                    return;
-                }
-                // Si pas en mode connexion, on change simplement la sélection
+                // Connection mode removed
             }
 
-            // Visual feedback
             d3.selectAll(".node circle").style("stroke-width", 0).style("stroke", "white");
 
             const nodeElement = this.node.nodes().find(n => n.__data__ && n.__data__.id === node.id);
@@ -375,6 +432,7 @@ class SDNController {
 
             this.selectedNode = node;
             this.log(`Sélection : ${node.label} (IP: ${node.ip})`);
+            this.fetchSelectedNode();
         }
     }
 
@@ -396,41 +454,193 @@ class SDNController {
         d.fy = null;
     }
 
-    updateUI() {
-        // Update dropdown for link creation
-        const selectEl = document.getElementById('nodeSelector');
-        if (selectEl) {
-            selectEl.innerHTML = '<option value="">-- Sélectionnez un nœud --</option>';
-            this.nodes.forEach(n => {
-                if (n.type === 'switch') {
-                    const option = document.createElement('option');
-                    option.value = n.id;
-                    option.textContent = `${n.label} (${n.type})`;
-                    selectEl.appendChild(option);
-                }
-            });
-        }
-    }
-
-    connectSelectedNodes(firstId, secondId) {
-        if (!firstId || !secondId) {
-            this.log("Erreur : Veuillez sélectionner deux nœuds valides.");
-            return;
-        }
-
-        const node1 = this.nodes.find(n => n.id === firstId);
-        const node2 = this.nodes.find(n => n.id === secondId);
-
-        if (!node1 || !node2) {
-            this.log("Erreur : Un ou plusieurs nœuds introuvables.");
-            return;
-        }
-
-        this.createLink(node1, node2);
-    }
 
     installFlowRule() {
         this.log("Installation d'une règle de flot... (simulation)");
+    }
+
+    async fetchSelectedNode() {
+        if (!this.selectedNode) return;
+        
+        if (this.currentEditingInterfaceId) {
+            this.autoSaveInterface(this.currentEditingInterfaceId);
+        }
+
+        try {
+            const nodeId = this.selectedNode.id;
+            this.log(`Récupération des interfaces pour le nœud ID: ${nodeId}...`);
+            const response = await fetch(`${API_BASE}/db/node/${nodeId}/interfaces`);
+            if (!response.ok) throw new Error(`HTTP ${response.status}`);
+            
+            this.currentInterfaces = await response.json();
+            this.openPanel();
+            this.renderInterfacesPanel();
+        } catch (error) {
+            this.log(`Erreur lors de la récupération des interfaces: ${error.message}`);
+        }
+    }
+
+    openPanel() {
+        const panel = document.getElementById('bottom-panel');
+        if (panel) {
+            document.getElementById('panel-title').textContent = `Interfaces - ${this.selectedNode?.label || ''}`;
+            panel.classList.add('open');
+        }
+    }
+
+    closePanel() {
+        if (this.currentEditingInterfaceId) {
+            this.autoSaveInterface(this.currentEditingInterfaceId);
+        }
+        const panel = document.getElementById('bottom-panel');
+        if (panel) panel.classList.remove('open');
+        if (this.linkGroup) {
+            this.linkGroup.selectAll("line")
+                .style("stroke", "#95a5a6")
+                .style("stroke-width", 2);
+        }
+        this.currentInterfaces = [];
+        this.currentEditingInterfaceId = null;
+    }
+
+    renderInterfacesPanel() {
+        const list = document.getElementById('interfaces-list');
+        if (!list) return;
+        list.innerHTML = '';
+        if (!this.currentInterfaces || this.currentInterfaces.length === 0) {
+            list.innerHTML = '<p style="color: #666; text-align:center;">Aucune interface trouvée.</p>';
+            return;
+        }
+
+        this.currentInterfaces.forEach(iface => {
+            const isEditing = this.currentEditingInterfaceId === iface.id;
+            const card = document.createElement('div');
+            card.className = `interface-card ${isEditing ? 'editing' : ''}`;
+            
+            if (isEditing) {
+                card.innerHTML = `
+                    <div class="iface-field">
+                        <span class="iface-label">Nom</span>
+                        <input type="text" class="iface-input" id="edit-name-${iface.id}" value="${iface.name || ''}" />
+                    </div>
+                    <div class="iface-field">
+                        <span class="iface-label">Description</span>
+                        <input type="text" class="iface-input" id="edit-desc-${iface.id}" value="${iface.description || ''}" />
+                    </div>
+                    <div class="iface-field">
+                        <span class="iface-label">Mode</span>
+                        <select class="iface-input" id="edit-mode-${iface.id}">
+                            <option value="access" ${iface.mode === 'access' ? 'selected' : ''}>Access</option>
+                            <option value="trunk" ${iface.mode === 'trunk' ? 'selected' : ''}>Trunk</option>
+                            <option value="dynamic auto" ${iface.mode === 'dynamic auto' ? 'selected' : ''}>Dynamic Auto</option>
+                            <option value="static access" ${iface.mode === 'static access' ? 'selected' : ''}>Static Access</option>
+                        </select>
+                    </div>
+                    <div class="iface-field">
+                        <span class="iface-label">VLAN</span>
+                        <input type="number" class="iface-input" id="edit-vlan-${iface.id}" value="${iface.vlan_id || ''}" />
+                    </div>
+                    <div class="iface-field">
+                        <span class="iface-label">Allowed VLANs</span>
+                        <input type="text" class="iface-input" id="edit-allowed-${iface.id}" value="${iface.allowed_vlans || ''}" placeholder="ex: 10,20,30" />
+                    </div>
+                `;
+            } else {
+                card.innerHTML = `
+                    <div class="iface-status ${iface.mode ? 'active' : ''}"></div>
+                    <div class="iface-field">
+                        <span class="iface-label">Nom</span>
+                        <span class="iface-value">${iface.name || '-'}</span>
+                    </div>
+                    <div class="iface-field">
+                        <span class="iface-label">Mode</span>
+                        <span class="iface-value">${iface.mode || '-'}</span>
+                    </div>
+                    <div class="iface-field">
+                        <span class="iface-label">VLAN</span>
+                        <span class="iface-value">${iface.vlan_id || '-'}</span>
+                    </div>
+                    <div class="iface-field">
+                        <span class="iface-label">Description</span>
+                        <span class="iface-value">${iface.description || '-'}</span>
+                    </div>
+                `;
+                card.onclick = () => this.editInterface(iface.id);
+            }
+            list.appendChild(card);
+        });
+    }
+
+    editInterface(id) {
+        if (this.currentEditingInterfaceId && this.currentEditingInterfaceId !== id) {
+            this.autoSaveInterface(this.currentEditingInterfaceId);
+        }
+        this.currentEditingInterfaceId = id;
+        this.renderInterfacesPanel();
+
+        // Highlight link on the graph
+        const selectedInterface = this.currentInterfaces.find(i => i.id === id);
+        if (selectedInterface && this.selectedNode) {
+            const ifaceName = selectedInterface.name;
+            const nodeId = this.selectedNode.id;
+
+            let matchFound = false;
+            this.linkGroup.selectAll("line")
+                .style("stroke", d => {
+                    const srcMatch = String(d.source.id) === String(nodeId) && d.source_interface === ifaceName;
+                    const tgtMatch = String(d.target.id) === String(nodeId) && d.target_interface === ifaceName;
+                    if (srcMatch || tgtMatch) matchFound = true;
+                    return (srcMatch || tgtMatch) ? "#e74c3c" : "#95a5a6";
+                })
+                .style("stroke-width", d => {
+                    const srcMatch = String(d.source.id) === String(nodeId) && d.source_interface === ifaceName;
+                    const tgtMatch = String(d.target.id) === String(nodeId) && d.target_interface === ifaceName;
+                    return (srcMatch || tgtMatch) ? 4 : 2;
+                });
+                
+            this.log(`Recherche de liens pour l'interface ${ifaceName}... ${matchFound ? 'Trouvé!' : 'Aucun lien actif'}`);
+        }
+    }
+
+    async autoSaveInterface(id) {
+        const nameEl = document.getElementById(`edit-name-${id}`);
+        const descEl = document.getElementById(`edit-desc-${id}`);
+        const modeEl = document.getElementById(`edit-mode-${id}`);
+        const vlanEl = document.getElementById(`edit-vlan-${id}`);
+        const allowedEl = document.getElementById(`edit-allowed-${id}`);
+
+        if (!nameEl) return;
+
+        const data = {
+            name: nameEl.value,
+            description: descEl.value,
+            mode: modeEl.value,
+            vlan_id: parseInt(vlanEl.value) || null,
+            allowed_vlans: allowedEl.value
+        };
+
+        const idx = this.currentInterfaces.findIndex(i => i.id === id);
+        if (idx !== -1) {
+            this.currentInterfaces[idx] = { ...this.currentInterfaces[idx], ...data };
+        }
+        
+        // Remove currently editing id before rendering so it shows as a normal card
+        this.currentEditingInterfaceId = null;
+        this.renderInterfacesPanel();
+        
+        this.log(`Sauvegarde de l'interface ${data.name}...`);
+
+        try {
+            const response = await fetch(`${API_BASE}/db/interface/${id}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            });
+            if (!response.ok) throw new Error("Erreur serveur lors de la sauvegarde");
+            this.log(`Interface ${data.name} sauvegardée avec succès.`);
+        } catch (error) {
+            this.log(`Erreur de sauvegarde: ${error.message}`);
+        }
     }
 
     fetchStatistics() {

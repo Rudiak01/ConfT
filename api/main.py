@@ -7,6 +7,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from datetime import datetime
 from contextlib import asynccontextmanager
 from fastapi import FastAPI, Depends, HTTPException, status
+from fastapi.staticfiles import StaticFiles
 from fastapi.security import OAuth2PasswordRequestForm
 
 from .models import Token, ModelUser
@@ -54,9 +55,7 @@ app.add_middleware(
 GetToken = Annotated[ModelUser, Depends(get_current_user)]
 
 
-@app.get("/")
-async def read_root():
-    return {"Hello": "World"}
+app.mount("/", StaticFiles(directory="front", html=True), name="front")
 
 
 @app.post("/token")
@@ -70,12 +69,6 @@ async def _login(form_data: Annotated[OAuth2PasswordRequestForm, Depends()]) -> 
 if __name__ == "__main__":
 
     log_config = uvicorn.config.LOGGING_CONFIG
-
-    log_config["formatters"]["access"]["fmt"] = (
-        "%(asctime)s | %(levelname)s | "
-        "trace_id=%(otelTraceID)s span_id=%(otelSpanID)s service=%(otelServiceName)s | "
-        "%(message)s"
-    )
 
     uvicorn.run(
         "api.main:app",
