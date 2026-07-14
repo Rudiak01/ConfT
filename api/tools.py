@@ -10,7 +10,7 @@ from api.auth import (
     login,
 )
 from fastapi import HTTPException, status
-from back.extract_config import crawl_network
+from back.extract_config import crawl_network, DeviceUnreachableError, DeviceAuthenticationError
 from back.apply_config import apply_device_config
 def topology_db():
     _db = DB()
@@ -296,6 +296,12 @@ def run_discovery(credentials_host: str, credentials_data: dict):
             "nodes_discovered": len(nodes_created),
             "details": nodes_created
         }
+    except DeviceAuthenticationError as e:
+        raise HTTPException(status_code=401, detail=str(e))
+    except DeviceUnreachableError as e:
+        raise HTTPException(status_code=504, detail=str(e))
+    except HTTPException as he:
+        raise he
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -320,4 +326,167 @@ def push_config(device_ip: str, config_data: dict):
         raise HTTPException(status_code=500, detail=msg)
     
     return {"status": "success", "message": msg}
+
+
+def get_settings():
+    from back.config import SWITCH
+    return {
+        "host": SWITCH.get("host", ""),
+        "username": SWITCH.get("username", ""),
+        "password": SWITCH.get("password", ""),
+        "device_type": SWITCH.get("device_type", "cisco_ios")
+    }
+
+
+def update_settings(settings: dict):
+    import json
+    import os
+    import importlib
+    
+    config_json_path = os.path.join("back", "config.json")
+    data = {}
+    if os.path.exists(config_json_path):
+        try:
+            with open(config_json_path, "r", encoding="utf-8") as f:
+                data = json.load(f)
+        except Exception:
+            pass
+            
+    if "SWITCH" not in data:
+        data["SWITCH"] = {}
+        
+    data["SWITCH"].update({
+        "host": settings.get("host"),
+        "username": settings.get("username"),
+        "password": settings.get("password"),
+        "device_type": settings.get("device_type", "cisco_ios")
+    })
+    
+    with open(config_json_path, "w", encoding="utf-8") as f:
+        json.dump(data, f, indent=4)
+        
+    # Force reload of back.config to propagate settings changes
+    import back.config
+    importlib.reload(back.config)
+    return {"status": "success", "message": "Paramètres mis à jour."}
+
+
+def rediscover_network():
+    from back.config import SWITCH
+    seed_ip = SWITCH.get("host")
+    if not seed_ip:
+        raise HTTPException(status_code=400, detail="Aucune adresse IP de seed n'est configurée.")
+        
+    credentials = {
+        "host": seed_ip,
+        "username": SWITCH.get("username", ""),
+        "password": SWITCH.get("password", ""),
+        "device_type": SWITCH.get("device_type", "cisco_ios")
+    }
+    return run_discovery(seed_ip, credentials)
+
+
+def deploy_topology_to_network():
+    _db = DB()
+    topology_data = _db.topology_from_db()
+    nodes = topology_data.get("nodes", [])
+    
+    from back.config import SWITCH
+    
+    results = []
+    for node in nodes:
+        node_detail = _db.get_node_interfaces(node.id)
+        if not node_detail:
+            continue
+            
+        if node.vendor == "simulated":
+            results.append({
+                "hostname": node.hostname,
+                "ip_address": node.ip_address,
+                "success": True,
+                "message": "Configuration simulée avec succès (nœud de démonstration)."
+            })
+            continue
+            
+        vlans = []
+        interfaces = []
+        for iface in node_detail.interfaces:
+            # Check if it's a VLAN database entry (e.g. VLAN10)
+            if iface.name.upper().startswith("VLAN") and iface.name[4:].isdigit():
+                vlans.append({
+                    "vlan_id": iface.vlan_id,
+                    "name": iface.description or f"VLAN_{iface.vlan_id}"
+                })
+            else:
+                interfaces.append({
+                    "interface": iface.name,
+                    "description": iface.description or "",
+                    "mode": iface.mode,
+                    "vlan": iface.vlan_id,
+                    "allowed_vlans": iface.allowed_vlans
+                })
+                
+        config_data = {
+            "vlans": vlans,
+            "interfaces": interfaces
+        }
+        
+        connection_params = {
+            "host": node.ip_address,
+            "device_type": node.device_type or "cisco_ios",
+            "username": SWITCH.get("username", "admin"),
+            "password": SWITCH.get("password", "")
+        }
+        
+        success, msg = apply_device_config(connection_params, config_data)
+        results.append({
+            "hostname": node.hostname,
+            "ip_address": node.ip_address,
+            "success": success,
+            "message": msg
+        })
+        
+    return {"status": "success", "results": results}
+
+
+def reset_database_and_app():
+    from backend.db import SessionLocal
+    from backend.db.models import Node, Interface, Link, TableUser
+    import os
+    import importlib
+    
+    with SessionLocal() as session:
+        # Clear topology tables
+        session.query(Link).delete()
+        session.query(Interface).delete()
+        session.query(Node).delete()
+        session.query(TableUser).delete()
+        session.commit()
+        
+    # Re-create default admin user
+    from api.models import ModelUser
+    from api.tools import add_admin_account
+    dataModel = {
+        "first_name": "administrateur",
+        "email": os.environ.get("SOCIETY_ADMIN_EMAIL") or "admin@example.com",
+        "login": "admin",
+        "password": "admin123",
+        "role": "admin",
+    }
+    add_admin_account(ModelUser(**dataModel))
+    
+    # Remove custom settings override
+    config_json_path = os.path.join("back", "config.json")
+    if os.path.exists(config_json_path):
+        try:
+            os.remove(config_json_path)
+        except Exception:
+            pass
+            
+    # Reload config
+    import back.config
+    importlib.reload(back.config)
+    
+    return {"status": "success", "message": "Base de données supprimée et application réinitialisée."}
+
 

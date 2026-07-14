@@ -26,9 +26,9 @@ BACK_DIR=/app/back
 # FastAPI
 APP_HOST=0.0.0.0
 APP_PORT=8000
-⚠️ Important : Ne jamais committer ce fichier ! Ajoutez-le à .gitignore.
+Important : Ne jamais committer ce fichier ! Ajoutez-le à .gitignore.
 
-🐳 2. docker-compose.yml
+2. docker-compose.yml
 version: '3.8'
 
 services:
@@ -73,19 +73,19 @@ services:
         condition: service_healthy
     command: >
       sh -c "
-        echo '⏳ Waiting for DB...' &&
+        echo 'Waiting for DB...' &&
         sleep 5 &&
-        alembic upgrade head || { echo '⚠️ Migration skipped (first run?)'; } &&
+        alembic upgrade head || { echo 'Migration skipped (first run?)'; } &&
         uvicorn app.main:app --host 0.0.0.0 --port 8000
       "
 
 volumes:
   mariadb_data:
-📜 3. init-db.sh (script d’initialisation de la DB)
+3. init-db.sh (script d’initialisation de la DB)
 #!/bin/bash
 set -e
 
-echo "🔧 Creating database and user..."
+echo "Creating database and user..."
 
 mariadb -u root -p"$MARIADB_ROOT_PASSWORD" <<SQL
 CREATE DATABASE IF NOT EXISTS sdn_db;
@@ -94,11 +94,11 @@ GRANT ALL PRIVILEGES ON sdn_db.* TO 'sdn_user'@'%';
 FLUSH PRIVILEGES;
 SQL
 
-echo "✅ Database and user ready."
-✅ Rendre exécutable :
+echo "Database and user ready."
+Rendre exécutable :
 
 chmod +x init-db.sh
-📦 4. Dockerfile.api
+4. Dockerfile.api
 # Build stage (pour installer les dépendances)
 FROM python:3.12-slim AS builder
 

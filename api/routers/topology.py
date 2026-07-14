@@ -2,9 +2,29 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
 from backend.db.models import Node, Interface
-from ..models import TopologyNode, TopologyLink, TopologyGraph, InterfaceSchema, TopologySyncRequest, InterfaceUpdate, TopologyLayoutUpdate
+from ..models import (
+    TopologyNode,
+    TopologyLink,
+    TopologyGraph,
+    InterfaceSchema,
+    TopologySyncRequest,
+    InterfaceUpdate,
+    TopologyLayoutUpdate,
+    DeviceCredentials
+)
 
-from ..tools import topology_db, get_nodes, get_node_interfaces, sync_random_topology, update_layout
+from ..tools import (
+    topology_db,
+    get_nodes,
+    get_node_interfaces,
+    sync_random_topology,
+    update_layout,
+    get_settings,
+    update_settings,
+    rediscover_network,
+    deploy_topology_to_network,
+    reset_database_and_app
+)
 
 router = APIRouter(prefix="/db", tags=["topology"])
 
@@ -38,3 +58,24 @@ def update_interface_route(interface_id: int, data: InterfaceUpdate):
 @router.put("/topology/layout")
 def _update_layout(data: TopologyLayoutUpdate):
     return update_layout(data)
+
+@router.get("/settings", response_model=DeviceCredentials)
+def _get_settings():
+    return get_settings()
+
+@router.post("/settings")
+def _update_settings(data: DeviceCredentials):
+    return update_settings(data.model_dump())
+
+@router.post("/rediscover")
+def _rediscover_network():
+    return rediscover_network()
+
+@router.post("/deploy")
+def _deploy_topology():
+    return deploy_topology_to_network()
+
+@router.post("/reset")
+def _reset_app():
+    return reset_database_and_app()
+

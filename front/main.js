@@ -27,8 +27,34 @@ class SDNController {
         this.initGraph();
 
         this.log("Système prêt.");
-        document.getElementById('refresh-topology-btn')?.addEventListener('click', () => {
+        
+        // Bind new action buttons
+        document.getElementById('refresh-db-btn')?.addEventListener('click', () => {
             this.fetchRealTopology();
+        });
+
+        document.getElementById('discover-network-btn')?.addEventListener('click', () => {
+            this.rediscoverNetwork();
+        });
+
+        document.getElementById('deploy-network-btn')?.addEventListener('click', () => {
+            this.deployTopology();
+        });
+
+        document.getElementById('save-settings-btn')?.addEventListener('click', () => {
+            this.saveSettings();
+        });
+
+        document.getElementById('reset-app-btn')?.addEventListener('click', () => {
+            this.showConfirmModal();
+        });
+
+        document.getElementById('confirm-cancel-btn')?.addEventListener('click', () => {
+            this.hideConfirmModal();
+        });
+
+        document.getElementById('confirm-reset-btn')?.addEventListener('click', () => {
+            this.resetApp();
         });
         
         const lockBtn = document.getElementById('lock-topology-btn');
@@ -38,6 +64,191 @@ class SDNController {
             });
             // Update button state to match initial state
             this.updateLockButtonUI();
+        }
+        
+        // Fetch existing topology and load configuration on load
+        this.loadSettings();
+        this.fetchRealTopology();
+    }
+
+    async loadSettings() {
+        try {
+            const response = await fetch(`${API_BASE}/db/settings`);
+            if (response.ok) {
+                const settings = await response.json();
+                document.getElementById('settings-ip').value = settings.host || '';
+                document.getElementById('settings-username').value = settings.username || '';
+                document.getElementById('settings-password').value = settings.password || '';
+                document.getElementById('settings-device-type').value = settings.device_type || 'cisco_ios';
+                this.log("Paramètres de connexion chargés.");
+            }
+        } catch (error) {
+            this.log("Impossible de charger les paramètres.");
+        }
+    }
+
+    async saveSettings() {
+        const host = document.getElementById('settings-ip').value.trim();
+        const username = document.getElementById('settings-username').value.trim();
+        const password = document.getElementById('settings-password').value.trim();
+        const deviceType = document.getElementById('settings-device-type').value;
+
+        if (!host || !username || !password) {
+            this.log("Champs de paramètres de connexion incomplets.");
+            alert("Veuillez remplir l'adresse IP, l'utilisateur et le mot de passe.");
+            return;
+        }
+
+        const btn = document.getElementById('save-settings-btn');
+        btn.disabled = true;
+        btn.textContent = "Enregistrement...";
+
+        try {
+            const response = await fetch(`${API_BASE}/db/settings`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ host, username, password, device_type: deviceType })
+            });
+
+            if (response.ok) {
+                this.log("Paramètres de connexion sauvegardés.");
+                alert("Paramètres enregistrés avec succès.");
+            } else {
+                throw new Error();
+            }
+        } catch (error) {
+            this.log("Erreur lors de la sauvegarde des paramètres.");
+            alert("Erreur lors de la sauvegarde.");
+        } finally {
+            btn.disabled = false;
+            btn.textContent = "Enregistrer";
+        }
+    }
+
+    async rediscoverNetwork() {
+        const btn = document.getElementById('discover-network-btn');
+        btn.disabled = true;
+        btn.textContent = "Découverte...";
+        this.log("Début de la découverte réseau...");
+
+        try {
+            const response = await fetch(`${API_BASE}/db/rediscover`, {
+                method: 'POST'
+            });
+
+            const result = await response.json();
+            if (response.ok) {
+                this.log(`Découverte terminée : ${result.nodes_discovered} nœud(s) découvert(s).`);
+                alert(`Découverte terminée : ${result.nodes_discovered} nœud(s) découvert(s).`);
+                this.fetchRealTopology();
+            } else {
+                throw new Error(result.detail || "Échec de la découverte");
+            }
+        } catch (error) {
+            this.log(`Erreur de découverte : ${error.message}`);
+            alert(`Erreur : ${error.message}`);
+        } finally {
+            btn.disabled = false;
+            btn.textContent = "Découvrir le réseau";
+        }
+    }
+
+    async deployTopology() {
+        const btn = document.getElementById('deploy-network-btn');
+        btn.disabled = true;
+        btn.textContent = "Envoi en cours...";
+        this.log("Déploiement de la configuration au réseau...");
+
+        try {
+            const response = await fetch(`${API_BASE}/db/deploy`, {
+                method: 'POST'
+            });
+
+            const result = await response.json();
+            if (response.ok) {
+                let successCount = 0;
+                let failCount = 0;
+                result.results.forEach(res => {
+                    if (res.success) {
+                        this.log(`[Succès] ${res.hostname || res.ip_address} : ${res.message}`);
+                        successCount++;
+                    } else {
+                        this.log(`[Erreur] ${res.hostname || res.ip_address} : ${res.message}`);
+                        failCount++;
+                    }
+                });
+                alert(`Déploiement terminé.\nSuccès : ${successCount}, Échecs : ${failCount}`);
+            } else {
+                throw new Error(result.detail || "Échec du déploiement");
+            }
+        } catch (error) {
+            this.log(`Erreur de déploiement : ${error.message}`);
+            alert(`Erreur : ${error.message}`);
+        } finally {
+            btn.disabled = false;
+            btn.textContent = "Envoyer au réseau";
+        }
+    }
+
+    showConfirmModal() {
+        const modal = document.getElementById('confirm-modal');
+        if (modal) modal.style.display = 'flex';
+    }
+
+    hideConfirmModal() {
+        const modal = document.getElementById('confirm-modal');
+        if (modal) modal.style.display = 'none';
+    }
+
+    async resetApp() {
+        this.hideConfirmModal();
+        this.log("Réinitialisation de l'application...");
+
+        try {
+            const response = await fetch(`${API_BASE}/db/reset`, {
+                method: 'POST'
+            });
+
+            if (response.ok) {
+                this.log("Application réinitialisée. Base de données vidée.");
+                this.selectedNode = null;
+                this.updateNodeInfoUI(null);
+                this.closePanel();
+                
+                // Vider les inputs
+                document.getElementById('settings-ip').value = '';
+                document.getElementById('settings-username').value = '';
+                document.getElementById('settings-password').value = '';
+                document.getElementById('settings-device-type').value = 'cisco_ios';
+                
+                alert("L'application a été réinitialisée avec succès.");
+                await this.fetchRealTopology();
+            } else {
+                throw new Error("Erreur lors de la réinitialisation");
+            }
+        } catch (error) {
+            this.log(`Erreur de réinitialisation : ${error.message}`);
+            alert(`Erreur : ${error.message}`);
+        }
+    }
+
+    updateNodeInfoUI(node) {
+        const container = document.getElementById('node-info-section');
+        const infoCard = document.getElementById('selected-node-info');
+        if (!container || !infoCard) return;
+
+        if (node) {
+            container.style.display = 'block';
+            infoCard.innerHTML = `
+                <div style="display:flex; flex-direction:column; gap:6px;">
+                    <div><strong>Nom :</strong> ${node.label}</div>
+                    <div><strong>Adresse IP :</strong> ${node.ip}</div>
+                    <div><strong>Type :</strong> ${node.type.toUpperCase()}</div>
+                </div>
+            `;
+        } else {
+            container.style.display = 'none';
+            infoCard.innerHTML = '';
         }
     }
     async fetchRealTopology() {
@@ -52,6 +263,14 @@ class SDNController {
             // Valider la structure
             if (!Array.isArray(data.nodes) || !Array.isArray(data.links)) {
                 throw new Error("Réponse API invalide");
+            }
+
+            // Check if topology is empty (first initialization)
+            if (data.nodes.length === 0) {
+                this.showSetupOverlay();
+                return;
+            } else {
+                this.hideSetupOverlay();
             }
 
             // Check if any node is locked in DB
@@ -165,6 +384,89 @@ class SDNController {
         }
     }
 
+    showSetupOverlay() {
+        const overlay = document.getElementById('setup-overlay');
+        if (overlay) {
+            overlay.style.display = 'flex';
+            this.initSetupForm();
+        }
+    }
+
+    hideSetupOverlay() {
+        const overlay = document.getElementById('setup-overlay');
+        if (overlay) {
+            overlay.style.display = 'none';
+        }
+    }
+
+    initSetupForm() {
+        const form = document.getElementById('setup-form');
+        const demoBtn = document.getElementById('btn-setup-demo');
+        const submitBtn = document.getElementById('btn-setup-submit');
+        const spinner = submitBtn ? submitBtn.querySelector('.spinner') : null;
+        const btnText = submitBtn ? submitBtn.querySelector('.btn-text') : null;
+        const errorDiv = document.getElementById('setup-error');
+
+        if (form && !form.dataset.initialized) {
+            form.dataset.initialized = 'true';
+            form.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const ip = document.getElementById('setup-ip').value;
+                const username = document.getElementById('setup-username').value;
+                const password = document.getElementById('setup-password').value;
+                const deviceType = document.getElementById('setup-device-type').value;
+
+                if (submitBtn) submitBtn.disabled = true;
+                if (spinner) spinner.style.display = 'block';
+                if (btnText) btnText.textContent = "Découverte en cours...";
+                if (errorDiv) errorDiv.style.display = 'none';
+
+                try {
+                    const response = await fetch(`${API_BASE}/api/network/crawl`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            host: ip,
+                            username: username,
+                            password: password,
+                            device_type: deviceType
+                        })
+                    });
+
+                    const result = await response.json();
+                    if (!response.ok) {
+                        throw new Error(result.detail || "Échec de la découverte");
+                    }
+
+                    this.log(`Découverte réussie : ${result.nodes_discovered} nœuds trouvés.`);
+                    this.hideSetupOverlay();
+                    this.fetchRealTopology();
+                } catch (err) {
+                    this.log(`Erreur de découverte : ${err.message}`);
+                    if (errorDiv) {
+                        errorDiv.textContent = `Erreur : ${err.message}`;
+                        errorDiv.style.display = 'block';
+                    }
+                } finally {
+                    if (submitBtn) submitBtn.disabled = false;
+                    if (spinner) spinner.style.display = 'none';
+                    if (btnText) btnText.textContent = "Démarrer la découverte";
+                }
+            });
+        }
+
+        if (demoBtn && !demoBtn.dataset.initialized) {
+            demoBtn.dataset.initialized = 'true';
+            demoBtn.addEventListener('click', () => {
+                this.log("Génération de la topologie de démonstration...");
+                this.generateRandomTopology();
+                this.hideSetupOverlay();
+            });
+        }
+    }
+
     toggleGraphLock() {
         this.isGraphLocked = !this.isGraphLocked;
         this.updateLockButtonUI();
@@ -234,6 +536,7 @@ class SDNController {
                 d3.selectAll(".node circle")
                     .style("stroke-width", 2)
                     .style("stroke", "#34495e");
+                this.updateNodeInfoUI(null);
                 this.closePanel();
             });
 
@@ -662,6 +965,7 @@ class SDNController {
                 .style("stroke-width", 2)
                 .style("stroke", "#34495e");
             this.log(`Désélection de ${node.label}`);
+            this.updateNodeInfoUI(null);
             this.closePanel();
         } else {
             if (this.selectedNode) {
@@ -681,6 +985,7 @@ class SDNController {
 
             this.selectedNode = node;
             this.log(`Sélection : ${node.label} (IP: ${node.ip})`);
+            this.updateNodeInfoUI(node);
             this.fetchSelectedNode();
         }
     }
@@ -910,7 +1215,7 @@ class SDNController {
         }
     }
     async fetchAllInterfaces() {
-        this.log("Récupération de toutes les interfaces pour les filtres VLAN...");
+        this.log("Interfaces chargées.");
         this.allInterfaces = {};
         const vlanSet = new Set();
         

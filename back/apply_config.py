@@ -27,7 +27,7 @@ def build_commands(data, device_type):
         iface_name = iface["interface"]
 
         if iface_name in PROTECTED_INTERFACES:
-            print(f"⚠ Interface protégée ignorée : {iface_name}")
+            print(f"Attention : Interface protégée ignorée : {iface_name}")
             continue
 
         commands.append(syntax["interface"].format(iface=iface_name))
@@ -98,13 +98,13 @@ def main():
         if commands:
             output = connection.send_config_set(commands)
             connection.save_config()
-            print("\n✅ Configuration appliquée avec succès.")
+            print("\nSuccès : Configuration appliquée avec succès.")
             print(output)
         else:
             print("Aucune commande à envoyer.")
         connection.disconnect()
     except Exception as e:
-        print(f"❌ Erreur lors de l'application: {e}")
+        print(f"Erreur lors de l'application: {e}")
 
 if __name__ == "__main__":
     main()

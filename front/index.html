@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>WebSDN Controller Simulator</title>
+    <title>ConfT</title>
     <meta name="description"
         content="ConfT - Simulateur de contrôleur SDN avec visualisation de topologie réseau dynamique">
     <script src="https://d3js.org/d3.v7.min.js"></script>
@@ -16,36 +16,69 @@
     <!-- Sidebar -->
     <div class="sidebar">
         <div class="header">
-            <h1>WebSDN Controller</h1>
-            <p>Simulation OpenFlow / Topologie Dynamique</p>
+            <h1>ConfT</h1>
+            <p>Contrôleur SDN et Automatisation Réseau</p>
         </div>
 
         <div class="control-panel">
-            <h3>1. Infrastructure (Nodes)</h3>
-            <div class="control-group">
-                <button id="refresh-topology-btn" class="btn-refresh">Recharger la topologie (API)</button>
-                <!--
-                refetch network
-                fetch selected node
-                
-                -->
-
+            <div class="sidebar-section">
+                <h3>Topologie & Réseau</h3>
+                <div class="button-group">
+                    <button id="refresh-db-btn" class="btn-action">
+                        Recharger depuis la DB
+                    </button>
+                    <button id="discover-network-btn" class="btn-action">
+                        Découvrir le réseau
+                    </button>
+                    <button id="deploy-network-btn" class="btn-action btn-deploy">
+                        Envoyer au réseau
+                    </button>
+                </div>
             </div>
 
-
-            <div class="control-group">
-                <div id="selected-node-info"></div>
+            <div class="sidebar-section" id="node-info-section" style="display: none;">
+                <h3>Équipement Sélectionné</h3>
+                <div id="selected-node-info" class="node-info-card"></div>
             </div>
 
-            <h3>demo</h3>
-            <div class="control-group">
-                <button onclick="app.generateRandomTopology()">Générer Topo Aléatoire</button>
+            <div class="sidebar-section">
+                <h3>Paramètres de Connexion</h3>
+                <div class="settings-form">
+                    <div class="input-group">
+                        <label for="settings-ip">Adresse IP (Seed)</label>
+                        <input type="text" id="settings-ip" placeholder="ex: 192.168.1.1">
+                    </div>
+                    <div class="input-group">
+                        <label for="settings-username">Utilisateur SSH</label>
+                        <input type="text" id="settings-username" placeholder="ex: admin">
+                    </div>
+                    <div class="input-group">
+                        <label for="settings-password">Mot de passe</label>
+                        <input type="password" id="settings-password" placeholder="••••••••">
+                    </div>
+                    <div class="input-group">
+                        <label for="settings-device-type">Type d'équipement</label>
+                        <select id="settings-device-type">
+                            <option value="cisco_ios">Cisco IOS</option>
+                            <option value="cisco_xe">Cisco XE</option>
+                            <option value="cisco_xr">Cisco XR</option>
+                        </select>
+                    </div>
+                    <button id="save-settings-btn" class="btn-save">Enregistrer</button>
+                    <button id="reset-app-btn" class="btn-danger">Réinitialiser l'application</button>
+                </div>
             </div>
 
+            <div class="sidebar-section">
+                <h3>Démo & Simulation</h3>
+                <button onclick="app.generateRandomTopology()" class="btn-demo">Générer Topo Démo</button>
+            </div>
 
-            <div class="terminal" id="console-log">
-                <div>> Initialisation du contrôleur </div>
-                
+            <div class="sidebar-section console-section">
+                <h3>Terminal SDN</h3>
+                <div class="terminal" id="console-log">
+                    <div>> Initialisation du contrôleur </div>
+                </div>
             </div>
         </div>
     </div>
@@ -76,6 +109,66 @@
             </div>
             <div class="panel-content" id="interfaces-list">
                 <!-- Interface cards will be generated here -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Setup Overlay for First-time Onboarding -->
+    <div id="setup-overlay" class="setup-overlay" style="display: none;">
+        <div class="setup-card">
+            <h2>Initialisation de ConfT</h2>
+            <p class="setup-subtitle">Entrez les identifiants de votre équipement réseau initial pour démarrer la découverte automatique.</p>
+            
+            <form id="setup-form">
+                <div class="form-group">
+                    <label for="setup-ip">Adresse IP initiale (Seed IP)</label>
+                    <input type="text" id="setup-ip" placeholder="ex: 192.168.1.1" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="setup-username">Identifiant (SSH)</label>
+                    <input type="text" id="setup-username" placeholder="ex: admin" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="setup-password">Mot de passe</label>
+                    <input type="password" id="setup-password" placeholder="••••••••" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="setup-device-type">Type d'équipement</label>
+                    <select id="setup-device-type">
+                        <option value="cisco_ios">Cisco IOS</option>
+                        <option value="cisco_xe">Cisco XE</option>
+                        <option value="cisco_xr">Cisco XR</option>
+                    </select>
+                </div>
+
+                <div class="setup-error" id="setup-error" style="display: none;"></div>
+
+                <button type="submit" class="btn-setup-submit" id="btn-setup-submit">
+                    <span class="btn-text">Démarrer la découverte</span>
+                    <span class="spinner" style="display: none;"></span>
+                </button>
+            </form>
+            
+            <div class="setup-divider">
+                <span>ou</span>
+            </div>
+            
+            <button class="btn-setup-demo" id="btn-setup-demo">
+                Générer une topologie de démonstration
+            </button>
+        </div>
+    </div>
+    <!-- Confirmation Modal for Reset -->
+    <div id="confirm-modal" class="confirm-modal" style="display: none;">
+        <div class="confirm-modal-card">
+            <h3>Confirmation de réinitialisation</h3>
+            <p>Êtes-vous sûr de vouloir supprimer la base de données et réinitialiser l'application ? Cette action est irréversible.</p>
+            <div class="confirm-modal-actions">
+                <button id="confirm-cancel-btn" class="btn-modal-cancel">Annuler</button>
+                <button id="confirm-reset-btn" class="btn-modal-danger">Réinitialiser</button>
             </div>
         </div>
     </div>
