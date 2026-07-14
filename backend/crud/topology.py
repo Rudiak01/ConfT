@@ -196,7 +196,7 @@ class DB:
                         node_id=node.id,
                         name=iface.name,
                         description=iface.description or "",
-                        mode=iface.mode or "access",
+                        mode=iface.mode,
                         vlan_id=iface.vlan_id,
                         allowed_vlans=iface.allowed_vlans,
                         is_protected=False
@@ -233,4 +233,36 @@ class DB:
                     node.fx = update.fx
                     node.fy = update.fy
                     node.is_locked = update.is_locked
-            session.commit()
+            session.commit()
+
+    def create_interface(self, node_id: int, name: str, mode: str, vlan_id: int = None, description: str = None, allowed_vlans: str = None):
+        with SessionLocal() as session:
+            iface = Interface(
+                node_id=node_id,
+                name=name,
+                description=description or "",
+                mode=mode,
+                vlan_id=vlan_id,
+                allowed_vlans=allowed_vlans,
+                is_protected=False
+            )
+            session.add(iface)
+            session.commit()
+            session.refresh(iface)
+            return {
+                "id": iface.id,
+                "name": iface.name,
+                "description": iface.description,
+                "mode": iface.mode,
+                "vlan_id": iface.vlan_id,
+                "allowed_vlans": iface.allowed_vlans
+            }
+
+    def delete_interface(self, interface_id: int) -> bool:
+        with SessionLocal() as session:
+            iface = session.get(Interface, interface_id)
+            if not iface:
+                return False
+            session.delete(iface)
+            session.commit()
+            return True

@@ -11,7 +11,8 @@ from ..models import (
     InterfaceUpdate,
     TopologyLayoutUpdate,
     DeviceCredentials,
-    NodeUpdate
+    NodeUpdate,
+    InterfaceCreate
 )
 
 from ..tools import (
@@ -55,6 +56,16 @@ def _sync_random_topology(data: TopologySyncRequest):
 def update_interface_route(interface_id: int, data: InterfaceUpdate):
     from api.tools import update_interface
     return update_interface(interface_id, data)
+
+@router.post("/node/{node_id}/interface")
+def create_interface_route(node_id: int, data: InterfaceCreate):
+    from api.tools import create_interface
+    return create_interface(node_id, data)
+
+@router.delete("/interface/{interface_id}")
+def delete_interface_route(interface_id: int):
+    from api.tools import delete_interface
+    return delete_interface(interface_id)
 
 @router.put("/node/{node_id}")
 def update_node_route(node_id: int, data: NodeUpdate):

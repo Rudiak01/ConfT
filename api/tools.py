@@ -111,6 +111,31 @@ def update_interface(interface_id: int, data):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
+def create_interface(node_id: int, data):
+    _db = DB()
+    try:
+        new_iface = _db.create_interface(
+            node_id=node_id,
+            name=data.name,
+            mode=data.mode,
+            vlan_id=data.vlan_id,
+            description=data.description,
+            allowed_vlans=data.allowed_vlans
+        )
+        return {"status": "success", "message": "Interface created", "interface": new_iface}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+def delete_interface(interface_id: int):
+    _db = DB()
+    try:
+        success = _db.delete_interface(interface_id)
+        if not success:
+            raise HTTPException(status_code=404, detail="Interface not found")
+        return {"status": "success", "message": "Interface deleted"}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
 def update_node(node_id: int, data):
     _db = DB()
     try:
@@ -344,8 +369,10 @@ def get_settings():
         "host": SWITCH.get("host", ""),
         "username": SWITCH.get("username", ""),
         "password": SWITCH.get("password", ""),
-        "device_type": SWITCH.get("device_type", "cisco_ios")
-    }
+        "device_type": SWITCH.get("device_type", "cisco_ios"),
+        "enable_vlan_feasibility": SWITCH.get("enable_vlan_feasibility", False)
+        }
+
 
 
 def update_settings(settings: dict):
