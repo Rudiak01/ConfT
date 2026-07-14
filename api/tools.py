@@ -111,6 +111,16 @@ def update_interface(interface_id: int, data):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
+def update_node(node_id: int, data):
+    _db = DB()
+    try:
+        updated_node = _db.update_node(node_id, data.model_dump(exclude_unset=True))
+        if not updated_node:
+            raise HTTPException(status_code=404, detail="Node not found")
+        return {"status": "success", "message": "Node updated"}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
 def token(form_data):
     """
     return the token of the user

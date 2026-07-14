@@ -54,6 +54,23 @@ class DB:
                 "allowed_vlans": iface.allowed_vlans
             }
 
+    def update_node(self, id: int, update_data: dict):
+        with SessionLocal() as session:
+            node = session.get(Node, id)
+            if not node:
+                return None
+            for key, value in update_data.items():
+                if hasattr(node, key):
+                    setattr(node, key, value)
+            session.commit()
+            session.refresh(node)
+            return {
+                "id": node.id,
+                "hostname": node.hostname,
+                "ip_address": node.ip_address,
+                "device_type": node.device_type
+            }
+
     def upsert_discovered_nodes(self, nodes_data: dict, edges_data: list = None) -> list[dict]:
         nodes_created = []
         if edges_data is None:

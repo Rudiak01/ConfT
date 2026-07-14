@@ -35,24 +35,45 @@ body {
 }
 
 .header {
-    padding: 24px;
+    padding: 15px;
     background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
     color: white;
-    text-align: center;
     border-bottom: 1px solid #1e293b;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+    flex-shrink: 0;
+
+}
+
+.header-logo {
+    width: 96px;
+    height: 96px;
+    flex-shrink: 0;
+}
+
+.header-text {
+    display: flex;
+    flex-direction: column;
+    text-align: center;
+    align-items: center;
 }
 
 .header h1 {
     margin: 0;
-    font-size: 1.6rem;
+    font-size: 2.4rem;
     font-weight: 700;
     letter-spacing: -0.5px;
+    line-height: 1.2;
 }
 
 .header p {
-    margin: 6px 0 0;
-    font-size: 0.85rem;
+    margin: 4px 0 0;
+    font-size: 0.8rem;
     opacity: 0.85;
+    line-height: 1.3;
 }
 
 .control-panel {
@@ -98,7 +119,7 @@ button.btn-action {
     padding: 10px 14px;
     font-size: 0.9rem;
     font-weight: 500;
-    border-radius: 6px;
+    border-radius: 2px;
     cursor: pointer;
     transition: all 0.2s ease;
     text-align: left;
@@ -138,7 +159,7 @@ button.btn-deploy:hover {
     background: #f8fafc;
     border: 1px solid #f1f5f9;
     padding: 15px;
-    border-radius: 8px;
+    border-radius: 4px;
 }
 
 .input-group {
@@ -153,11 +174,11 @@ button.btn-deploy:hover {
     color: #64748b;
 }
 
-.input-group input,
+.input-group input:not([type="range"]),
 .input-group select {
     padding: 8px 10px;
     border: 1px solid #cbd5e1;
-    border-radius: 6px;
+    border-radius: 2px;
     font-size: 0.85rem;
     background-color: #ffffff;
     transition: all 0.2s ease;
@@ -166,11 +187,60 @@ button.btn-deploy:hover {
     box-sizing: border-box;
 }
 
-.input-group input:focus,
+.input-group input:not([type="range"]):focus,
 .input-group select:focus {
     border-color: #3b82f6;
     outline: none;
     box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+}
+
+/* Custom premium range slider */
+.input-group input[type="range"] {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 100%;
+    height: 6px;
+    background: #e2e8f0;
+    border-radius: 9999px;
+    outline: none;
+    margin: 8px 0;
+    cursor: pointer;
+    transition: background 0.2s;
+    border: none;
+    padding: 0;
+}
+
+.input-group input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: #3b82f6;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.15);
+    border: 2px solid #ffffff;
+    transition: transform 0.1s, background-color 0.2s;
+}
+
+.input-group input[type="range"]::-webkit-slider-thumb:hover {
+    transform: scale(1.2);
+    background: #2563eb;
+}
+
+.input-group input[type="range"]::-moz-range-thumb {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background: #3b82f6;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.15);
+    border: 2px solid #ffffff;
+    cursor: pointer;
+    transition: transform 0.1s, background-color 0.2s;
+}
+
+.input-group input[type="range"]::-moz-range-thumb:hover {
+    transform: scale(1.2);
+    background: #2563eb;
 }
 
 button.btn-save {
@@ -178,7 +248,7 @@ button.btn-save {
     color: white;
     border: none;
     padding: 10px;
-    border-radius: 6px;
+    border-radius: 2px;
     font-weight: 600;
     cursor: pointer;
     transition: background 0.2s;
@@ -195,7 +265,7 @@ button.btn-danger {
     color: white;
     border: none;
     padding: 10px;
-    border-radius: 6px;
+    border-radius: 2px;
     font-weight: 600;
     cursor: pointer;
     transition: background 0.2s;
@@ -212,7 +282,7 @@ button.btn-demo {
     color: #475569;
     border: 2px dashed #cbd5e1;
     padding: 10px;
-    border-radius: 6px;
+    border-radius: 2px;
     font-weight: 500;
     cursor: pointer;
     transition: all 0.2s;
@@ -230,16 +300,19 @@ button.btn-demo:hover {
     background: #f0f9ff;
     border: 1px solid #bae6fd;
     padding: 14px;
-    border-radius: 8px;
+    border-radius: 4px;
     font-size: 0.9rem;
     color: #0369a1;
 }
 
 /* Terminal log adjustments */
 .console-section {
-    flex-grow: 1;
+    padding: 10px;
+    border-top: 1px solid #e2e8f0;
+    background-color: #ffffff;
     display: flex;
     flex-direction: column;
+    flex-shrink: 0;
 }
 
 .console-section h3 {
@@ -248,16 +321,40 @@ button.btn-demo:hover {
 
 .terminal {
     background: #0f172a;
-    border-radius: 8px;
+    border-radius: 2px;
     border: 1px solid #1e293b;
     color: #38bdf8;
     padding: 12px;
     font-size: 0.8rem;
     line-height: 1.4;
-    min-height: 140px;
-    max-height: 200px;
+    min-height: 300px;
+    max-height: 300px;
     overflow-y: auto;
     flex-grow: 1;
+    /* Firefox */
+    scrollbar-width: thin;
+    scrollbar-color: #334155 #0f172a;
+}
+
+/* WebKit-based browsers (Chrome, Safari, Edge) */
+.terminal::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+.terminal::-webkit-scrollbar-track {
+    background: #0f172a;
+    border-radius: 2px;
+}
+
+.terminal::-webkit-scrollbar-thumb {
+    background: #1e293b;
+    border-radius: 4px;
+    border: 1px solid #334155;
+}
+
+.terminal::-webkit-scrollbar-thumb:hover {
+    background: #334155;
 }
 
 /* Custom Confirmation Modal */
@@ -277,7 +374,7 @@ button.btn-demo:hover {
 
 .confirm-modal-card {
     background: #ffffff;
-    border-radius: 12px;
+    border-radius: 4px;
     width: 400px;
     max-width: 90%;
     padding: 24px;
@@ -312,7 +409,7 @@ button.btn-demo:hover {
     color: #475569;
     border: 1px solid #e2e8f0;
     padding: 8px 16px;
-    border-radius: 6px;
+    border-radius: 2px;
     font-weight: 600;
     cursor: pointer;
     transition: all 0.2s;
@@ -330,7 +427,7 @@ button.btn-demo:hover {
     color: white;
     border: none;
     padding: 8px 16px;
-    border-radius: 6px;
+    border-radius: 2px;
     font-weight: 600;
     cursor: pointer;
     transition: background 0.2s;
@@ -376,7 +473,7 @@ button.btn-demo:hover {
     left: 20px;
     background: white;
     padding: 15px;
-    border-radius: 8px;
+    border-radius: 4px;
     box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
     display: flex;
     gap: 15px;
@@ -557,7 +654,7 @@ button.btn-demo:hover {
 .top-filter {
     background: white;
     padding: 10px 15px;
-    border-radius: 8px;
+    border-radius: 4px;
     box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
     display: flex;
     align-items: center;
@@ -575,14 +672,13 @@ button.btn-demo:hover {
     filter: drop-shadow(0 0 5px #f1c40f);
 }
 
-/* Setup Overlay for Onboarding */
 .setup-overlay {
     position: fixed;
     top: 0;
     left: 0;
     width: 100vw;
     height: 100vh;
-    background: rgba(44, 62, 80, 0.95);
+    background: rgba(15, 23, 42, 0.95);
     backdrop-filter: blur(8px);
     z-index: 2000;
     display: flex;
@@ -590,14 +686,40 @@ button.btn-demo:hover {
     align-items: center;
 }
 
+.setup-logo-bg {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 1600px;
+    height: 1600px;
+    background-image: url('ConfT.svg');
+    background-repeat: no-repeat;
+    background-position: center;
+    background-size: contain;
+    opacity: 0.08;
+    pointer-events: none;
+    z-index: 0;
+}
+
 .setup-card {
     background: white;
     padding: 40px;
-    border-radius: 12px;
+    border-radius: 4px;
     box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
     width: 450px;
     max-width: 90%;
     box-sizing: border-box;
+    z-index: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+.setup-card-logo {
+    display: block;
+    width: 80px;
+    height: 80px;
+    margin: 0 auto 20px auto;
 }
 
 .setup-card h2 {
@@ -634,7 +756,7 @@ button.btn-demo:hover {
 .form-group select {
     padding: 10px 12px;
     border: 1px solid #cbd5e0;
-    border-radius: 6px;
+    border-radius: 2px;
     font-size: 0.95rem;
     outline: none;
     transition: border-color 0.2s;
@@ -653,7 +775,7 @@ button.btn-demo:hover {
     color: #c53030;
     border: 1px solid #feb2b2;
     padding: 10px;
-    border-radius: 6px;
+    border-radius: 2px;
     font-size: 0.85rem;
     margin-bottom: 15px;
     text-align: center;
@@ -665,7 +787,7 @@ button.btn-demo:hover {
     font-weight: 600;
     font-size: 1rem;
     border: none;
-    border-radius: 6px;
+    border-radius: 2px;
     padding: 12px;
     width: 100%;
     cursor: pointer;
@@ -731,7 +853,7 @@ button.btn-demo:hover {
     padding: 12px;
     font-weight: 500;
     font-size: 0.95rem;
-    border-radius: 6px;
+    border-radius: 2px;
     cursor: pointer;
     width: 100%;
     transition: all 0.3s;
@@ -751,7 +873,7 @@ button.btn-lock {
     padding: 8px 16px;
     width: auto;
     margin-bottom: 0;
-    border-radius: 6px;
+    border-radius: 2px;
     box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
     font-size: 0.85rem;
     font-weight: 600;
@@ -779,4 +901,4 @@ button.btn-lock.locked:hover {
     border-color: #93c5fd;
     color: #1d4ed8;
 }
-
+

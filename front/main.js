@@ -139,14 +139,12 @@ class SDNController {
             const result = await response.json();
             if (response.ok) {
                 this.log(`Découverte terminée : ${result.nodes_discovered} nœud(s) découvert(s).`);
-                alert(`Découverte terminée : ${result.nodes_discovered} nœud(s) découvert(s).`);
                 this.fetchRealTopology();
             } else {
                 throw new Error(result.detail || "Échec de la découverte");
             }
         } catch (error) {
             this.log(`Erreur de découverte : ${error.message}`);
-            alert(`Erreur : ${error.message}`);
         } finally {
             btn.disabled = false;
             btn.textContent = "Découvrir le réseau";
@@ -177,7 +175,7 @@ class SDNController {
                         failCount++;
                     }
                 });
-                alert(`Déploiement terminé.\nSuccès : ${successCount}, Échecs : ${failCount}`);
+                this.log(`Déploiement terminé.\nSuccès : ${successCount}, Échecs : ${failCount}`);
             } else {
                 throw new Error(result.detail || "Échec du déploiement");
             }
@@ -221,7 +219,6 @@ class SDNController {
                 document.getElementById('settings-password').value = '';
                 document.getElementById('settings-device-type').value = 'cisco_ios';
                 
-                alert("L'application a été réinitialisée avec succès.");
                 await this.fetchRealTopology();
             } else {
                 throw new Error("Erreur lors de la réinitialisation");
@@ -241,14 +238,64 @@ class SDNController {
             container.style.display = 'block';
             infoCard.innerHTML = `
                 <div style="display:flex; flex-direction:column; gap:6px;">
-                    <div><strong>Nom :</strong> ${node.label}</div>
+                    <div style="display:flex; align-items:center; gap:8px;">
+                        <strong>Nom :</strong> 
+                        <input type="text" id="edit-node-label" value="${node.label || ''}" 
+                            style="flex: 1; padding: 4px 8px; border: 1px solid #cbd5e1; border-radius: 4px; font-size: 0.9rem; font-family: inherit; font-weight: bold; color: #334155; width: 100%; box-sizing: border-box;" />
+                    </div>
                     <div><strong>Adresse IP :</strong> ${node.ip}</div>
                     <div><strong>Type :</strong> ${node.type.toUpperCase()}</div>
                 </div>
             `;
+
+            const input = document.getElementById('edit-node-label');
+            if (input) {
+                input.addEventListener('change', (e) => {
+                    this.saveNodeLabel(node, e.target.value.trim());
+                });
+                input.addEventListener('keydown', (e) => {
+                    if (e.key === 'Enter') {
+                        input.blur();
+                    }
+                });
+            }
         } else {
             container.style.display = 'none';
             infoCard.innerHTML = '';
+        }
+    }
+
+    async saveNodeLabel(node, newLabel) {
+        if (!newLabel || newLabel === node.label) return;
+        
+        this.log(`Sauvegarde du nom de ${node.label} -> ${newLabel}...`);
+        const oldLabel = node.label;
+        node.label = newLabel;
+        
+        // Mettre à jour l'étiquette texte du SVG immédiatement
+        this.node.select("text").text(d => d.label);
+
+        try {
+            const response = await fetch(`${API_BASE}/db/node/${node.id}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ hostname: newLabel })
+            });
+
+            if (response.ok) {
+                this.log(`Nom sauvegardé avec succès.`);
+                const panelTitle = document.getElementById('panel-title');
+                if (panelTitle && this.selectedNode && this.selectedNode.id === node.id) {
+                    panelTitle.textContent = `Interfaces - ${newLabel}`;
+                }
+            } else {
+                throw new Error();
+            }
+        } catch (error) {
+            this.log(`Erreur lors de la sauvegarde du nom.`);
+            node.label = oldLabel;
+            this.node.select("text").text(d => d.label);
+            this.updateNodeInfoUI(node);
         }
     }
     async fetchRealTopology() {
@@ -280,8 +327,16 @@ class SDNController {
             }
             this.updateLockButtonUI();
 
-            // Mapping des nœuds pour conserver les positions s'ils existent déjà
-            const oldNodesMap = new Map(this.nodes.map(n => [n.id, n]));
+            // Mapping des nœuds pour conserver les positions s'ils existent déjà (par id et par ip)
+            const oldNodesMap = new Map();
+            this.nodes.forEach(n => {
+                if (n.id !== undefined && n.id !== null) {
+                    oldNodesMap.set(String(n.id), n);
+                }
+                if (n.ip) {
+                    oldNodesMap.set(n.ip, n);
+                }
+            });
             
             let savedState = null;
             try {
@@ -290,8 +345,8 @@ class SDNController {
             } catch(e) {}
 
             this.nodes = data.nodes.map(n => {
-                const oldNode = oldNodesMap.get(n.id);
-                const savedNode = savedState && savedState.nodes ? savedState.nodes[n.id] : null;
+                const oldNode = oldNodesMap.get(String(n.id)) || oldNodesMap.get(n.ip_address || n.ip);
+                const savedNode = savedState && savedState.nodes ? (savedState.nodes[n.id] || (oldNode && savedState.nodes[oldNode.id])) : null;
                 
                 let startX = (Math.random() * 200) + (this.width / 2 - 100);
                 let startY = (Math.random() * 200) + (this.height / 2 - 100);
@@ -534,8 +589,8 @@ class SDNController {
             .on("dblclick", () => {
                 this.selectedNode = null;
                 d3.selectAll(".node circle")
-                    .style("stroke-width", 2)
-                    .style("stroke", "#34495e");
+                    .style("stroke-width", 0)
+                    .style("stroke", "white");
                 this.updateNodeInfoUI(null);
                 this.closePanel();
             });
@@ -568,7 +623,48 @@ class SDNController {
                     .attr("x1", d => d.source.x)
                     .attr("y1", d => d.source.y)
                     .attr("x2", d => d.target.x)
-                    .attr("y2", d => d.target.y);
+                    .attr("y2", d => d.target.y)
+                    .style("stroke-dasharray", d => {
+                        const srcNode = typeof d.source === 'object' ? d.source : this.nodes.find(n => n.id === d.source);
+                        const tgtNode = typeof d.target === 'object' ? d.target : this.nodes.find(n => n.id === d.target);
+                        if (!srcNode || !tgtNode) return "none";
+                        const srcType = srcNode.type;
+                        const tgtType = tgtNode.type;
+                        const isSrcExt = srcType === 'external';
+                        const isTgtExt = tgtType === 'external';
+                        if (isSrcExt || isTgtExt) {
+                            const sx = srcNode.x || 0;
+                            const sy = srcNode.y || 0;
+                            const tx = tgtNode.x || 0;
+                            const ty = tgtNode.y || 0;
+                            const dx = tx - sx;
+                            const dy = ty - sy;
+                            const len = Math.sqrt(dx * dx + dy * dy) || 1;
+                            const solidLen = 35;
+                            const dotPeriod = 10;
+                            const remaining = Math.max(0, len - solidLen);
+                            const numDots = Math.floor(remaining / dotPeriod);
+                            
+                            if (isTgtExt) {
+                                // Router is source, External is target -> solid at start
+                                let pattern = `${solidLen}, 6`;
+                                for (let i = 0; i < numDots; i++) {
+                                    pattern += ", 4, 6";
+                                }
+                                pattern += ", 0, 1000";
+                                return pattern;
+                            } else {
+                                // External is source, Router is target -> solid at end
+                                let pattern = "";
+                                for (let i = 0; i < numDots; i++) {
+                                    pattern += "4, 6, ";
+                                }
+                                pattern += `${solidLen}, 1000`;
+                                return pattern;
+                            }
+                        }
+                        return "none";
+                    });
 
                 this.node
                     .attr("transform", d => `translate(${d.x},${d.y})`);
@@ -640,14 +736,37 @@ class SDNController {
         this.link.exit().remove();
 
         const linkEnter = this.link.enter().append("line")
-            .attr("stroke", "#95a5a6")
-            .attr("stroke-width", 2);
+            .attr("stroke", d => {
+                const srcType = typeof d.source === 'object' ? d.source.type : (this.nodes.find(n => n.id === d.source)?.type);
+                const tgtType = typeof d.target === 'object' ? d.target.type : (this.nodes.find(n => n.id === d.target)?.type);
+                if (srcType === 'external' || tgtType === 'external') return "#7f8c8d";
+                return "#95a5a6";
+            })
+            .attr("stroke-width", d => {
+                const srcType = typeof d.source === 'object' ? d.source.type : (this.nodes.find(n => n.id === d.source)?.type);
+                const tgtType = typeof d.target === 'object' ? d.target.type : (this.nodes.find(n => n.id === d.target)?.type);
+                if (srcType === 'external' || tgtType === 'external') return 1.5;
+                return 2;
+            })
+            .style("stroke-dasharray", d => {
+                const srcType = typeof d.source === 'object' ? d.source.type : (this.nodes.find(n => n.id === d.source)?.type);
+                const tgtType = typeof d.target === 'object' ? d.target.type : (this.nodes.find(n => n.id === d.target)?.type);
+                if (srcType === 'external' || tgtType === 'external') return "35, 6, 4, 6, 4, 6, 4, 6, 4, 6";
+                return "none";
+            })
+            .style("opacity", d => {
+                const srcType = typeof d.source === 'object' ? d.source.type : (this.nodes.find(n => n.id === d.source)?.type);
+                const tgtType = typeof d.target === 'object' ? d.target.type : (this.nodes.find(n => n.id === d.target)?.type);
+                if (srcType === 'external' || tgtType === 'external') return 0.9;
+                return 1;
+            });
 
         // Tooltip sur les liens
         linkEnter.on("mouseover", (event, d) => {
             const sourceNode = typeof d.source === 'object' ? d.source : this.nodes.find(n => n.id === d.source);
             const targetNode = typeof d.target === 'object' ? d.target : this.nodes.find(n => n.id === d.target);
             if (sourceNode && targetNode) {
+                if (sourceNode.type === 'external' || targetNode.type === 'external') return;
                 this.tooltip.style("opacity", 1);
                 this.tooltip.html(`Lien : ${sourceNode.label} ↔ ${targetNode.label}`);
             }
@@ -666,11 +785,15 @@ class SDNController {
 
         const nodeEnter = this.node.enter().append("g")
             .attr("class", "node")
+            .style("display", d => d.type === 'external' ? "none" : null)
             .call(d3.drag()
                 .on("start", (event, d) => this.dragstarted(event, d))
                 .on("drag", (event, d) => this.dragged(event, d))
                 .on("end", (event, d) => this.dragended(event, d)))
-            .on("click", (event, d) => this.selectNode(d));
+            .on("click", (event, d) => {
+                if (d.type === 'external') return;
+                this.selectNode(d);
+            });
 
         nodeEnter.append("circle")
             .attr("r", d => d.type === 'switch' ? 25 : (d.type === 'router' ? 30 : 15))
@@ -688,6 +811,7 @@ class SDNController {
 
         // Tooltip sur les nouveaux nœuds
         nodeEnter.on("mouseover", (event, d) => {
+            if (d.type === 'external') return;
             this.tooltip.style("opacity", 1);
             this.tooltip.html(`ID: ${d.id}<br>Type: ${d.type.toUpperCase()}<br>IP: ${d.ip}`);
         })
@@ -729,11 +853,18 @@ class SDNController {
                 ifaceName = `GigabitEthernet0/${count - 1}`;
                 mode = "routed";
                 vlan_id = null;
+            } else if (node.type === 'external') {
+                ifaceName = `WAN0`;
+                mode = "routed";
+                vlan_id = null;
             } else if (node.type === 'switch') {
                 ifaceName = `FastEthernet0/${count}`;
                 if (targetNode.type === 'router' || targetNode.type === 'switch') {
                     mode = "trunk";
                     vlan_id = 1;
+                } else if (targetNode.type === 'external') {
+                    mode = "routed";
+                    vlan_id = null;
                 } else if (targetNode.type === 'host') {
                     mode = "access";
                     vlan_id = targetNode._vlan || 10;
@@ -770,10 +901,31 @@ class SDNController {
             });
         };
 
-        const numCores = Math.floor(Math.random() * 2) + 1; // 1 to 2 core routers
+        const complexity = parseInt(document.getElementById('topo-complexity')?.value || '2');
+        
+        let numCores, numDists, getNumAccess, getNumHosts;
+        if (complexity === 1) {
+            numCores = 1;
+            numDists = 0;
+            getNumAccess = () => 1;
+            getNumHosts = () => Math.floor(Math.random() * 2) + 1; // 1 to 2
+        } else if (complexity === 2) {
+            numCores = Math.floor(Math.random() * 2) + 1; // 1 to 2 core routers (max 2)
+            numDists = numCores; // 1 to 2 dist switches
+            getNumAccess = () => Math.floor(Math.random() * 2) + 1; // 1 to 2 access switches per dist
+            getNumHosts = () => Math.floor(Math.random() * 2) + 1; // 1 to 2 hosts per access
+        } else { // 3 (Grand)
+            numCores = 2; // max 2 core routers
+            numDists = Math.floor(Math.random() * 2) + 2; // 2 to 3 dist switches (potentially more than 2)
+            getNumAccess = () => Math.floor(Math.random() * 2) + 2; // 2 to 3 access switches per dist
+            getNumHosts = () => Math.floor(Math.random() * 2) + 2; // 2 to 3 hosts per access
+        }
+
         const cores = [];
+        const externals = [];
         
         for (let i = 0; i < numCores; i++) {
+            // Core router
             const rId = `r${this.nextNodeId++}`;
             const rNode = {
                 id: rId, label: `Core-R${i + 1}`, type: "router", ip: `10.0.0.${i + 1}`,
@@ -781,61 +933,91 @@ class SDNController {
             };
             this.nodes.push(rNode);
             cores.push(rNode);
+
+            // Dummy external node
+            const extId = `ext${this.nextNodeId++}`;
+            const extNode = {
+                id: extId, label: `Ext-R${i + 1}`, type: "external", ip: `198.51.100.${i + 1}`,
+                x: rNode.x, y: rNode.y - 80
+            };
+            this.nodes.push(extNode);
+            externals.push(extNode);
         }
         
-        if (cores.length > 1) {
-            addLink(cores[0], cores[1]);
-        }
-        
-        const dists = [];
+        // Link core routers to their external connections (creates GigabitEthernet0/0 interface on router)
         for (let i = 0; i < cores.length; i++) {
-            const numDists = Math.floor(Math.random() * 2) + 2; 
+            addLink(cores[i], externals[i]);
+        }
+        
+        // Link core routers to their distribution/access switches
+        const dists = [];
+        const accesses = [];
+        
+        if (complexity === 1) {
+            // Très Petit: No distribution switches. Core connects directly to access switch.
+            const sId = `s${this.nextNodeId++}`;
+            const sNode = {
+                id: sId, label: `Acc-S1`, type: "switch", ip: `192.168.0.1`,
+                x: cores[0].x, y: this.height * 0.6
+            };
+            this.nodes.push(sNode);
+            accesses.push(sNode);
+            
+            // Link Core directly to Access switch
+            addLink(cores[0], sNode);
+        } else {
+            // Distribution switches
             for (let j = 0; j < numDists; j++) {
                 const sId = `s${this.nextNodeId++}`;
                 const sNode = {
                     id: sId, label: `Dist-S${dists.length + 1}`, type: "switch", ip: `172.16.${dists.length}.1`,
-                    x: (this.width / (cores.length * numDists + 1)) * (dists.length + 1), y: this.height * 0.5
+                    x: (this.width / (numDists + 1)) * (j + 1), y: this.height * 0.5
                 };
                 this.nodes.push(sNode);
                 dists.push(sNode);
-                addLink(cores[i], sNode);
+                if (j < cores.length) {
+                    addLink(cores[j], sNode);
+                }
             }
-        }
-        
-        if (dists.length > 1) {
-            for (let i = 0; i < dists.length - 1; i++) {
-                if (Math.random() > 0.5) {
+            
+            // Interconnect distribution switches to form a fully connected path (guarantees they are never disconnected)
+            if (dists.length > 1) {
+                for (let i = 0; i < dists.length - 1; i++) {
                     addLink(dists[i], dists[i+1]);
                 }
             }
-        }
-        
-        const accesses = [];
-        for (let i = 0; i < dists.length; i++) {
-            const numAccess = Math.floor(Math.random() * 2) + 2; 
-            for (let j = 0; j < numAccess; j++) {
-                const sId = `s${this.nextNodeId++}`;
-                const sNode = {
-                    id: sId, label: `Acc-S${accesses.length + 1}`, type: "switch", ip: `192.168.${accesses.length}.1`,
-                    x: (this.width / (dists.length * numAccess + 1)) * (accesses.length + 1), y: this.height * 0.8
-                };
-                this.nodes.push(sNode);
-                accesses.push(sNode);
-                addLink(dists[i], sNode);
-                
-                const vlanForThisSwitch = [10, 20, 30, 40, 50][Math.floor(Math.random() * 5)];
 
-                const numHosts = Math.floor(Math.random() * 3) + 2; 
-                for (let k = 0; k < numHosts; k++) {
-                    const hId = `h${this.nextNodeId++}`;
-                    const hNode = {
-                        id: hId, label: `Host-${accesses.length}-${k+1}`, type: "host", ip: `192.168.${accesses.length}.${k + 10}`,
-                        x: sNode.x + (Math.random() * 80 - 40), y: this.height * 0.95 + (Math.random() * 20 - 10),
-                        _vlan: vlanForThisSwitch
+            // Access switches
+            for (let i = 0; i < dists.length; i++) {
+                const numAccess = getNumAccess(); 
+                for (let j = 0; j < numAccess; j++) {
+                    const sId = `s${this.nextNodeId++}`;
+                    const sNode = {
+                        id: sId, label: `Acc-S${accesses.length + 1}`, type: "switch", ip: `192.168.${accesses.length}.1`,
+                        x: (this.width / (dists.length * numAccess + 1)) * (accesses.length + 1), y: this.height * 0.8
                     };
-                    this.nodes.push(hNode);
-                    addLink(sNode, hNode);
+                    this.nodes.push(sNode);
+                    accesses.push(sNode);
+                    addLink(dists[i], sNode);
                 }
+            }
+        }
+
+        // Host generation for all access switches
+        for (let i = 0; i < accesses.length; i++) {
+            const sNode = accesses[i];
+            const vlanForThisSwitch = [10, 20, 30, 40, 50][Math.floor(Math.random() * 5)];
+
+            const numHosts = getNumHosts(); 
+            for (let k = 0; k < numHosts; k++) {
+                const hId = `h${this.nextNodeId++}`;
+                const hNode = {
+                    id: hId, label: `Host-${i+1}-${k+1}`, type: "host", ip: `192.168.${i}.${k + 10}`,
+                    x: sNode.x + (Math.random() * 80 - 40), y: this.height * 0.95 + (Math.random() * 20 - 10),
+                    _vlan: vlanForThisSwitch
+                };
+                this.nodes.push(hNode);
+                addLink(sNode, hNode);
             }
         }
 
@@ -862,14 +1044,14 @@ class SDNController {
             }
         });
 
-        // 3. Core => Dist
+        // 3. Core => Dist or Core => Acc
         this.links.forEach(l => {
             const src = l._sourceNode;
             const tgt = l._targetNode;
-            if (src.label.startsWith('Core') && tgt.label.startsWith('Dist')) {
+            if (src.label.startsWith('Core') && (tgt.label.startsWith('Dist') || tgt.label.startsWith('Acc'))) {
                 tgt._requiredVlans.forEach(v => src._requiredVlans.add(v));
             }
-            if (tgt.label.startsWith('Core') && src.label.startsWith('Dist')) {
+            if (tgt.label.startsWith('Core') && (src.label.startsWith('Dist') || src.label.startsWith('Acc'))) {
                 src._requiredVlans.forEach(v => tgt._requiredVlans.add(v));
             }
         });
@@ -931,8 +1113,6 @@ class SDNController {
         }));
         this.links = linksForD3;
 
-        this.restartSimulation();
-
         fetch(`${API_BASE}/db/topology/random`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -949,6 +1129,22 @@ class SDNController {
         });
     }
 
+    updateComplexityLabel(val) {
+        const label = document.getElementById('topo-complexity-value');
+        if (!label) return;
+        
+        let text = "Moyen";
+        const v = parseInt(val);
+        if (v === 1) {
+            text = "Petit";
+        } else if (v === 2) {
+            text = "Moyen";
+        } else if (v === 3) {
+            text = "Grand";
+        }
+        label.textContent = text;
+    }
+
     resetNetwork() {
         this.nodes = [];
         this.links = [];
@@ -959,11 +1155,11 @@ class SDNController {
     }
 
     selectNode(node) {
-        if (this.selectedNode === node) {
+        if (this.selectedNode && this.selectedNode.id === node.id) {
             this.selectedNode = null;
             d3.selectAll(".node circle")
-                .style("stroke-width", 2)
-                .style("stroke", "#34495e");
+                .style("stroke-width", 0)
+                .style("stroke", "white");
             this.log(`Désélection de ${node.label}`);
             this.updateNodeInfoUI(null);
             this.closePanel();
@@ -973,9 +1169,10 @@ class SDNController {
             }
 
             d3.selectAll(".node circle")
-                .style("stroke-width", 2)
-                .style("stroke", "#34495e");
+                .style("stroke-width", 0)
+                .style("stroke", "white");
 
+            this.selectedNode = node;
             const nodeElement = this.node.nodes().find(n => n.__data__ && n.__data__.id === node.id);
             if (nodeElement) {
                 d3.select(nodeElement).select("circle")
@@ -983,7 +1180,6 @@ class SDNController {
                     .style("stroke", "#f1c40f");
             }
 
-            this.selectedNode = node;
             this.log(`Sélection : ${node.label} (IP: ${node.ip})`);
             this.updateNodeInfoUI(node);
             this.fetchSelectedNode();
@@ -1100,10 +1296,13 @@ class SDNController {
                             document.getElementById('edit-vlan-container-${iface.id}').style.display = (this.value === 'access' || this.value === 'static access') ? 'flex' : 'none';
                             document.getElementById('edit-allowed-container-${iface.id}').style.display = this.value === 'trunk' ? 'flex' : 'none';
                         ">
-                            <option value="access" ${iface.mode === 'access' ? 'selected' : ''}>Access</option>
-                            <option value="trunk" ${iface.mode === 'trunk' ? 'selected' : ''}>Trunk</option>
-                            <option value="dynamic auto" ${iface.mode === 'dynamic auto' ? 'selected' : ''}>Dynamic Auto</option>
-                            <option value="static access" ${iface.mode === 'static access' ? 'selected' : ''}>Static Access</option>
+                            ${(() => {
+                                const modes = ["access", "trunk", "dynamic auto", "static access"];
+                                if (iface.mode && !modes.includes(iface.mode)) {
+                                    modes.push(iface.mode);
+                                }
+                                return modes.map(m => `<option value="${m}" ${iface.mode === m ? 'selected' : ''}>${m.charAt(0).toUpperCase() + m.slice(1)}</option>`).join('');
+                            })()}
                         </select>
                     </div>
                     <div class="iface-field" id="edit-vlan-container-${iface.id}" style="display: ${(!iface.mode || iface.mode.includes('access')) ? 'flex' : 'none'}">
@@ -1210,6 +1409,7 @@ class SDNController {
             });
             if (!response.ok) throw new Error("Erreur serveur lors de la sauvegarde");
             this.log(`Interface ${data.name} sauvegardée avec succès.`);
+            this.fetchAllInterfaces();
         } catch (error) {
             this.log(`Erreur de sauvegarde: ${error.message}`);
         }
@@ -1247,7 +1447,9 @@ class SDNController {
         const filterSelect = document.getElementById('vlan-filter');
         if (!filterSelect) return;
         
-        filterSelect.innerHTML = '<option value="">Tous les VLANs</option>';
+        const previousValue = filterSelect.value;
+        
+        filterSelect.innerHTML = '<option value="">Pas de filtre</option>';
         vlans.forEach(v => {
             const opt = document.createElement('option');
             opt.value = v;
@@ -1257,11 +1459,16 @@ class SDNController {
 
         // Supprimer l'ancien écouteur s'il existe pour éviter les doublons
         const newSelect = filterSelect.cloneNode(true);
+        newSelect.value = previousValue;
         filterSelect.parentNode.replaceChild(newSelect, filterSelect);
 
         newSelect.addEventListener('change', (e) => {
             this.highlightVlan(e.target.value);
         });
+
+        if (previousValue) {
+            this.highlightVlan(previousValue);
+        }
     }
 
     highlightVlan(vlanId) {

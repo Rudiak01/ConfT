@@ -10,7 +10,8 @@ from ..models import (
     TopologySyncRequest,
     InterfaceUpdate,
     TopologyLayoutUpdate,
-    DeviceCredentials
+    DeviceCredentials,
+    NodeUpdate
 )
 
 from ..tools import (
@@ -54,6 +55,11 @@ def _sync_random_topology(data: TopologySyncRequest):
 def update_interface_route(interface_id: int, data: InterfaceUpdate):
     from api.tools import update_interface
     return update_interface(interface_id, data)
+
+@router.put("/node/{node_id}")
+def update_node_route(node_id: int, data: NodeUpdate):
+    from api.tools import update_node
+    return update_node(node_id, data)
 
 @router.put("/topology/layout")
 def _update_layout(data: TopologyLayoutUpdate):

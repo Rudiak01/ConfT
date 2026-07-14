@@ -153,3 +153,6 @@ class NodeLayoutUpdate(BaseModel):
 
 class TopologyLayoutUpdate(BaseModel):
     nodes: List[NodeLayoutUpdate]
+
+class NodeUpdate(BaseModel):
+    hostname: Optional[str] = None
