@@ -1,152 +1,160 @@
-from fastapi import APIRouter, Depends, HTTPException, Header
-from sqlalchemy.orm import Session
-from sqlalchemy import select
-from pydantic import BaseModel
-import hashlib
-import secrets
-from typing import Optional, List, Dict
+import os
+from datetime import timedelta, datetime, timezone
+from typing import Annotated
+import jwt
+from fastapi.security import OAuth2PasswordBearer
+from fastapi import Depends, HTTPException, status
+from jwt.exceptions import InvalidTokenError
+from backend.crud import user, auth
+from pwdlib import PasswordHash
+from api.models import TokenData
 
-from .models import DBUser, DBToken, DBUserSettings, DBNodeColor
-from .db import get_db
+SECRET_KEY = os.environ.get("FASTAPI_SECRET_KEY")
+ALGORITHM = "HS256"
+ACCESS_TOKEN_EXPIRE_MINUTES = 240
 
-router = APIRouter()
+password_hash = PasswordHash.recommended()
 
-def hash_password(password: str) -> str:
-    return hashlib.sha256(password.encode()).hexdigest()
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 
-def ensure_admin(db: Session):
-    admin = db.query(DBUser).filter(DBUser.username == "admin").first()
-    if not admin:
-        admin = DBUser(username="admin", password_hash=hash_password("admin123"), is_admin=True)
-        db.add(admin)
-        db.commit()
-        db.refresh(admin)
-        settings = DBUserSettings(user_id=admin.id)
-        db.add(settings)
-        db.commit()
 
-def get_current_user(authorization: Optional[str] = Header(None), db: Session = Depends(get_db)):
-    if not authorization or not authorization.startswith("Bearer "):
-        raise HTTPException(status_code=401, detail="Unauthorized")
-    token = authorization.replace("Bearer ", "")
-    db_token = db.query(DBToken).filter(DBToken.token == token).first()
-    if not db_token:
-        raise HTTPException(status_code=401, detail="Invalid token")
-    user = db.query(DBUser).filter(DBUser.id == db_token.user_id).first()
+def verify_password(plain_password, hashed_password):
+    """
+    verify password exists in db
+    return true or false
+    """
+    return password_hash.verify(plain_password, hashed_password)
+
+
+def get_password_hash(password):
+    """
+    hash the password
+    return the hash
+    """
+    return password_hash.hash(password)
+
+
+def get_user_username(login):
+    """
+    get user by login
+    return user information
+    """
+    a = auth.Auth()
+    res = a.get_user(login)
+    return res
+
+
+def get_user_by_id(user_id):
+    """
+    Get user by id
+    """
+    u = user.User()
+    res = u.get_user(user_id)
+    return res
+
+def authenticated_user(login: str, password: str):
+    """
+    Verify login informations
+    return user informations
+    """
+    user = get_user_username(login)
     if not user:
-        raise HTTPException(status_code=401, detail="User not found")
+        return False
+    if not verify_password(password, user[2]):
+        return False
+    if user[3] == "inactive":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Account Deactivated. please contact your administrator",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
     return user
 
-class LoginRequest(BaseModel):
-    username: str
-    password: str
 
-@router.post("/api/auth/login")
-def login(req: LoginRequest, db: Session = Depends(get_db)):
-    ensure_admin(db)
-    user = db.query(DBUser).filter(DBUser.username == req.username).first()
-    if not user or user.password_hash != hash_password(req.password):
-        raise HTTPException(status_code=401, detail="Invalid credentials")
-    
-    token = secrets.token_hex(32)
-    db.add(DBToken(token=token, user_id=user.id))
-    db.commit()
-    return {"token": token, "username": user.username, "is_admin": user.is_admin}
-
-@router.get("/api/auth/me")
-def get_me(current_user: DBUser = Depends(get_current_user)):
-    return {"username": current_user.username, "is_admin": current_user.is_admin}
-
-@router.post("/api/auth/logout")
-def logout(authorization: Optional[str] = Header(None), db: Session = Depends(get_db)):
-    if authorization and authorization.startswith("Bearer "):
-        token = authorization.replace("Bearer ", "")
-        db.query(DBToken).filter(DBToken.token == token).delete()
-        db.commit()
-    return {"status": "success"}
-
-class UserSettingsSchema(BaseModel):
-    theme: str
-    bg_color: str
-    default_node_color: str
-    router_color: str
-    switch_color: str
-    host_color: str
-
-@router.get("/api/users/settings")
-def get_settings(current_user: DBUser = Depends(get_current_user), db: Session = Depends(get_db)):
-    settings = current_user.settings
-    if not settings:
-        settings = DBUserSettings(user_id=current_user.id)
-        db.add(settings)
-        db.commit()
-        db.refresh(settings)
-        
-    node_colors = {nc.node_id: nc.color for nc in current_user.node_colors}
-    
-    return {
-        "theme": settings.theme,
-        "bg_color": settings.bg_color,
-        "default_node_color": settings.default_node_color,
-        "router_color": settings.router_color,
-        "switch_color": settings.switch_color,
-        "host_color": settings.host_color,
-        "node_colors": node_colors
-    }
-
-@router.put("/api/users/settings")
-def update_settings(req: UserSettingsSchema, current_user: DBUser = Depends(get_current_user), db: Session = Depends(get_db)):
-    settings = current_user.settings
-    if not settings:
-        settings = DBUserSettings(user_id=current_user.id)
-        db.add(settings)
-    
-    settings.theme = req.theme
-    settings.bg_color = req.bg_color
-    settings.default_node_color = req.default_node_color
-    settings.router_color = req.router_color
-    settings.switch_color = req.switch_color
-    settings.host_color = req.host_color
-    db.commit()
-    return {"status": "success"}
-
-class NodeColorReq(BaseModel):
-    color: str
-
-@router.put("/api/nodes/{node_id}/color")
-def update_node_color(node_id: str, req: NodeColorReq, current_user: DBUser = Depends(get_current_user), db: Session = Depends(get_db)):
-    nc = db.query(DBNodeColor).filter(DBNodeColor.user_id == current_user.id, DBNodeColor.node_id == node_id).first()
-    if not nc:
-        nc = DBNodeColor(user_id=current_user.id, node_id=node_id, color=req.color)
-        db.add(nc)
+def create_access_token(data: dict, expires_delta: timedelta | None = None):
+    """
+    Create a New token or update expire time to 30 minutes
+    return the token
+    """
+    to_encode = data.copy()
+    if expires_delta:
+        expire = datetime.now(timezone.utc) + expires_delta
     else:
-        nc.color = req.color
-    db.commit()
-    return {"status": "success"}
+        expire = datetime.now(timezone.utc) + timedelta(minutes=15)
+    to_encode.update({"exp": expire})
+    encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
+    return encoded_jwt
 
-class UserCreate(BaseModel):
-    username: str
-    password: str
-    is_admin: bool
 
-@router.post("/api/users")
-def create_user(req: UserCreate, current_user: DBUser = Depends(get_current_user), db: Session = Depends(get_db)):
-    if not current_user.is_admin:
-        raise HTTPException(status_code=403, detail="Forbidden")
-    if db.query(DBUser).filter(DBUser.username == req.username).first():
-        raise HTTPException(status_code=400, detail="User already exists")
-        
-    new_user = DBUser(username=req.username, password_hash=hash_password(req.password), is_admin=req.is_admin)
-    db.add(new_user)
-    db.commit()
-    db.refresh(new_user)
-    db.add(DBUserSettings(user_id=new_user.id))
-    db.commit()
-    return {"status": "success"}
+def get_current_user(token: Annotated[str, Depends(oauth2_scheme)]):
+    """
+    verify the validity of the token
+    return user information
+    """
+    credentials_exception = HTTPException(
+        status_code=status.HTTP_401_UNAUTHORIZED,
+        detail="Could not validate credentials",
+        headers={"WWW-Authenticate": "Bearer"},
+    )
+    try:
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        rowid = int(payload.get("rowid"))
+        role = str(payload.get("role"))
+        if rowid is None:
+            raise credentials_exception
+        token_data = TokenData(rowid=rowid, role=role)
+    except InvalidTokenError:
+        raise credentials_exception
+    return token_data
 
-@router.get("/api/users")
-def list_users(current_user: DBUser = Depends(get_current_user), db: Session = Depends(get_db)):
-    if not current_user.is_admin:
-        raise HTTPException(status_code=403, detail="Forbidden")
-    users = db.query(DBUser).all()
-    return [{"id": u.id, "username": u.username, "is_admin": u.is_admin} for u in users]
+
+def login(username, password):
+    """
+    check if the user logins are correct
+    return a token if true
+    """
+    user = authenticated_user(username, password)
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Incorrect username or password",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    access_token_expires = timedelta(minutes=240)
+    access_token = create_access_token(
+        data={"rowid": str(user[0]), "role": str(user[3]), "scope": "access"},
+        expires_delta=access_token_expires,
+    )
+    return access_token, user[0]
+
+
+def is_admin(token: Annotated[str, Depends(oauth2_scheme)]):
+    """
+    check if user is an admin
+    return True
+    """
+    if token.role == "admin":
+        return True
+    else:
+        return False
+
+
+def update_password(current_password, token):
+    a = auth.Auth()
+
+    if not current_password:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="You must provide your current password to set a new one.",
+        )
+
+    current_password_hash = a.get_user_for_update(token.rowid)
+    verified_user = verify_password(current_password, current_password_hash)
+
+    if not verified_user:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid current password.",
+        )
+
+    return True

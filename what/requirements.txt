@@ -1,0 +1,24 @@
+# Core Web Framework
+fastapi
+uvicorn
+watchfiles
+websockets
+
+
+# DB + ORM
+sqlalchemy
+pymysql
+alembic
+
+# Auth & Sécurité
+python-jose[cryptography]
+passlib[bcrypt]
+python-multipart
+
+# Utilitaires
+pydantic[email]
+python-dotenv
+
+# Dépendances métier (déjà dans requirements.txt original)
+netmiko
+ntc-templates

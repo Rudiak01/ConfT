@@ -15,10 +15,10 @@ def compare_configs(current_state_file, desired_config_file):
         with open(desired_path, "r", encoding="utf-8") as f:
             desired_data = json.load(f)
     except FileNotFoundError as e:
-        print(f"❌ Erreur : Impossible de trouver le fichier {e.filename}")
+        print(f"Erreur : Impossible de trouver le fichier {e.filename}")
         return
     except json.JSONDecodeError:
-        print("❌ Erreur : Le format JSON est invalide.")
+        print("Erreur : Le format JSON est invalide.")
         return
 
     print("\nDIFFÉRENCES DE CONFIGURATION")
@@ -38,11 +38,11 @@ def compare_configs(current_state_file, desired_config_file):
         v_name = des_vlan.get("name", "Unnamed_VLAN")
         
         if v_id not in current_vlans:
-            print(f"➕ À CRÉER : VLAN {v_id} ({v_name})")
+            print(f"+ A CREER : VLAN {v_id} ({v_name})")
         elif current_vlans[v_id] != v_name:
-            print(f"🔄 À RENOMMER : VLAN {v_id} s'appelle '{current_vlans[v_id]}', devrait être '{v_name}'")
+            print(f"[RENOMMER] : VLAN {v_id} s'appelle '{current_vlans[v_id]}', devrait être '{v_name}'")
         else:
-            print(f"✅ OK : VLAN {v_id} ({v_name}) est déjà conforme.")
+            print(f"OK : VLAN {v_id} ({v_name}) est déjà conforme.")
 
     # 2. ANALYSE DES INTERFACES
     print("\n[Interfaces]")
@@ -60,7 +60,7 @@ def compare_configs(current_state_file, desired_config_file):
             continue # Si l'interface n'a pas de nom dans le desired, on ignore
 
         if iface_name not in current_interfaces:
-            print(f"❓ INCONNUE : L'interface {iface_name} n'existe pas sur ce switch.")
+            print(f"INCONNUE : L'interface {iface_name} n'existe pas sur ce switch.")
             continue
             
         curr_iface = current_interfaces[iface_name]
@@ -72,24 +72,24 @@ def compare_configs(current_state_file, desired_config_file):
         if "trunk" in curr_mode: curr_mode = "trunk"
 
         if curr_mode != des_mode:
-            print(f"🔄 À MODIFIER : {iface_name} est en mode '{curr_mode}', doit passer en '{des_mode}'")
+            print(f"[MODIFIER] : {iface_name} est en mode '{curr_mode}', doit passer en '{des_mode}'")
             continue 
             
         if des_mode == "access":
             curr_vlan = str(curr_iface.get("vlan", "1"))
             des_vlan = str(des_iface.get("vlan", "1"))
             if curr_vlan != des_vlan:
-                print(f"🔄 À MODIFIER : {iface_name} (VLAN {curr_vlan} ➔ VLAN {des_vlan})")
+                print(f"[MODIFIER] : {iface_name} (VLAN {curr_vlan} -> VLAN {des_vlan})")
             else:
-                print(f"✅ OK : {iface_name} (Access VLAN {des_vlan})")
+                print(f"OK : {iface_name} (Access VLAN {des_vlan})")
                 
         elif des_mode == "trunk" and "allowed_vlans" in des_iface:
             curr_allowed = str(curr_iface.get("allowed_vlans", curr_iface.get("trunk_vlans", "All")))
             des_allowed = str(des_iface.get("allowed_vlans", ""))
             if curr_allowed != des_allowed:
-                print(f"🔄 À MODIFIER : {iface_name} (Allowed '{curr_allowed}' ➔ '{des_allowed}')")
+                print(f"[MODIFIER] : {iface_name} (Allowed '{curr_allowed}' -> '{des_allowed}')")
             else:
-                print(f"✅ OK : {iface_name} (Trunk Allowed {des_allowed})")
+                print(f"OK : {iface_name} (Trunk Allowed {des_allowed})")
 
 if __name__ == "__main__":
     compare_configs("current_state.json", "desired_config.json")

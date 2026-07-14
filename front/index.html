@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ConfT</title>
+    <meta name="description"
+        content="ConfT - Simulateur de contrôleur SDN avec visualisation de topologie réseau dynamique">
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <link rel="stylesheet" href="styles.css">
+</head>
+
+<body>
+
+    <!-- Sidebar -->
+    <div class="sidebar">
+        <div class="header">
+            <img src="ConfT.svg" alt="ConfT Logo" class="header-logo">
+            <div class="header-text">
+                <h1>ConfT</h1>
+                <p>Contrôleur SDN et Automatisation Réseau</p>
+            </div>
+        </div>
+
+        <div class="control-panel">
+            <div class="sidebar-section">
+                <h3>Topologie & Réseau</h3>
+                <div class="button-group">
+                    <button id="refresh-db-btn" class="btn-action">
+                        Recharger depuis la DB
+                    </button>
+                    <button id="discover-network-btn" class="btn-action">
+                        Découvrir le réseau
+                    </button>
+                    <button id="deploy-network-btn" class="btn-action btn-deploy">
+                        Envoyer au réseau
+                    </button>
+                </div>
+            </div>
+
+            <div class="sidebar-section" id="node-info-section" style="display: none;">
+                <h3>Équipement Sélectionné</h3>
+                <div id="selected-node-info" class="node-info-card"></div>
+            </div>
+
+            <div class="sidebar-section">
+                <h3>Paramètres de Connexion</h3>
+                <div class="settings-form">
+                    <div class="input-group">
+                        <label for="settings-ip">Adresse IP (Seed)</label>
+                        <input type="text" id="settings-ip" placeholder="ex: 192.168.1.1">
+                    </div>
+                    <div class="input-group">
+                        <label for="settings-username">Utilisateur SSH</label>
+                        <input type="text" id="settings-username" placeholder="ex: admin">
+                    </div>
+                    <div class="input-group">
+                        <label for="settings-password">Mot de passe</label>
+                        <input type="password" id="settings-password" placeholder="••••••••">
+                    </div>
+                    <div class="input-group">
+                        <label for="settings-device-type">Type d'équipement</label>
+                        <select id="settings-device-type">
+                            <option value="cisco_ios">Cisco IOS</option>
+                            <option value="cisco_xe">Cisco XE</option>
+                            <option value="cisco_xr">Cisco XR</option>
+                        </select>
+                    </div>
+                    <button id="save-settings-btn" class="btn-save">Enregistrer</button>
+                    <button id="reset-app-btn" class="btn-danger">Réinitialiser l'application</button>
+                </div>
+            </div>
+
+            <div class="sidebar-section">
+                <h3>Démo &amp; Simulation</h3>
+                <div class="demo-content" style="display: flex; flex-direction: column; gap: 12px;">
+                    <div class="input-group" style="margin-bottom: 8px;">
+                        <div
+                            style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+                            <label for="topo-complexity"
+                                style="font-size: 0.8rem; font-weight: 600; color: #64748b; margin: 0;">Complexité /
+                                Taille</label>
+                            <span id="topo-complexity-value"
+                                style="font-size: 0.75rem; font-weight: 700; color: #3b82f6; background-color: #eff6ff; padding: 2px 8px; border-radius: 9999px; border: 1px solid #dbeafe;">Moyen</span>
+                        </div>
+                        <input type="range" id="topo-complexity" min="1" max="3" step="1" value="2"
+                            oninput="app.updateComplexityLabel(this.value)">
+                    </div>
+
+                    <!-- Anomaly toggle -->
+                    <label class="toggle-row" title="Introduit des incohérences VLAN pour les démonstrations">
+                        <span class="toggle-label">Topo non conforme</span>
+                        <div class="toggle-switch">
+                            <input type="checkbox" id="topo-anomaly" />
+                            <span class="toggle-thumb"></span>
+                        </div>
+                    </label>
+
+                    <button onclick="app.generateRandomTopology()" class="btn-demo">Générer Topo Démo</button>
+                    <button onclick="app.checkVlanFeasibility()" class="btn-check" id="btn-check-vlan">Vérifier la faisabilité</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="sidebar-section console-section">
+            <div class="terminal" id="console-log">
+                <div>> Initialisation du contrôleur </div>
+            </div>
+        </div>
+    </div>
+    <!-- Main Graph Area -->
+    <div class="main-view">
+        <div id="graph-container"></div>
+
+
+        <!-- Top Right Controls -->
+        <div class="top-controls">
+            <button id="lock-topology-btn" class="btn-lock">Déverrouiller le graphe</button>
+            <div class="top-filter">
+                <label for="vlan-filter">Filtrer par VLAN:</label>
+                <select id="vlan-filter">
+                    <option value="">Pas de filtre</option>
+                </select>
+            </div>
+        </div>
+
+        <!-- VLAN Feasibility Report Panel -->
+        <div id="feasibility-panel" class="feasibility-panel" style="display:none;">
+            <div class="feasibility-header">
+                <span id="feasibility-title">Rapport de faisabilité VLAN</span>
+                <button class="close-btn" onclick="app.closeFeasibilityPanel()">×</button>
+            </div>
+            <div id="feasibility-content" class="feasibility-content"></div>
+        </div>
+
+        <div id="tooltip" class="tooltip"></div>
+
+        <!-- Bottom Panel for Interfaces -->
+        <div id="bottom-panel" class="bottom-panel">
+            <div class="panel-header">
+                <h3 id="panel-title">Interfaces</h3>
+                <button id="close-panel-btn" class="close-btn" onclick="app.deselectCurrentNode()">×</button>
+            </div>
+            <div class="panel-content" id="interfaces-list">
+                <!-- Interface cards will be generated here -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Setup Overlay for First-time Onboarding -->
+    <div id="setup-overlay" class="setup-overlay" style="display: none;">
+        <div class="setup-logo-bg"></div>
+        <div class="setup-card">
+            <img src="ConfT.svg" alt="ConfT Logo" class="setup-card-logo">
+            <h2>Initialisation de ConfT</h2>
+            <p class="setup-subtitle">Entrez les identifiants de votre équipement réseau initial pour démarrer la
+                découverte automatique.</p>
+
+            <form id="setup-form">
+                <div class="form-group">
+                    <label for="setup-ip">Adresse IP initiale (Seed IP)</label>
+                    <input type="text" id="setup-ip" placeholder="ex: 192.168.1.1" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="setup-username">Identifiant (SSH)</label>
+                    <input type="text" id="setup-username" placeholder="ex: admin" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="setup-password">Mot de passe</label>
+                    <input type="password" id="setup-password" placeholder="••••••••" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="setup-device-type">Type d'équipement</label>
+                    <select id="setup-device-type">
+                        <option value="cisco_ios">Cisco IOS</option>
+                        <option value="cisco_xe">Cisco XE</option>
+                        <option value="cisco_xr">Cisco XR</option>
+                    </select>
+                </div>
+
+                <div class="setup-error" id="setup-error" style="display: none;"></div>
+
+                <button type="submit" class="btn-setup-submit" id="btn-setup-submit">
+                    <span class="btn-text">Démarrer la découverte</span>
+                    <span class="spinner" style="display: none;"></span>
+                </button>
+            </form>
+
+            <div class="setup-divider">
+                <span>ou</span>
+            </div>
+
+            <button class="btn-setup-demo" id="btn-setup-demo">
+                Générer une topologie de démonstration
+            </button>
+        </div>
+    </div>
+    <!-- Confirmation Modal for Reset -->
+    <div id="confirm-modal" class="confirm-modal" style="display: none;">
+        <div class="confirm-modal-card">
+            <h3>Confirmation de réinitialisation</h3>
+            <p>Êtes-vous sûr de vouloir supprimer la base de données et réinitialiser l'application ? Cette action est
+                irréversible.</p>
+            <div class="confirm-modal-actions">
+                <button id="confirm-cancel-btn" class="btn-modal-cancel">Annuler</button>
+                <button id="confirm-reset-btn" class="btn-modal-danger">Réinitialiser</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add Sub-interface Modal -->
+    <div id="add-sub-modal" class="confirm-modal" style="display: none;">
+        <div class="confirm-modal-card">
+            <h3>Ajouter une sous-interface 802.1Q</h3>
+            <p id="add-sub-parent-text" style="font-weight: 600; color: #475569; margin: 8px 0;"></p>
+            <div class="form-group" style="margin-top: 12px; display: flex; flex-direction: column; gap: 4px; text-align: left;">
+                <label for="add-sub-vlan" style="font-size: 0.85rem; font-weight: 600; color: #475569;">Numéro de VLAN (dot1q)</label>
+                <input type="number" id="add-sub-vlan" min="1" max="4094" placeholder="ex: 10" style="padding: 8px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 0.95rem;">
+            </div>
+            <div class="form-group" style="margin-top: 12px; display: flex; flex-direction: column; gap: 4px; text-align: left;">
+                <label for="add-sub-desc" style="font-size: 0.85rem; font-weight: 600; color: #475569;">Description (optionnelle)</label>
+                <input type="text" id="add-sub-desc" placeholder="ex: Liaison VLAN 10" style="padding: 8px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 0.95rem;">
+            </div>
+            <div class="confirm-modal-actions" style="margin-top: 20px;">
+                <button id="add-sub-cancel-btn" class="btn-modal-cancel">Annuler</button>
+                <button id="add-sub-submit-btn" class="btn-modal-primary" style="background-color: #3b82f6; color: white; border: none; padding: 10px 20px; border-radius: 6px; font-weight: 600; cursor: pointer; transition: background-color 0.2s;">Ajouter</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="main.js?v=3"></script>
+</body>
+
+</html>

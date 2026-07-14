@@ -5,6 +5,12 @@ from .ssh_connect import connect
 from .config import SWITCH
 from .vendor_syntax import VENDOR_SYNTAX
 
+class DeviceUnreachableError(Exception):
+    pass
+
+class DeviceAuthenticationError(Exception):
+    pass
+
 def normalize_data(raw_data, template_mapping):
     """Transforme les clés TextFSM en clés universelles"""
     normalized_list = []
@@ -42,7 +48,7 @@ def fetch_device_config(params):
 
                 # 3. Vérification si on a eu une erreur de syntaxe (Cisco renvoie souvent le texte d'erreur)
                 if isinstance(raw_output, str) and "% Invalid input" in raw_output:
-                    print(f"  ⚠ Commande '{feature}' non supportée par ce modèle (Ignorée).")
+                    print(f"  Attention : Commande '{feature}' non supportée par ce modèle (Ignorée).")
                     continue
 
                 # 4. Normalisation
@@ -54,7 +60,7 @@ def fetch_device_config(params):
                     extracted_data[feature] = []
             
             except Exception as e:
-                print(f"  ❌ Erreur lors de l'extraction de {feature}: {e}")
+                print(f"Erreur lors de l'extraction de {feature}: {e}")
             
             # --- DEBUG ---
             #if feature == "vlans":
@@ -66,15 +72,15 @@ def fetch_device_config(params):
         connection.disconnect()
         return extracted_data
 
-    except NetmikoAuthenticationException:
-        print(f"❌ Erreur : Identifiants incorrects pour {params.get('host')}")
-        return None
-    except NetmikoTimeoutException:
-        print(f"❌ Erreur : Le switch {params.get('host')} est injoignable.")
-        return None
+    except NetmikoAuthenticationException as e:
+        print(f"Erreur : Identifiants incorrects pour {params.get('host')}")
+        raise DeviceAuthenticationError(f"Identifiants incorrects pour {params.get('host')}") from e
+    except NetmikoTimeoutException as e:
+        print(f"Erreur : Le switch {params.get('host')} est injoignable.")
+        raise DeviceUnreachableError(f"Le switch {params.get('host')} est injoignable.") from e
     except Exception as e:
-        print(f"❌ Erreur inattendue : {e}")
-        return None
+        print(f"Erreur inattendue : {e}")
+        raise e
 
 def crawl_network(seed_ip, credentials):
     """
@@ -100,19 +106,42 @@ def crawl_network(seed_ip, credentials):
             break
             
     vlans = []
-    if "vlan" in device_data:
-        for v in device_data["vlan"]:
+    if "vlans" in device_data:
+        for v in device_data["vlans"]:
             vlans.append({"vlan_id": v.get("vlan_id", ""), "name": v.get("name", "")})
+
+    interfaces = device_data.get("interfaces", [])
 
     nodes = {
         seed_ip: {
             "hostname": hostname,
             "device_type": params["device_type"],
             "running_config": running_cfg,
-            "vlans": vlans
+            "vlans": vlans,
+            "interfaces": interfaces
         }
     }
+    
     edges = []
+    # In vendor_syntax.py, "lldp" maps to "show cdp neighbors" and "cdp" normalizes the keys
+    # But wait, TextFSM returns the raw key if there's no normalizer for "lldp".
+    # Wait, the normalize_keys has "cdp", but the read command is "lldp". So it might not be normalized!
+    # Let's just safely extract both possibilities
+    neighbors = device_data.get("lldp", []) or device_data.get("cdp", [])
+    
+    for neighbor in neighbors:
+        # Depending on if it was normalized or not
+        remote_host = neighbor.get("neighbor_name") or neighbor.get("destination_host") or neighbor.get("neighbor")
+        local_port = neighbor.get("local_port") or neighbor.get("local_interface")
+        remote_port = neighbor.get("remote_port") or neighbor.get("neighbor_interface") or neighbor.get("port_id")
+        
+        if remote_host:
+            edges.append({
+                "source_ip": seed_ip,
+                "target_hostname": remote_host,
+                "source_port": local_port,
+                "target_port": remote_port
+            })
     
     return {"nodes": nodes, "edges": edges}
 
@@ -123,7 +152,7 @@ def main():
     if data:
         with open("back/current_state.json", "w") as f:
             json.dump(data, f, indent=4)
-        print("\n✅ Extraction et normalisation terminées → current_state.json")
+        print("\nSuccès : Extraction et normalisation terminées → current_state.json")
 
 if __name__ == "__main__":
     main()

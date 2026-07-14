@@ -1,168 +1,158 @@
-from pydantic import BaseModel
-from typing import Optional, List
+from pydantic import BaseModel, ConfigDict, Field
+from datetime import datetime
 
-# --- Pydantic Models ---
-class PortConfigSchema(BaseModel):
-    ipv4: str = ""
-    ipv6: str = ""
-    mask: str = "255.255.255.0"
-    gateway: str = ""
-    vlan: str = "1"
-    interface_name: str = ""
-    mode: str = "access"
-    portfast: bool = False
-    allowed_vlans: str = ""
-    description: str = ""
-    voice_vlan: str = ""
+from pydantic import BaseModel, Field
+from typing import Optional, List, Dict, Any
 
-class EdgeSchema(BaseModel):
-    source: str
-    target: str
-    portId: str
-    config: PortConfigSchema
-
-class NodeSchema(BaseModel):
-    id: str
-    label: str
-    link_count: int
-    color: str
+class DeviceCredentials(BaseModel):
+    host: str
+    username: str
+    password: str
     device_type: str = "cisco_ios"
-    mgmt_ip: str = ""
-    ssh_username: str = ""
-    stp_mode: str = ""
-    stp_root_vlan: str = ""
-    routes_json: str = "[]"
 
-class NetworkSchema(BaseModel):
-    nodes: List[NodeSchema]
-    edges: List[EdgeSchema]
+class InterfaceCreate(BaseModel):
+    name: str
+    description: Optional[str] = None
+    mode: Optional[str] = None  # access/trunk
+    vlan_id: Optional[int] = None
+    allowed_vlans: Optional[str] = None
 
-# --- SQLAlchemy Models ---
-from sqlalchemy.orm import DeclarativeBase, relationship, Mapped, mapped_column
-from sqlalchemy import create_engine, String, ForeignKey, Integer, Text, Boolean
-from sqlalchemy.orm import sessionmaker
+class InterfaceUpdate(BaseModel):
+    name: Optional[str] = None
+    description: Optional[str] = None
+    mode: Optional[str] = None
+    vlan_id: Optional[int] = None
+    allowed_vlans: Optional[str] = None
 
-# Force MySQL connection
-engine = create_engine("mysql+pymysql://root:test@localhost:3306/test", pool_pre_ping=True)
-print("Successfully connected to MySQL database.")
+class NodeCreate(BaseModel):
+    ip_address: str
+    hostname: Optional[str] = None
+    device_type: Optional[str] = None
 
-class Base(DeclarativeBase):
-    pass
+class TopologyNode(BaseModel):
+    id: int
+    ip_address: str
+    hostname: str
+    device_type: str
+    x: Optional[float] = None
+    y: Optional[float] = None
+    fx: Optional[float] = None
+    fy: Optional[float] = None
+    is_locked: Optional[bool] = False
 
-class DBNode(Base):
-    __tablename__ = "nodes"
-    id: Mapped[str] = mapped_column(String(50), primary_key=True)
-    label: Mapped[str] = mapped_column(String(50))
-    link_count: Mapped[int] = mapped_column(Integer, default=0)
-    color: Mapped[str] = mapped_column(String(30), default="#3498db")
-    
-    # SSH Discovery Fields
-    device_type: Mapped[str] = mapped_column(String(50), default="cisco_ios")
-    mgmt_ip: Mapped[Optional[str]] = mapped_column(String(50), nullable=True)
-    ssh_username: Mapped[Optional[str]] = mapped_column(String(50), nullable=True)
-    ssh_password_encrypted: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
-    
-    # Configurations
-    running_config_active: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
-    running_config_draft: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
-    
-    # New Backend Capabilities
-    stp_mode: Mapped[Optional[str]] = mapped_column(String(50), nullable=True)
-    stp_root_vlan: Mapped[Optional[str]] = mapped_column(String(50), nullable=True)
-    routes_json: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
-    
-    # Status: pending, completed, failed
-    discovery_status: Mapped[str] = mapped_column(String(20), default="pending")
-    
-    vlans: Mapped[List["DBVlan"]] = relationship(back_populates="node", cascade="all, delete-orphan")
+class InterfaceSchema(BaseModel):
+    id: int
+    name: str
+    description: Optional[str]
+    mode: Optional[str]
+    vlan_id: Optional[int]
+    allowed_vlans: Optional[str]
 
-class DBEdge(Base):
-    __tablename__ = "edges"
-    id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
-    source_id: Mapped[str] = mapped_column(ForeignKey("nodes.id"))
-    target_id: Mapped[str] = mapped_column(ForeignKey("nodes.id"))
-    port_id: Mapped[str] = mapped_column(String(50))
-    
-    config: Mapped["DBPortConfig"] = relationship(back_populates="edge", cascade="all, delete-orphan")
+class TopologyLink(BaseModel):
+    source_ip: str
+    target_ip: str
+    source_interface: Optional[str]
+    target_interface: Optional[str]
 
-class DBPortConfig(Base):
-    __tablename__ = "port_configs"
-    id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
-    edge_id: Mapped[int] = mapped_column(ForeignKey("edges.id"))
-    
-    # App / Draft Config
-    ipv4: Mapped[str] = mapped_column(String(50), default="")
-    ipv6: Mapped[str] = mapped_column(String(50), default="")
-    mask: Mapped[str] = mapped_column(String(50), default="255.255.255.0")
-    gateway: Mapped[str] = mapped_column(String(50), default="")
-    vlan: Mapped[str] = mapped_column(String(50), default="1")
-    interface_name: Mapped[str] = mapped_column(String(50), default="")
-    mode: Mapped[str] = mapped_column(String(20), default="access")
-    portfast: Mapped[bool] = mapped_column(Boolean, default=False)
-    allowed_vlans: Mapped[str] = mapped_column(String(200), default="")
-    description: Mapped[str] = mapped_column(String(200), default="")
-    voice_vlan: Mapped[str] = mapped_column(String(50), default="")
-    
-    # Active / Physical Config
-    active_ipv4: Mapped[Optional[str]] = mapped_column(String(50), nullable=True)
-    active_ipv6: Mapped[Optional[str]] = mapped_column(String(50), nullable=True)
-    active_mask: Mapped[Optional[str]] = mapped_column(String(50), nullable=True)
-    active_gateway: Mapped[Optional[str]] = mapped_column(String(50), nullable=True)
-    active_vlan: Mapped[Optional[str]] = mapped_column(String(50), nullable=True)
-    active_interface_name: Mapped[Optional[str]] = mapped_column(String(50), nullable=True)
-    active_mode: Mapped[Optional[str]] = mapped_column(String(50), nullable=True)
-    active_portfast: Mapped[Optional[bool]] = mapped_column(Boolean, nullable=True)
-    active_trunk_vlans: Mapped[Optional[str]] = mapped_column(String(200), nullable=True)
-    
-    edge: Mapped["DBEdge"] = relationship(back_populates="config")
+class TopologyGraph(BaseModel):
+    nodes: List[TopologyNode]
+    links: List[TopologyLink]
 
-class DBVlan(Base):
-    __tablename__ = "vlans"
-    id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
-    node_id: Mapped[str] = mapped_column(ForeignKey("nodes.id"))
-    vlan_id: Mapped[str] = mapped_column(String(10))
-    name: Mapped[str] = mapped_column(String(50))
-    is_active: Mapped[bool] = mapped_column(Boolean, default=True)
-    
-    node: Mapped["DBNode"] = relationship(back_populates="vlans")
 
-class DBUser(Base):
-    __tablename__ = "users"
-    id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
-    username: Mapped[str] = mapped_column(String(50), unique=True)
-    password_hash: Mapped[str] = mapped_column(String(100))
-    is_admin: Mapped[bool] = mapped_column(Boolean, default=False)
-    
-    settings: Mapped["DBUserSettings"] = relationship(back_populates="user", uselist=False, cascade="all, delete-orphan")
-    node_colors: Mapped[List["DBNodeColor"]] = relationship(back_populates="user", cascade="all, delete-orphan")
+class ModelUser(BaseModel):
+    """
+    Model for user
+    """
+    first_name: str = Field(max_length=100)
+    last_name: str = Field(None, max_length=100)
+    email: str = Field(max_length=100)
+    login: str = Field(max_length=50, min_length=1)
+    password: str = Field(max_length=200, min_length=2)
+    role: str | None = "user"
 
-class DBToken(Base):
-    __tablename__ = "tokens"
-    token: Mapped[str] = mapped_column(String(100), primary_key=True)
-    user_id: Mapped[int] = mapped_column(ForeignKey("users.id"))
 
-class DBUserSettings(Base):
-    __tablename__ = "user_settings"
-    id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
-    user_id: Mapped[int] = mapped_column(ForeignKey("users.id"), unique=True)
-    bg_color: Mapped[str] = mapped_column(String(30), default="#1e1e1e")
-    default_node_color: Mapped[str] = mapped_column(String(30), default="#ccc")
-    router_color: Mapped[str] = mapped_column(String(30), default="#3498db")
-    switch_color: Mapped[str] = mapped_column(String(30), default="#2ecc71")
-    host_color: Mapped[str] = mapped_column(String(30), default="#9b59b6")
-    theme: Mapped[str] = mapped_column(String(20), default="dark")
-    
-    user: Mapped["DBUser"] = relationship(back_populates="settings")
+class UserUpdate(BaseModel):
+    """
+    Model for user update
+    """
+    first_name: str | None = Field(None, max_length=100)
+    last_name: str | None = Field(None, max_length=100)
+    email: str | None = Field(None, max_length=100)
+    login: str | None = Field(None, max_length=50, min_length=1)
+    password: str | None = Field(None, max_length=200, min_length=1)
+    current_password: str | None = Field(None, max_length=200)
 
-class DBNodeColor(Base):
-    __tablename__ = "node_colors"
-    id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
-    user_id: Mapped[int] = mapped_column(ForeignKey("users.id"))
-    node_id: Mapped[str] = mapped_column(ForeignKey("nodes.id"))
-    color: Mapped[str] = mapped_column(String(30))
-    
-    user: Mapped["DBUser"] = relationship(back_populates="node_colors")
 
-Base.metadata.create_all(engine)
+class UserRole(BaseModel):
+    """
+    Model for role update
+    """
+    role: str | None = "user"
 
-SessionLocal = sessionmaker(engine, autoflush=False)
+
+class Token(BaseModel):
+    """
+    Model for token
+    """
+    access_token: str
+    token_type: str
+
+
+class TokenData(BaseModel):
+    """
+    Model for token data converted
+    """
+    rowid: int | None = None
+    role: str | None = None
+
+
+class ModelResponseGetConnectedUser(BaseModel):
+    """
+    Model for connected user result
+    """
+    id: int
+    first_name: str
+    last_name: str | None
+    email: str
+    login: str
+    role: str
+
+
+class Token(BaseModel):
+    access_token: str
+    token_type: str
+
+class MockInterface(BaseModel):
+    name: str
+    description: Optional[str] = None
+    mode: Optional[str] = None
+    vlan_id: Optional[int] = None
+    allowed_vlans: Optional[str] = None
+
+class MockNode(BaseModel):
+    ip: str
+    label: str
+    type: str
+    interfaces: List[MockInterface] = []
+
+class MockLink(BaseModel):
+    source_ip: str
+    target_ip: str
+
+class TopologySyncRequest(BaseModel):
+    nodes: List[MockNode]
+    links: List[MockLink]
+
+class NodeLayoutUpdate(BaseModel):
+    id: int
+    x: Optional[float] = None
+    y: Optional[float] = None
+    fx: Optional[float] = None
+    fy: Optional[float] = None
+    is_locked: Optional[bool] = False
+
+class TopologyLayoutUpdate(BaseModel):
+    nodes: List[NodeLayoutUpdate]
+
+class NodeUpdate(BaseModel):
+    hostname: Optional[str] = None
