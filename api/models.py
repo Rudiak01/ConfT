@@ -34,6 +34,11 @@ class TopologyNode(BaseModel):
     ip_address: str
     hostname: str
     device_type: str
+    x: Optional[float] = None
+    y: Optional[float] = None
+    fx: Optional[float] = None
+    fy: Optional[float] = None
+    is_locked: Optional[bool] = False
 
 class InterfaceSchema(BaseModel):
     id: int
@@ -122,6 +127,7 @@ class MockInterface(BaseModel):
     description: Optional[str] = None
     mode: Optional[str] = None
     vlan_id: Optional[int] = None
+    allowed_vlans: Optional[str] = None
 
 class MockNode(BaseModel):
     ip: str
@@ -136,3 +142,14 @@ class MockLink(BaseModel):
 class TopologySyncRequest(BaseModel):
     nodes: List[MockNode]
     links: List[MockLink]
+
+class NodeLayoutUpdate(BaseModel):
+    id: int
+    x: Optional[float] = None
+    y: Optional[float] = None
+    fx: Optional[float] = None
+    fy: Optional[float] = None
+    is_locked: Optional[bool] = False
+
+class TopologyLayoutUpdate(BaseModel):
+    nodes: List[NodeLayoutUpdate]

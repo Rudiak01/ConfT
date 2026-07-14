@@ -181,6 +181,7 @@ class DB:
                         description=iface.description or "",
                         mode=iface.mode or "access",
                         vlan_id=iface.vlan_id,
+                        allowed_vlans=iface.allowed_vlans,
                         is_protected=False
                     )
                     session.add(interface)
@@ -203,4 +204,16 @@ class DB:
                         target_interface=t_iface_name
                     )
                     session.add(link)
+            session.commit()
+
+    def update_node_layout(self, updates: list) -> None:
+        with SessionLocal() as session:
+            for update in updates:
+                node = session.query(Node).filter(Node.id == update.id).first()
+                if node:
+                    node.x = update.x
+                    node.y = update.y
+                    node.fx = update.fx
+                    node.fy = update.fy
+                    node.is_locked = update.is_locked
             session.commit()

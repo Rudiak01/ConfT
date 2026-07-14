@@ -12,17 +12,37 @@ class SDNController {
         this.nextNodeId = 1;
         this.connectionMode = false;
 
+        this.isGraphLocked = false;
+        try {
+            const savedStateJson = localStorage.getItem('conft_topology_state');
+            if (savedStateJson) {
+                const savedState = JSON.parse(savedStateJson);
+                if (savedState.isLocked !== undefined) {
+                    this.isGraphLocked = savedState.isLocked;
+                }
+            }
+        } catch(e) {}
+
         // Initial Setup
         this.initGraph();
 
-        this.log("Système prêt. Ajoutez des nœuds pour commencer.");
+        this.log("Système prêt.");
         document.getElementById('refresh-topology-btn')?.addEventListener('click', () => {
             this.fetchRealTopology();
         });
+        
+        const lockBtn = document.getElementById('lock-topology-btn');
+        if (lockBtn) {
+            lockBtn.addEventListener('click', () => {
+                this.toggleGraphLock();
+            });
+            // Update button state to match initial state
+            this.updateLockButtonUI();
+        }
     }
     async fetchRealTopology() {
         try {
-            this.log("Récupération de la topologie réelle via l'API...");
+            this.log("Récupération de la topologie via l'API.");
             
             const response = await fetch(`${API_BASE}/db/topology`);
             if (!response.ok) throw new Error(`HTTP ${response.status}`);
@@ -34,15 +54,71 @@ class SDNController {
                 throw new Error("Réponse API invalide");
             }
 
-            this.nodes = data.nodes.map(n => ({
-                id: n.id,
-                label: n.hostname || n.label,
-                type: n.device_type || n.type,
-                ip: n.ip_address || n.ip,
-                // Initialiser x/y pour éviter les bugs de position
-                x: (Math.random() * 200) + (this.width / 2 - 100),
-                y: (Math.random() * 200) + (this.height / 2 - 100)
-            }));
+            // Check if any node is locked in DB
+            const isAnyLocked = data.nodes.some(n => n.is_locked);
+            if (isAnyLocked) {
+                this.isGraphLocked = true;
+            }
+            this.updateLockButtonUI();
+
+            // Mapping des nœuds pour conserver les positions s'ils existent déjà
+            const oldNodesMap = new Map(this.nodes.map(n => [n.id, n]));
+            
+            let savedState = null;
+            try {
+                const savedStateJson = localStorage.getItem('conft_topology_state');
+                if (savedStateJson) savedState = JSON.parse(savedStateJson);
+            } catch(e) {}
+
+            this.nodes = data.nodes.map(n => {
+                const oldNode = oldNodesMap.get(n.id);
+                const savedNode = savedState && savedState.nodes ? savedState.nodes[n.id] : null;
+                
+                let startX = (Math.random() * 200) + (this.width / 2 - 100);
+                let startY = (Math.random() * 200) + (this.height / 2 - 100);
+                
+                if (oldNode && oldNode.x !== undefined) {
+                    startX = oldNode.x;
+                    startY = oldNode.y;
+                } else if (n.x !== null && n.x !== undefined) {
+                    startX = n.x;
+                    startY = n.y;
+                } else if (savedNode && savedNode.x !== undefined) {
+                    startX = savedNode.x;
+                    startY = savedNode.y;
+                }
+                
+                let fx = null;
+                let fy = null;
+                if (this.isGraphLocked) {
+                    if (oldNode && oldNode.fx !== null && oldNode.fx !== undefined) {
+                        fx = oldNode.fx;
+                        fy = oldNode.fy;
+                    } else if (n.fx !== null && n.fx !== undefined) {
+                        fx = n.fx;
+                        fy = n.fy;
+                    } else if (savedNode && savedNode.x !== undefined) {
+                        fx = savedNode.x;
+                        fy = savedNode.y;
+                    } else {
+                        fx = startX;
+                        fy = startY;
+                    }
+                }
+
+                return {
+                    id: n.id,
+                    label: n.hostname || n.label,
+                    type: n.device_type || n.type,
+                    ip: n.ip_address || n.ip,
+                    x: startX,
+                    y: startY,
+                    fx: fx,
+                    fy: fy,
+                    vx: oldNode ? oldNode.vx : 0,
+                    vy: oldNode ? oldNode.vy : 0
+                };
+            });
             
             this.links = data.links.map(l => {
                 // Find node ID by IP since backend link uses IP
@@ -58,12 +134,12 @@ class SDNController {
 
             // Mettre à jour la simulation avec les nouvelles données
             this.restartSimulation();
-            this.log(`Topologie réelle chargée : ${this.nodes.length} nœuds, ${this.links.length} liens.`);
+            this.log(`Topologie chargée : ${this.nodes.length} nœuds, ${this.links.length} liens.`);
+            
+            this.fetchAllInterfaces();
             
         } catch (error) {
-            console.warn("[SDN] API topologie non disponible. Utilisation de la topologie aléatoire.", error);
-            this.log("⚠️ Backend SDN indisponible → génération d'une topologie aléatoire.");
-            this.generateRandomTopology();
+            this.log("API indisponible.");
         }
     }
 
@@ -77,23 +153,67 @@ class SDNController {
         consoleEl.scrollTop = consoleEl.scrollHeight;
     }
 
-    toggleConnectionMode() {
-        this.connectionMode = !this.connectionMode;
-        const btn = document.getElementById('btn-connection-mode');
-        if (this.connectionMode) {
-            if(btn) {
-                btn.classList.add('active');
-                btn.textContent = "Mode Connexion: Actif";
-            }
-            this.log("Mode connexion activé. Cliquez sur deux nœuds pour les relier.");
+    updateLockButtonUI() {
+        const lockBtn = document.getElementById('lock-topology-btn');
+        if (!lockBtn) return;
+        if (this.isGraphLocked) {
+            lockBtn.textContent = "Déverrouiller le graphe";
+            lockBtn.classList.add('locked');
         } else {
-            if(btn) {
-                btn.classList.remove('active');
-                btn.textContent = "Activer Mode Connexion";
-            }
-            this.selectedNode = null;
-            d3.selectAll(".node circle").style("stroke-width", 0).style("stroke", "white");
-            this.log("Mode connexion désactivé.");
+            lockBtn.textContent = "Verrouiller le graphe";
+            lockBtn.classList.remove('locked');
+        }
+    }
+
+    toggleGraphLock() {
+        this.isGraphLocked = !this.isGraphLocked;
+        this.updateLockButtonUI();
+        
+        if (this.isGraphLocked) {
+            this.log("Graphe verrouillé.");
+            this.nodes.forEach(d => {
+                d.fx = d.x;
+                d.fy = d.y;
+            });
+            this.simulation.alphaTarget(0); // Stop movement
+        } else {
+            this.log("Graphe déverrouillé.");
+            this.nodes.forEach(d => {
+                d.fx = null;
+                d.fy = null;
+            });
+            this.simulation.alpha(0.3).restart();
+        }
+        this.saveTopologyState();
+    }
+
+    async saveTopologyState() {
+        const state = {
+            isLocked: this.isGraphLocked,
+            nodes: {}
+        };
+        const updates = [];
+        this.nodes.forEach(n => {
+            state.nodes[n.id] = { x: n.x, y: n.y };
+            updates.push({
+                id: n.id,
+                x: n.x,
+                y: n.y,
+                fx: n.fx,
+                fy: n.fy,
+                is_locked: this.isGraphLocked
+            });
+        });
+        localStorage.setItem('conft_topology_state', JSON.stringify(state));
+        
+        try {
+            await fetch(`${API_BASE}/db/topology/layout`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ nodes: updates })
+            });
+        } catch(e) {
+            console.warn("Could not save layout to DB", e);
         }
     }
 
@@ -111,7 +231,9 @@ class SDNController {
             }))
             .on("dblclick", () => {
                 this.selectedNode = null;
-                d3.selectAll(".node circle").style("stroke-width", 0).style("stroke", "white");
+                d3.selectAll(".node circle")
+                    .style("stroke-width", 2)
+                    .style("stroke", "#34495e");
                 this.closePanel();
             });
 
@@ -147,6 +269,29 @@ class SDNController {
 
                 this.node
                     .attr("transform", d => `translate(${d.x},${d.y})`);
+                    
+                this.g.selectAll(".vlan-dot")
+                    .attr("cx", d => {
+                        const targetNode = d.isSource ? d.link.target : d.link.source;
+                        const sourceNode = d.isSource ? d.link.source : d.link.target;
+                        const dx = targetNode.x - sourceNode.x;
+                        const dy = targetNode.y - sourceNode.y;
+                        const dist = Math.sqrt(dx * dx + dy * dy) || 1;
+                        const offset = sourceNode.type === 'switch' ? 35 : (sourceNode.type === 'router' ? 40 : 25);
+                        return sourceNode.x + (dx / dist) * offset;
+                    })
+                    .attr("cy", d => {
+                        const targetNode = d.isSource ? d.link.target : d.link.source;
+                        const sourceNode = d.isSource ? d.link.source : d.link.target;
+                        const dx = targetNode.x - sourceNode.x;
+                        const dy = targetNode.y - sourceNode.y;
+                        const dist = Math.sqrt(dx * dx + dy * dy) || 1;
+                        const offset = sourceNode.type === 'switch' ? 35 : (sourceNode.type === 'router' ? 40 : 25);
+                        return sourceNode.y + (dy / dist) * offset;
+                    });
+            })
+            .on("end", () => {
+                this.saveTopologyState();
             });
 
         // Lier les liens après avoir initialisé la simulation
@@ -183,26 +328,6 @@ class SDNController {
 
         // Forcer un tick initial pour afficher les éléments
         this.simulation.alpha(1).restart();
-    }
-
-    addNode(type) {
-        this.width = document.getElementById('graph-container').clientWidth || 800;
-        this.height = document.getElementById('graph-container').clientHeight || 600;
-        this.simulation.force("center", d3.forceCenter(this.width / 2, this.height / 2));
-
-        const id = type === 'switch' ? `s${this.nextNodeId++}` : `h${this.nextNodeId++}`;
-        const label = type === 'switch' ? `S-${id.replace('s', '')}` : `Host ${id.replace('h', '')}`;
-        const ip = type === 'switch' ? `192.168.1.${Math.floor(Math.random() * 254)}` : `10.0.0.${this.nextNodeId}`;
-
-        // Position random near center
-        const x = (Math.random() * 300) + (this.width / 2 - 150);
-        const y = (Math.random() * 300) + (this.height / 2 - 150);
-
-        const newNode = { id, label, type, ip, x, y };
-
-        this.nodes.push(newNode);
-        this.log(`Nouveau nœud créé : ${label} (${type})`);
-        this.restartSimulation();
     }
 
 
@@ -245,13 +370,13 @@ class SDNController {
             .on("click", (event, d) => this.selectNode(d));
 
         nodeEnter.append("circle")
-            .attr("r", d => d.type === 'switch' ? 25 : 15)
-            .attr("fill", d => d.type === 'switch' ? "#e74c3c" : "#2ecc71")
+            .attr("r", d => d.type === 'switch' ? 25 : (d.type === 'router' ? 30 : 15))
+            .attr("fill", d => d.type === 'switch' ? "#e74c3c" : (d.type === 'router' ? "#3498db" : "#2ecc71"))
             .attr("stroke", "white")
             .attr("stroke-width", 0);
 
         nodeEnter.append("text")
-            .attr("dx", d => d.type === 'switch' ? 35 : 20)
+            .attr("dx", d => d.type === 'switch' ? 35 : (d.type === 'router' ? 40 : 20))
             .attr("dy", ".35em")
             .text(d => d.label)
             .style("font-size", "14px")
@@ -288,101 +413,222 @@ class SDNController {
         this.height = document.getElementById('graph-container').clientHeight || 600;
         this.simulation.force("center", d3.forceCenter(this.width / 2, this.height / 2));
 
-        const switches = Math.floor(Math.random() * 16) + 5; // 5 to 20 switches
-
-        let prevSwitch = null;
-        for (let i = 0; i < switches; i++) {
-            const sId = `s${this.nextNodeId++}`;
-            const sNode = {
-                id: sId, label: `S-${i + 1}`, type: "switch", ip: `192.168.${i}.1`,
-                x: Math.random() * this.width, y: Math.random() * this.height
-            };
-            this.nodes.push(sNode);
-
-            if (prevSwitch) {
-                this.links.push({ source: prevSwitch.id, target: sNode.id });
-            }
-
-            const hostsPerSwitch = Math.floor(Math.random() * 9) + 2; // 2 to 10 hosts
-            for (let j = 0; j < hostsPerSwitch; j++) {
-                const hId = `h${this.nextNodeId++}`;
-                const hNode = {
-                    id: hId, label: `Host ${j + 1}`, type: "host", ip: `192.168.${i}.${j + 10}`,
-                    x: sNode.x + (Math.random() * 100 - 50), y: sNode.y + 100
-                };
-                this.nodes.push(hNode);
-                this.links.push({ source: sNode.id, target: hNode.id });
-            }
-
-            prevSwitch = sNode;
-        }
-
-        if (switches > 2) {
-            this.links.push({ source: this.nodes[0].id, target: prevSwitch.id });
-        }
-
-        this.log("Topologie aléatoire générée localement. Synchronisation avec la DB...");
-        this.restartSimulation();
-
-        // Sync with backend
-        const payloadNodes = this.nodes.map(n => {
-            let interfaces = [];
+        const getNewIface = (node, type, targetNode) => {
+            if (!node._ifaces) node._ifaces = [];
+            let ifaceName = "";
+            let mode = "access";
+            let vlan_id = 1;
+            let allowed_vlans = "";
             
-            // Compter le nombre exact de liens connectés à ce nœud
-            const connectedLinksCount = this.links.filter(l => 
-                (typeof l.source === 'object' ? l.source.id : l.source) === n.id || 
-                (typeof l.target === 'object' ? l.target.id : l.target) === n.id
-            ).length;
+            const count = node._ifaces.length + 1;
 
-            if (n.type === 'switch') {
-                for (let k = 1; k <= connectedLinksCount; k++) {
-                    interfaces.push({
-                        name: `FastEthernet0/${k}`,
-                        description: "Auto-generated",
-                        mode: Math.random() > 0.5 ? "access" : "trunk",
-                        vlan_id: Math.floor(Math.random() * 100) + 1
-                    });
+            if (node.type === 'router') {
+                ifaceName = `GigabitEthernet0/${count - 1}`;
+                mode = "routed";
+                vlan_id = null;
+            } else if (node.type === 'switch') {
+                ifaceName = `FastEthernet0/${count}`;
+                if (targetNode.type === 'router' || targetNode.type === 'switch') {
+                    mode = "trunk";
+                    vlan_id = 1;
+                } else if (targetNode.type === 'host') {
+                    mode = "access";
+                    vlan_id = targetNode._vlan || 10;
                 }
-            } else {
-                for (let k = 1; k <= (connectedLinksCount || 1); k++) {
-                    interfaces.push({
-                        name: k === 1 ? "eth0" : `eth${k-1}`,
-                        description: "Auto-generated host interface",
-                        mode: "access",
-                        vlan_id: 1
-                    });
+            } else if (node.type === 'host') {
+                ifaceName = count === 1 ? "eth0" : `eth${count - 1}`;
+                mode = "access";
+                vlan_id = node._vlan || 10;
+            }
+
+            const ifaceObj = {
+                name: ifaceName,
+                description: `Connected to ${targetNode.label}`,
+                mode: mode,
+                vlan_id: vlan_id
+            };
+            if (allowed_vlans) {
+                ifaceObj.allowed_vlans = allowed_vlans;
+            }
+            node._ifaces.push(ifaceObj);
+            return ifaceName;
+        };
+
+        const addLink = (sourceNode, targetNode) => {
+            const sIface = getNewIface(sourceNode, sourceNode.type, targetNode);
+            const tIface = getNewIface(targetNode, targetNode.type, sourceNode);
+            this.links.push({
+                source: sourceNode.id,
+                target: targetNode.id,
+                _sourceNode: sourceNode,
+                _targetNode: targetNode,
+                source_interface: sIface,
+                target_interface: tIface
+            });
+        };
+
+        const numCores = Math.floor(Math.random() * 2) + 1; // 1 to 2 core routers
+        const cores = [];
+        
+        for (let i = 0; i < numCores; i++) {
+            const rId = `r${this.nextNodeId++}`;
+            const rNode = {
+                id: rId, label: `Core-R${i + 1}`, type: "router", ip: `10.0.0.${i + 1}`,
+                x: (this.width / (numCores + 1)) * (i + 1), y: this.height * 0.2
+            };
+            this.nodes.push(rNode);
+            cores.push(rNode);
+        }
+        
+        if (cores.length > 1) {
+            addLink(cores[0], cores[1]);
+        }
+        
+        const dists = [];
+        for (let i = 0; i < cores.length; i++) {
+            const numDists = Math.floor(Math.random() * 2) + 2; 
+            for (let j = 0; j < numDists; j++) {
+                const sId = `s${this.nextNodeId++}`;
+                const sNode = {
+                    id: sId, label: `Dist-S${dists.length + 1}`, type: "switch", ip: `172.16.${dists.length}.1`,
+                    x: (this.width / (cores.length * numDists + 1)) * (dists.length + 1), y: this.height * 0.5
+                };
+                this.nodes.push(sNode);
+                dists.push(sNode);
+                addLink(cores[i], sNode);
+            }
+        }
+        
+        if (dists.length > 1) {
+            for (let i = 0; i < dists.length - 1; i++) {
+                if (Math.random() > 0.5) {
+                    addLink(dists[i], dists[i+1]);
                 }
             }
+        }
+        
+        const accesses = [];
+        for (let i = 0; i < dists.length; i++) {
+            const numAccess = Math.floor(Math.random() * 2) + 2; 
+            for (let j = 0; j < numAccess; j++) {
+                const sId = `s${this.nextNodeId++}`;
+                const sNode = {
+                    id: sId, label: `Acc-S${accesses.length + 1}`, type: "switch", ip: `192.168.${accesses.length}.1`,
+                    x: (this.width / (dists.length * numAccess + 1)) * (accesses.length + 1), y: this.height * 0.8
+                };
+                this.nodes.push(sNode);
+                accesses.push(sNode);
+                addLink(dists[i], sNode);
+                
+                const vlanForThisSwitch = [10, 20, 30, 40, 50][Math.floor(Math.random() * 5)];
+
+                const numHosts = Math.floor(Math.random() * 3) + 2; 
+                for (let k = 0; k < numHosts; k++) {
+                    const hId = `h${this.nextNodeId++}`;
+                    const hNode = {
+                        id: hId, label: `Host-${accesses.length}-${k+1}`, type: "host", ip: `192.168.${accesses.length}.${k + 10}`,
+                        x: sNode.x + (Math.random() * 80 - 40), y: this.height * 0.95 + (Math.random() * 20 - 10),
+                        _vlan: vlanForThisSwitch
+                    };
+                    this.nodes.push(hNode);
+                    addLink(sNode, hNode);
+                }
+            }
+        }
+
+        // --- VLAN Pruning Logic ---
+        this.nodes.forEach(n => n._requiredVlans = new Set());
+        
+        // 1. Acc => Hosts
+        this.links.forEach(l => {
+            const src = l._sourceNode;
+            const tgt = l._targetNode;
+            if (src.type === 'host' && tgt.type === 'switch') tgt._requiredVlans.add(src._vlan);
+            if (tgt.type === 'host' && src.type === 'switch') src._requiredVlans.add(tgt._vlan);
+        });
+
+        // 2. Dist => Acc
+        this.links.forEach(l => {
+            const src = l._sourceNode;
+            const tgt = l._targetNode;
+            if (src.label.startsWith('Dist') && tgt.label.startsWith('Acc')) {
+                tgt._requiredVlans.forEach(v => src._requiredVlans.add(v));
+            }
+            if (tgt.label.startsWith('Dist') && src.label.startsWith('Acc')) {
+                src._requiredVlans.forEach(v => tgt._requiredVlans.add(v));
+            }
+        });
+
+        // 3. Core => Dist
+        this.links.forEach(l => {
+            const src = l._sourceNode;
+            const tgt = l._targetNode;
+            if (src.label.startsWith('Core') && tgt.label.startsWith('Dist')) {
+                tgt._requiredVlans.forEach(v => src._requiredVlans.add(v));
+            }
+            if (tgt.label.startsWith('Core') && src.label.startsWith('Dist')) {
+                src._requiredVlans.forEach(v => tgt._requiredVlans.add(v));
+            }
+        });
+
+        // 4. Update allowed_vlans on interfaces
+        this.nodes.forEach(n => {
+            if (n._ifaces) {
+                n._ifaces.forEach(iface => {
+                    if (iface.mode === 'trunk') {
+                        const link = this.links.find(l => 
+                            (l.source === n.id && l.source_interface === iface.name) ||
+                            (l.target === n.id && l.target_interface === iface.name)
+                        );
+                        if (link) {
+                            const targetNode = link.source === n.id ? link._targetNode : link._sourceNode;
+                            let allowed = [...n._requiredVlans].filter(x => targetNode._requiredVlans.has(x));
+                            if (allowed.length > 0) {
+                                iface.allowed_vlans = allowed.sort((a,b)=>a-b).join(',');
+                            } else {
+                                iface.allowed_vlans = "1"; // native fallback
+                            }
+                        }
+                    }
+                });
+            }
+        });
+        // --- End VLAN Pruning Logic ---
+
+        this.log("Topologie générée localement. Synchronisation avec la DB...");
+        
+        const payloadNodes = this.nodes.map(n => {
             return {
                 ip: n.ip,
                 label: n.label,
                 type: n.type,
-                interfaces: interfaces
+                interfaces: n._ifaces || []
             };
         });
 
-        const ifaceCounter = {};
         const payloadLinks = this.links.map(l => {
-            const sNode = this.nodes.find(n => n.id === (typeof l.source === 'object' ? l.source.id : l.source));
-            const tNode = this.nodes.find(n => n.id === (typeof l.target === 'object' ? l.target.id : l.target));
-            
-            let sIface = "", tIface = "";
-            if (sNode) {
-                ifaceCounter[sNode.id] = (ifaceCounter[sNode.id] || 0) + 1;
-                sIface = sNode.type === 'switch' ? `FastEthernet0/${ifaceCounter[sNode.id]}` : (ifaceCounter[sNode.id] === 1 ? "eth0" : `eth${ifaceCounter[sNode.id]-1}`);
-            }
-            if (tNode) {
-                ifaceCounter[tNode.id] = (ifaceCounter[tNode.id] || 0) + 1;
-                tIface = tNode.type === 'switch' ? `FastEthernet0/${ifaceCounter[tNode.id]}` : (ifaceCounter[tNode.id] === 1 ? "eth0" : `eth${ifaceCounter[tNode.id]-1}`);
-            }
-
             return {
-                source_ip: sNode ? sNode.ip : "",
-                target_ip: tNode ? tNode.ip : "",
-                source_interface: sIface,
-                target_interface: tIface
+                source_ip: l._sourceNode.ip,
+                target_ip: l._targetNode.ip,
+                source_interface: l.source_interface,
+                target_interface: l.target_interface
             };
         });
+
+        this.nodes.forEach(n => {
+            delete n._ifaces;
+            delete n._vlan;
+        });
+
+        const linksForD3 = this.links.map(l => ({
+            source: l.source,
+            target: l.target,
+            source_interface: l.source_interface,
+            target_interface: l.target_interface
+        }));
+        this.links = linksForD3;
+
+        this.restartSimulation();
 
         fetch(`${API_BASE}/db/topology/random`, {
             method: 'POST',
@@ -390,8 +636,7 @@ class SDNController {
             body: JSON.stringify({ nodes: payloadNodes, links: payloadLinks })
         }).then(res => {
             if (res.ok) {
-                this.log("Topologie aléatoire synchronisée avec la base de données.");
-                // Re-fetch to get the real integer IDs from the database
+                this.log("Topologie synchronisée avec la base de données.");
                 this.fetchRealTopology();
             } else {
                 this.log("Erreur de synchronisation avec la DB.");
@@ -413,15 +658,19 @@ class SDNController {
     selectNode(node) {
         if (this.selectedNode === node) {
             this.selectedNode = null;
-            d3.selectAll(".node circle").style("stroke-width", 0).style("stroke", "white");
+            d3.selectAll(".node circle")
+                .style("stroke-width", 2)
+                .style("stroke", "#34495e");
             this.log(`Désélection de ${node.label}`);
             this.closePanel();
         } else {
             if (this.selectedNode) {
-                // Connection mode removed
+                this.closePanel(); // Save interface state and reset links
             }
 
-            d3.selectAll(".node circle").style("stroke-width", 0).style("stroke", "white");
+            d3.selectAll(".node circle")
+                .style("stroke-width", 2)
+                .style("stroke", "#34495e");
 
             const nodeElement = this.node.nodes().find(n => n.__data__ && n.__data__.id === node.id);
             if (nodeElement) {
@@ -439,19 +688,35 @@ class SDNController {
     // Drag Functions
     dragstarted(event, d) {
         if (!event.active) this.simulation.alphaTarget(0.3).restart();
-        d.fx = d.x;
-        d.fy = d.y;
+        if (!this.isGraphLocked) {
+            d.fx = d.x;
+            d.fy = d.y;
+        }
     }
 
     dragged(event, d) {
-        d.fx = event.x;
-        d.fy = event.y;
+        if (!this.isGraphLocked) {
+            d.fx = event.x;
+            d.fy = event.y;
+        } else {
+            // Même si verrouillé, on autorise peut-être le drag manuel pour ajuster ?
+            // Le prompt demande "verrouiller le déplacement du graph" 
+            // Si on veut permettre le drag manuel tout en gardant "verrouillé", on fait pareil :
+            d.fx = event.x;
+            d.fy = event.y;
+        }
     }
 
     dragended(event, d) {
         if (!event.active) this.simulation.alphaTarget(0);
-        d.fx = null;
-        d.fy = null;
+        if (!this.isGraphLocked) {
+            d.fx = null;
+            d.fy = null;
+        } else {
+            d.fx = d.x;
+            d.fy = d.y;
+        }
+        this.saveTopologyState();
     }
 
 
@@ -494,13 +759,9 @@ class SDNController {
         }
         const panel = document.getElementById('bottom-panel');
         if (panel) panel.classList.remove('open');
-        if (this.linkGroup) {
-            this.linkGroup.selectAll("line")
-                .style("stroke", "#95a5a6")
-                .style("stroke-width", 2);
-        }
         this.currentInterfaces = [];
         this.currentEditingInterfaceId = null;
+        this.updateLinkStyles();
     }
 
     renderInterfacesPanel() {
@@ -527,23 +788,28 @@ class SDNController {
                         <span class="iface-label">Description</span>
                         <input type="text" class="iface-input" id="edit-desc-${iface.id}" value="${iface.description || ''}" />
                     </div>
+                    ${this.selectedNode && this.selectedNode.type !== 'host' ? `
                     <div class="iface-field">
-                        <span class="iface-label">Mode</span>
-                        <select class="iface-input" id="edit-mode-${iface.id}">
+                        <span class="iface-label" title="Access = port pour machine finale, Trunk = port entre switchs/routeurs">Mode</span>
+                        <select class="iface-input" id="edit-mode-${iface.id}" onchange="
+                            document.getElementById('edit-vlan-container-${iface.id}').style.display = (this.value === 'access' || this.value === 'static access') ? 'flex' : 'none';
+                            document.getElementById('edit-allowed-container-${iface.id}').style.display = this.value === 'trunk' ? 'flex' : 'none';
+                        ">
                             <option value="access" ${iface.mode === 'access' ? 'selected' : ''}>Access</option>
                             <option value="trunk" ${iface.mode === 'trunk' ? 'selected' : ''}>Trunk</option>
                             <option value="dynamic auto" ${iface.mode === 'dynamic auto' ? 'selected' : ''}>Dynamic Auto</option>
                             <option value="static access" ${iface.mode === 'static access' ? 'selected' : ''}>Static Access</option>
                         </select>
                     </div>
-                    <div class="iface-field">
-                        <span class="iface-label">VLAN</span>
+                    <div class="iface-field" id="edit-vlan-container-${iface.id}" style="display: ${(!iface.mode || iface.mode.includes('access')) ? 'flex' : 'none'}">
+                        <span class="iface-label" title="VLAN d'accès de ce port">VLAN</span>
                         <input type="number" class="iface-input" id="edit-vlan-${iface.id}" value="${iface.vlan_id || ''}" />
                     </div>
-                    <div class="iface-field">
-                        <span class="iface-label">Allowed VLANs</span>
+                    <div class="iface-field" id="edit-allowed-container-${iface.id}" style="display: ${iface.mode === 'trunk' ? 'flex' : 'none'}">
+                        <span class="iface-label" title="VLANs taggés autorisés sur ce trunk">Allowed VLANs</span>
                         <input type="text" class="iface-input" id="edit-allowed-${iface.id}" value="${iface.allowed_vlans || ''}" placeholder="ex: 10,20,30" />
                     </div>
+                    ` : ''}
                 `;
             } else {
                 card.innerHTML = `
@@ -553,17 +819,25 @@ class SDNController {
                         <span class="iface-value">${iface.name || '-'}</span>
                     </div>
                     <div class="iface-field">
-                        <span class="iface-label">Mode</span>
-                        <span class="iface-value">${iface.mode || '-'}</span>
-                    </div>
-                    <div class="iface-field">
-                        <span class="iface-label">VLAN</span>
-                        <span class="iface-value">${iface.vlan_id || '-'}</span>
-                    </div>
-                    <div class="iface-field">
                         <span class="iface-label">Description</span>
                         <span class="iface-value">${iface.description || '-'}</span>
                     </div>
+                    ${this.selectedNode && this.selectedNode.type !== 'host' ? `
+                    <div class="iface-field">
+                        <span class="iface-label">Mode</span>
+                        <span class="iface-value">${iface.mode || '-'}</span>
+                    </div>
+                    ${(!iface.mode || iface.mode.includes('access')) ? `
+                    <div class="iface-field">
+                        <span class="iface-label">VLAN</span>
+                        <span class="iface-value">${iface.vlan_id || '-'}</span>
+                    </div>` : ''}
+                    ${iface.mode === 'trunk' ? `
+                    <div class="iface-field">
+                        <span class="iface-label">Allowed VLANs</span>
+                        <span class="iface-value">${iface.allowed_vlans || '-'}</span>
+                    </div>` : ''}
+                    ` : ''}
                 `;
                 card.onclick = () => this.editInterface(iface.id);
             }
@@ -582,24 +856,16 @@ class SDNController {
         const selectedInterface = this.currentInterfaces.find(i => i.id === id);
         if (selectedInterface && this.selectedNode) {
             const ifaceName = selectedInterface.name;
-            const nodeId = this.selectedNode.id;
-
             let matchFound = false;
-            this.linkGroup.selectAll("line")
-                .style("stroke", d => {
-                    const srcMatch = String(d.source.id) === String(nodeId) && d.source_interface === ifaceName;
-                    const tgtMatch = String(d.target.id) === String(nodeId) && d.target_interface === ifaceName;
-                    if (srcMatch || tgtMatch) matchFound = true;
-                    return (srcMatch || tgtMatch) ? "#e74c3c" : "#95a5a6";
-                })
-                .style("stroke-width", d => {
-                    const srcMatch = String(d.source.id) === String(nodeId) && d.source_interface === ifaceName;
-                    const tgtMatch = String(d.target.id) === String(nodeId) && d.target_interface === ifaceName;
-                    return (srcMatch || tgtMatch) ? 4 : 2;
-                });
-                
+            this.linkGroup.selectAll("line").each(d => {
+                const srcMatch = String(d.source.id) === String(this.selectedNode.id) && d.source_interface === ifaceName;
+                const tgtMatch = String(d.target.id) === String(this.selectedNode.id) && d.target_interface === ifaceName;
+                if (srcMatch || tgtMatch) matchFound = true;
+            });
             this.log(`Recherche de liens pour l'interface ${ifaceName}... ${matchFound ? 'Trouvé!' : 'Aucun lien actif'}`);
         }
+        
+        this.updateLinkStyles();
     }
 
     async autoSaveInterface(id) {
@@ -611,18 +877,19 @@ class SDNController {
 
         if (!nameEl) return;
 
+        const idx = this.currentInterfaces.findIndex(i => i.id === id);
+        if (idx === -1) return;
+        const existingIface = this.currentInterfaces[idx];
+
         const data = {
             name: nameEl.value,
-            description: descEl.value,
-            mode: modeEl.value,
-            vlan_id: parseInt(vlanEl.value) || null,
-            allowed_vlans: allowedEl.value
+            description: descEl ? descEl.value : existingIface.description,
+            mode: modeEl ? modeEl.value : existingIface.mode,
+            vlan_id: vlanEl ? (parseInt(vlanEl.value) || null) : existingIface.vlan_id,
+            allowed_vlans: allowedEl ? allowedEl.value : existingIface.allowed_vlans
         };
 
-        const idx = this.currentInterfaces.findIndex(i => i.id === id);
-        if (idx !== -1) {
-            this.currentInterfaces[idx] = { ...this.currentInterfaces[idx], ...data };
-        }
+        this.currentInterfaces[idx] = { ...this.currentInterfaces[idx], ...data };
         
         // Remove currently editing id before rendering so it shows as a normal card
         this.currentEditingInterfaceId = null;
@@ -642,10 +909,173 @@ class SDNController {
             this.log(`Erreur de sauvegarde: ${error.message}`);
         }
     }
+    async fetchAllInterfaces() {
+        this.log("Récupération de toutes les interfaces pour les filtres VLAN...");
+        this.allInterfaces = {};
+        const vlanSet = new Set();
+        
+        const promises = this.nodes.map(async (n) => {
+            try {
+                const response = await fetch(`${API_BASE}/db/node/${n.id}/interfaces`);
+                if (response.ok) {
+                    const ifaces = await response.json();
+                    this.allInterfaces[n.id] = ifaces;
+                    ifaces.forEach(iface => {
+                        if (iface.vlan_id) vlanSet.add(iface.vlan_id);
+                        if (iface.allowed_vlans) {
+                            iface.allowed_vlans.split(',').forEach(v => {
+                                const vlan = parseInt(v.trim());
+                                if (!isNaN(vlan)) vlanSet.add(vlan);
+                            });
+                        }
+                    });
+                }
+            } catch (e) {
+                console.warn("Erreur fetch iface:", e);
+            }
+        });
+        await Promise.all(promises);
+        this.populateVlanFilter(Array.from(vlanSet).sort((a,b) => a-b));
+    }
 
-    fetchStatistics() {
-        this.log("Récupération des statistiques...");
-        document.getElementById("stats-output").innerText = "Trafic: Normal | Paquets traités: " + Math.floor(Math.random() * 10000);
+    populateVlanFilter(vlans) {
+        const filterSelect = document.getElementById('vlan-filter');
+        if (!filterSelect) return;
+        
+        filterSelect.innerHTML = '<option value="">Tous les VLANs</option>';
+        vlans.forEach(v => {
+            const opt = document.createElement('option');
+            opt.value = v;
+            opt.textContent = `VLAN ${v}`;
+            filterSelect.appendChild(opt);
+        });
+
+        // Supprimer l'ancien écouteur s'il existe pour éviter les doublons
+        const newSelect = filterSelect.cloneNode(true);
+        filterSelect.parentNode.replaceChild(newSelect, filterSelect);
+
+        newSelect.addEventListener('change', (e) => {
+            this.highlightVlan(e.target.value);
+        });
+    }
+
+    highlightVlan(vlanId) {
+        this.updateLinkStyles();
+    }
+
+    updateLinkStyles() {
+        if (!this.linkGroup) return;
+
+        const vlanFilter = document.getElementById('vlan-filter');
+        const vlan = vlanFilter && vlanFilter.value ? parseInt(vlanFilter.value) : null;
+        
+        let editingNodeId = null;
+        let editingIfaceName = null;
+        if (this.currentEditingInterfaceId && this.selectedNode) {
+            const selectedInterface = this.currentInterfaces.find(i => i.id === this.currentEditingInterfaceId);
+            if (selectedInterface) {
+                editingNodeId = String(this.selectedNode.id);
+                editingIfaceName = selectedInterface.name;
+            }
+        }
+
+        this.g.selectAll(".vlan-dot").remove();
+        let matchCount = 0;
+        const dotsData = [];
+
+        this.linkGroup.selectAll("line")
+            .style("stroke", d => {
+                // Check editing match
+                if (editingNodeId && editingIfaceName) {
+                    const srcMatch = String(d.source.id) === editingNodeId && d.source_interface === editingIfaceName;
+                    const tgtMatch = String(d.target.id) === editingNodeId && d.target_interface === editingIfaceName;
+                    if (srcMatch || tgtMatch) return "#e74c3c";
+                }
+
+                // Check VLAN match
+                if (vlan) {
+                    const srcIsHost = d.source.type === 'host';
+                    const tgtIsHost = d.target.type === 'host';
+                    
+                    const srcHasVlan = !srcIsHost && this.nodeHasVlanOnLink(d, true, vlan);
+                    const tgtHasVlan = !tgtIsHost && this.nodeHasVlanOnLink(d, false, vlan);
+                    
+                    if (srcHasVlan || tgtHasVlan) {
+                        matchCount++;
+                        if (srcHasVlan) dotsData.push({ link: d, isSource: true });
+                        if (tgtHasVlan) dotsData.push({ link: d, isSource: false });
+                    }
+                    
+                    if (srcIsHost || tgtIsHost) {
+                        if (srcHasVlan || tgtHasVlan) return "#f1c40f";
+                    } else {
+                        if (srcHasVlan && tgtHasVlan) return "#f1c40f";
+                        if (srcHasVlan || tgtHasVlan) return "#e67e22";
+                    }
+                    return "#bdc3c7";
+                }
+
+                // Default
+                return "#95a5a6";
+            })
+            .style("stroke-width", d => {
+                // Check editing match
+                if (editingNodeId && editingIfaceName) {
+                    const srcMatch = String(d.source.id) === editingNodeId && d.source_interface === editingIfaceName;
+                    const tgtMatch = String(d.target.id) === editingNodeId && d.target_interface === editingIfaceName;
+                    if (srcMatch || tgtMatch) return 4;
+                }
+
+                // Check VLAN match
+                if (vlan) {
+                    const srcIsHost = d.source.type === 'host';
+                    const tgtIsHost = d.target.type === 'host';
+                    const srcHasVlan = !srcIsHost && this.nodeHasVlanOnLink(d, true, vlan);
+                    const tgtHasVlan = !tgtIsHost && this.nodeHasVlanOnLink(d, false, vlan);
+                    return (srcHasVlan || tgtHasVlan) ? 4 : 1.5;
+                }
+
+                // Default
+                return 2;
+            })
+            .style("opacity", d => {
+                if (vlan) {
+                    const srcIsHost = d.source.type === 'host';
+                    const tgtIsHost = d.target.type === 'host';
+                    const srcHasVlan = !srcIsHost && this.nodeHasVlanOnLink(d, true, vlan);
+                    const tgtHasVlan = !tgtIsHost && this.nodeHasVlanOnLink(d, false, vlan);
+                    if (!srcHasVlan && !tgtHasVlan) return 0.4;
+                }
+                return 1;
+            });
+
+        if (vlan) {
+            this.g.selectAll(".vlan-dot")
+                .data(dotsData)
+                .enter()
+                .append("circle")
+                .attr("class", "vlan-dot")
+                .attr("r", 4);
+                
+            this.log(`Filtre VLAN ${vlan} : ${matchCount} lien(s) concerné(s).`);
+            this.simulation.alpha(0.1).restart();
+        }
+    }
+
+    nodeHasVlanOnLink(link, isSource, vlanId) {
+        const nodeId = isSource ? link.source.id : link.target.id;
+        const ifaceName = isSource ? link.source_interface : link.target_interface;
+        
+        const ifaces = this.allInterfaces[nodeId] || [];
+        const iface = ifaces.find(i => i.name === ifaceName);
+        
+        if (!iface) return false;
+        if (iface.vlan_id === vlanId) return true;
+        if (iface.allowed_vlans) {
+            const vlans = iface.allowed_vlans.split(',').map(v => parseInt(v.trim()));
+            if (vlans.includes(vlanId)) return true;
+        }
+        return false;
     }
 }
 

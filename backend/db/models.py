@@ -29,6 +29,11 @@ class Node(Base):
     hostname: Mapped[str] = mapped_column(String(100))
     device_type: Mapped[str] = mapped_column(String(50))  # e.g., "cisco_ios", "arista_eos"
     vendor: Mapped[str] = mapped_column(String(50))
+    x: Mapped[float] = mapped_column(nullable=True)
+    y: Mapped[float] = mapped_column(nullable=True)
+    fx: Mapped[float] = mapped_column(nullable=True)
+    fy: Mapped[float] = mapped_column(nullable=True)
+    is_locked: Mapped[bool] = mapped_column(Boolean, default=False)
 
     interfaces = relationship("Interface", back_populates="node", cascade="all, delete-orphan")
     links = relationship("Link", foreign_keys="[Link.source_id]", back_populates="source")

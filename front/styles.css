@@ -104,6 +104,43 @@ button.btn-refresh:hover {
     background-color: #219a52;
 }
 
+button.btn-lock {
+    background: white;
+    color: var(--primary);
+    border: 1px solid #dcdde1;
+    padding: 10px 15px;
+    width: auto;
+    margin-bottom: 0;
+    border-radius: 8px;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+    font-size: 0.9rem;
+    font-weight: 500;
+    display: inline-flex;
+    align-items: center;
+}
+
+button.btn-lock:hover {
+    background: #f8f9fa;
+    border-color: #cbd3da;
+    color: var(--primary);
+}
+
+button.btn-lock:active {
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.15);
+}
+
+button.btn-lock.locked {
+    background: #ebf5fb;
+    color: #2980b9;
+    border-color: #a9cce3;
+}
+
+button.btn-lock.locked:hover {
+    background: #d4e6f1;
+    border-color: #7fb3d5;
+    color: #2980b9;
+}
+
 button.active {
     background-color: #f39c12;
     border: 2px solid #e67e22;
@@ -366,3 +403,36 @@ input {
 .saving-indicator.show {
     opacity: 1;
 }
+
+/* Top Controls Container */
+.top-controls {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    z-index: 100;
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+/* Top Filter */
+.top-filter {
+    background: white;
+    padding: 10px 15px;
+    border-radius: 8px;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.top-filter select {
+    margin-bottom: 0;
+    width: auto;
+}
+
+/* Glowing dot for interfaces */
+.vlan-dot {
+    fill: #f1c40f;
+    filter: drop-shadow(0 0 5px #f1c40f);
+}

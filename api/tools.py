@@ -1,6 +1,6 @@
 from backend.crud.user import User
 from backend.crud.topology import DB
-from .models import TopologyNode, TopologyLink, InterfaceSchema, TopologySyncRequest
+from .models import TopologyNode, TopologyLink, InterfaceSchema, TopologySyncRequest, TopologyLayoutUpdate
 
 from api.auth import (
     get_password_hash,
@@ -26,7 +26,12 @@ def topology_db():
             id=n.id,
             ip_address=n.ip_address,
             hostname=n.hostname or "",
-            device_type=n.device_type or ""
+            device_type=n.device_type or "",
+            x=n.x,
+            y=n.y,
+            fx=n.fx,
+            fy=n.fy,
+            is_locked=n.is_locked
         ))
         node_id_to_ip[n.id] = n.ip_address
         
@@ -48,6 +53,14 @@ def sync_random_topology(data: TopologySyncRequest):
         return {"status": "success", "message": "Topology synced successfully"}
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
+
+def update_layout(data: TopologyLayoutUpdate):
+    _db = DB()
+    try:
+        _db.update_node_layout(data.nodes)
+        return {"status": "success", "message": "Layout updated"}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 def get_nodes():
     _db = DB()

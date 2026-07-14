@@ -44,8 +44,8 @@
 
 
             <div class="terminal" id="console-log">
-                <div>> Initialisation du contrôleur SDN...</div>
-                <div>> Connecté à l'interface REST API (8080)</div>
+                <div>> Initialisation du contrôleur </div>
+                
             </div>
         </div>
     </div>
@@ -53,13 +53,17 @@
     <div class="main-view">
         <div id="graph-container"></div>
 
-        <div class="legend">
-            <div class="legend-item">
-                <div class="dot" style="background:var(--switch-color)"></div> Switch (Controller)
+
+        <!-- Top Right Controls -->
+        <div class="top-controls">
+            <button id="lock-topology-btn" class="btn-lock">Déverrouiller le graphe</button>
+            <div class="top-filter">
+                <label for="vlan-filter">Filtrer par VLAN:</label>
+                <select id="vlan-filter">
+                    <option value="">Tous les VLANs</option>
+                </select>
             </div>
-            <div class="legend-item">
-                <div class="dot" style="background:var(--host-color)"></div> Hôte (End Device)
-            </div>
+            
         </div>
 
         <div id="tooltip" class="tooltip"></div>
