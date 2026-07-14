@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter
 from ..models import DeviceCredentials
 from ..tools import run_discovery
 

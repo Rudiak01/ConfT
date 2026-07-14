@@ -23,6 +23,7 @@ body {
     user-select: none;
     fill: #333;
 }
+
 /* Sidebar Controls */
 .sidebar {
     width: 380px;
@@ -566,12 +567,12 @@ button.btn-demo:hover {
 
 .interface-card:hover {
     background: #fff;
-    box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
 }
 
 .interface-card.editing {
     background: #fff;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
     border-left: 4px solid var(--accent);
     cursor: default;
 }
@@ -819,7 +820,9 @@ button.btn-demo:hover {
 }
 
 @keyframes spin {
-    to { transform: rotate(360deg); }
+    to {
+        transform: rotate(360deg);
+    }
 }
 
 .setup-divider {
@@ -909,7 +912,7 @@ button.btn-lock.locked:hover {
     justify-content: space-between;
     padding: 8px 10px;
     margin-bottom: 8px;
-    border-radius: 8px;
+    border-radius: 2px;
     background: #fffbeb;
     border: 1px solid #fde68a;
     cursor: pointer;
@@ -958,14 +961,14 @@ button.btn-lock.locked:hover {
     background: white;
     border-radius: 50%;
     transition: transform 0.25s;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
 }
 
-.toggle-switch input:checked + .toggle-thumb {
+.toggle-switch input:checked+.toggle-thumb {
     background: #f59e0b;
 }
 
-.toggle-switch input:checked + .toggle-thumb::before {
+.toggle-switch input:checked+.toggle-thumb::before {
     transform: translateX(16px);
 }
 
@@ -975,7 +978,7 @@ button.btn-check {
     color: #0369a1;
     border: 2px solid #bae6fd;
     padding: 10px;
-    border-radius: 8px;
+    border-radius: 2px;
     font-weight: 600;
     font-size: 0.85rem;
     cursor: pointer;
@@ -998,9 +1001,9 @@ button.btn-check:hover {
     width: 360px;
     max-height: 420px;
     background: white;
-    border-radius: 12px;
+    border-radius: 2px;
     border: 1px solid #e2e8f0;
-    box-shadow: 0 8px 32px rgba(0,0,0,0.14);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.14);
     z-index: 100;
     display: flex;
     flex-direction: column;
@@ -1009,8 +1012,15 @@ button.btn-check:hover {
 }
 
 @keyframes slideInPanel {
-    from { opacity: 0; transform: translateY(-12px) scale(0.97); }
-    to   { opacity: 1; transform: translateY(0)    scale(1); }
+    from {
+        opacity: 0;
+        transform: translateY(-12px) scale(0.97);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
 }
 
 .feasibility-header {
@@ -1044,7 +1054,7 @@ button.btn-check:hover {
     padding: 16px;
     background: #f0fdf4;
     border: 1px solid #bbf7d0;
-    border-radius: 8px;
+    border-radius: 4px;
     color: #15803d;
     font-weight: 600;
     font-size: 0.9rem;
@@ -1055,7 +1065,7 @@ button.btn-check:hover {
     align-items: flex-start;
     gap: 10px;
     padding: 10px 12px;
-    border-radius: 8px;
+    border-radius: 4px;
     margin-bottom: 6px;
     border-left: 3px solid;
     font-size: 0.82rem;
@@ -1131,7 +1141,7 @@ button.btn-check:hover {
 .interface-group {
     background: #f8fafc;
     border: 1px solid #e2e8f0;
-    border-radius: 8px;
+    border-radius: 4px;
     padding: 12px;
     margin-bottom: 12px;
     display: flex;
@@ -1147,7 +1157,7 @@ button.btn-check:hover {
 
 .interface-group .interface-card {
     margin-bottom: 0 !important;
-    width: 100% !important;
+    width: 98% !important;
 }
 
 .sub-interfaces-list {
@@ -1179,7 +1189,7 @@ button.btn-check:hover {
 .sub-interfaces-list .interface-card {
     background: white;
     border: 1px solid #e2e8f0;
-    box-shadow: 0 1px 2px rgba(0,0,0,0.02);
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.02);
     padding: 6px 12px;
     gap: 10px;
 }
@@ -1196,7 +1206,7 @@ button.btn-check:hover {
     background-color: #eff6ff;
     color: #2563eb;
     border: 1px dashed #bfdbfe;
-    border-radius: 6px;
+    border-radius: 2px;
     padding: 6px 12px;
     font-size: 0.75rem;
     font-weight: 600;
@@ -1218,7 +1228,7 @@ button.btn-check:hover {
     background-color: #fff1f2;
     color: #e11d48;
     border: 1px solid #fecdd3;
-    border-radius: 6px;
+    border-radius: 2px;
     padding: 4px 10px;
     font-size: 0.75rem;
     font-weight: 600;
@@ -1268,4 +1278,3 @@ button.btn-check:hover {
 .sidebar-section.collapsed .button-group {
     display: none !important;
 }
-

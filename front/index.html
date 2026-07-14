@@ -98,7 +98,8 @@
                     </label>
 
                     <button onclick="app.generateRandomTopology()" class="btn-demo">Générer Topo Démo</button>
-                    <button onclick="app.checkVlanFeasibility()" class="btn-check" id="btn-check-vlan">Vérifier la faisabilité</button>
+                    <button onclick="app.checkVlanFeasibility()" class="btn-check" id="btn-check-vlan">Vérifier la
+                        faisabilité</button>
                 </div>
             </div>
         </div>
@@ -217,17 +218,24 @@
         <div class="confirm-modal-card">
             <h3>Ajouter une sous-interface 802.1Q</h3>
             <p id="add-sub-parent-text" style="font-weight: 600; color: #475569; margin: 8px 0;"></p>
-            <div class="form-group" style="margin-top: 12px; display: flex; flex-direction: column; gap: 4px; text-align: left;">
-                <label for="add-sub-vlan" style="font-size: 0.85rem; font-weight: 600; color: #475569;">Numéro de VLAN (dot1q)</label>
-                <input type="number" id="add-sub-vlan" min="1" max="4094" placeholder="ex: 10" style="padding: 8px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 0.95rem;">
+            <div class="form-group"
+                style="margin-top: 12px; display: flex; flex-direction: column; gap: 4px; text-align: left;">
+                <label for="add-sub-vlan" style="font-size: 0.85rem; font-weight: 600; color: #475569;">Numéro de VLAN
+                    (dot1q)</label>
+                <input type="number" id="add-sub-vlan" min="1" max="4094" placeholder="ex: 10"
+                    style="padding: 8px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 0.95rem;">
             </div>
-            <div class="form-group" style="margin-top: 12px; display: flex; flex-direction: column; gap: 4px; text-align: left;">
-                <label for="add-sub-desc" style="font-size: 0.85rem; font-weight: 600; color: #475569;">Description (optionnelle)</label>
-                <input type="text" id="add-sub-desc" placeholder="ex: Liaison VLAN 10" style="padding: 8px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 0.95rem;">
+            <div class="form-group"
+                style="margin-top: 12px; display: flex; flex-direction: column; gap: 4px; text-align: left;">
+                <label for="add-sub-desc" style="font-size: 0.85rem; font-weight: 600; color: #475569;">Description
+                    (optionnelle)</label>
+                <input type="text" id="add-sub-desc" placeholder="ex: Liaison VLAN 10"
+                    style="padding: 8px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 0.95rem;">
             </div>
             <div class="confirm-modal-actions" style="margin-top: 20px;">
                 <button id="add-sub-cancel-btn" class="btn-modal-cancel">Annuler</button>
-                <button id="add-sub-submit-btn" class="btn-modal-primary" style="background-color: #3b82f6; color: white; border: none; padding: 10px 20px; border-radius: 6px; font-weight: 600; cursor: pointer; transition: background-color 0.2s;">Ajouter</button>
+                <button id="add-sub-submit-btn" class="btn-modal-primary"
+                    style="background-color: #3b82f6; color: white; border: none; padding: 10px 20px; border-radius: 6px; font-weight: 600; cursor: pointer; transition: background-color 0.2s;">Ajouter</button>
             </div>
         </div>
     </div>

@@ -19,6 +19,5 @@ services:
       MYSQL_ROOT_PASSWORD: test
     ports:
       - "8080:80"
-
 volumes:
   mariadb_data:
