@@ -66,6 +66,18 @@ class SDNController {
             this.updateLockButtonUI();
         }
         
+        // Key listener for Escape to deselect selected equipment
+        window.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' || e.key === 'Esc') {
+                const confirmModal = document.getElementById('confirm-modal');
+                if (confirmModal && confirmModal.style.display === 'flex') {
+                    this.hideConfirmModal();
+                    return;
+                }
+                this.deselectCurrentNode();
+            }
+        });
+
         // Fetch existing topology and load configuration on load
         this.loadSettings();
         this.fetchRealTopology();
@@ -587,12 +599,7 @@ class SDNController {
                 this.g.attr("transform", e.transform);
             }))
             .on("dblclick", () => {
-                this.selectedNode = null;
-                d3.selectAll(".node circle")
-                    .style("stroke-width", 0)
-                    .style("stroke", "white");
-                this.updateNodeInfoUI(null);
-                this.closePanel();
+                this.deselectCurrentNode();
             });
 
         this.g = this.svg.append("g");
@@ -1154,15 +1161,21 @@ class SDNController {
         this.restartSimulation();
     }
 
+    deselectCurrentNode() {
+        if (this.selectedNode) {
+            this.log(`Désélection de ${this.selectedNode.label}`);
+        }
+        this.selectedNode = null;
+        d3.selectAll(".node circle")
+            .style("stroke-width", 0)
+            .style("stroke", "white");
+        this.updateNodeInfoUI(null);
+        this.closePanel();
+    }
+
     selectNode(node) {
         if (this.selectedNode && this.selectedNode.id === node.id) {
-            this.selectedNode = null;
-            d3.selectAll(".node circle")
-                .style("stroke-width", 0)
-                .style("stroke", "white");
-            this.log(`Désélection de ${node.label}`);
-            this.updateNodeInfoUI(null);
-            this.closePanel();
+            this.deselectCurrentNode();
         } else {
             if (this.selectedNode) {
                 this.closePanel(); // Save interface state and reset links
