@@ -62,6 +62,14 @@ def build_commands(data, device_type):
     return commands
 
 def apply_device_config(connection_params, config_data): # readded
+    import os
+    from dotenv import load_dotenv
+    load_dotenv()
+    if os.getenv("MOCK_NETWORK", "0") == "1":
+        device_type = connection_params.get("device_type", "cisco_ios")
+        commands = build_commands(config_data, device_type)
+        return True, f"[MOCK] Configuration applied successfully: {', '.join(commands) if commands else 'none'}"
+
     try:
         connection = connect(connection_params)
         device_type = connection_params.get("device_type", "cisco_ios")

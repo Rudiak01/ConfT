@@ -83,65 +83,154 @@ def fetch_device_config(params):
         raise e
 
 def crawl_network(seed_ip, credentials):
-    """
-    Basic discovery that just fetches the seed node (no recursive crawling yet).
-    """
-    params = {
-        "host": seed_ip,
-        "device_type": credentials.get("device_type", "cisco_ios"),
-        "username": credentials.get("username", ""),
-        "password": credentials.get("password", "")
-    }
-    
-    device_data = fetch_device_config(params)
-    if not device_data:
-        return None
-        
-    hostname = "Unknown"
-    running_cfg = device_data.get("running_config", "")
-    # Try to extract hostname from running config
-    for line in running_cfg.splitlines():
-        if line.startswith("hostname "):
-            hostname = line.split(" ")[1]
-            break
-            
-    vlans = []
-    if "vlans" in device_data:
-        for v in device_data["vlans"]:
-            vlans.append({"vlan_id": v.get("vlan_id", ""), "name": v.get("name", "")})
+    import os
+    from dotenv import load_dotenv
+    load_dotenv()
 
-    interfaces = device_data.get("interfaces", [])
+    # MOCK MODE
+    if os.getenv("MOCK_NETWORK", "0") == "1":
+        print("[MOCK] Crawling network in mock mode...")
+        # Predefined 3-node mock topology
+        nodes = {
+            "192.168.1.13": {
+                "hostname": "Core-Switch",
+                "device_type": "cisco_ios",
+                "running_config": "hostname Core-Switch\ninterface FastEthernet0/23\ninterface FastEthernet0/24",
+                "vlans": [{"vlan_id": "10", "name": "PRODUCTION"}, {"vlan_id": "20", "name": "MANAGEMENT"}],
+                "interfaces": [
+                    {"interface": "FastEthernet0/23", "description": "Trunk to Dist-1", "mode": "trunk", "vlan": "1"},
+                    {"interface": "FastEthernet0/24", "description": "Trunk to Dist-2", "mode": "trunk", "vlan": "1"},
+                ]
+            },
+            "192.168.1.14": {
+                "hostname": "Dist-Switch-1",
+                "device_type": "cisco_ios",
+                "running_config": "hostname Dist-Switch-1\ninterface FastEthernet0/23",
+                "vlans": [{"vlan_id": "10", "name": "PRODUCTION"}],
+                "interfaces": [
+                    {"interface": "FastEthernet0/23", "description": "Trunk to Core", "mode": "trunk", "vlan": "1"}
+                ]
+            },
+            "192.168.1.15": {
+                "hostname": "Dist-Switch-2",
+                "device_type": "cisco_ios",
+                "running_config": "hostname Dist-Switch-2\ninterface FastEthernet0/24",
+                "vlans": [{"vlan_id": "20", "name": "MANAGEMENT"}],
+                "interfaces": [
+                    {"interface": "FastEthernet0/24", "description": "Trunk to Core", "mode": "trunk", "vlan": "1"}
+                ]
+            }
+        }
+        edges = [
+            {
+                "source_ip": "192.168.1.13",
+                "target_ip": "192.168.1.14",
+                "source_port": "FastEthernet0/23",
+                "target_port": "FastEthernet0/23"
+            },
+            {
+                "source_ip": "192.168.1.13",
+                "target_ip": "192.168.1.15",
+                "source_port": "FastEthernet0/24",
+                "target_port": "FastEthernet0/24"
+            }
+        ]
+        return {"nodes": nodes, "edges": edges}
 
-    nodes = {
-        seed_ip: {
+    # REAL NETWORK RECURSIVE CRAWL
+    queue = [seed_ip]
+    visited = set()
+    nodes = {}
+    edges = []
+
+    while queue:
+        ip = queue.pop(0)
+        if ip in visited:
+            continue
+        visited.add(ip)
+
+        print(f"Crawling switch: {ip}...")
+        params = {
+            "host": ip,
+            "device_type": credentials.get("device_type", "cisco_ios"),
+            "username": credentials.get("username", ""),
+            "password": credentials.get("password", "")
+        }
+
+        try:
+            device_data = fetch_device_config(params)
+        except Exception as e:
+            print(f"Error connecting to {ip}: {e}")
+            if ip == seed_ip:
+                raise e
+            continue
+
+        if not device_data:
+            continue
+
+        hostname = "Unknown"
+        running_cfg = device_data.get("running_config", "")
+        for line in running_cfg.splitlines():
+            if line.startswith("hostname "):
+                hostname = line.split(" ")[1]
+                break
+
+        vlans = []
+        if "vlans" in device_data:
+            for v in device_data["vlans"]:
+                vlans.append({"vlan_id": v.get("vlan_id", ""), "name": v.get("name", "")})
+
+        interfaces = device_data.get("interfaces", [])
+
+        nodes[ip] = {
             "hostname": hostname,
             "device_type": params["device_type"],
             "running_config": running_cfg,
             "vlans": vlans,
             "interfaces": interfaces
         }
-    }
-    
-    edges = []
-    # In vendor_syntax.py, "lldp" maps to "show cdp neighbors" and "cdp" normalizes the keys
-    # But wait, TextFSM returns the raw key if there's no normalizer for "lldp".
-    # Wait, the normalize_keys has "cdp", but the read command is "lldp". So it might not be normalized!
-    # Let's just safely extract both possibilities
-    neighbors = device_data.get("lldp", []) or device_data.get("cdp", [])
-    
-    for neighbor in neighbors:
-        # Depending on if it was normalized or not
-        remote_host = neighbor.get("neighbor_name") or neighbor.get("destination_host") or neighbor.get("neighbor")
-        local_port = neighbor.get("local_port") or neighbor.get("local_interface")
-        remote_port = neighbor.get("remote_port") or neighbor.get("neighbor_interface") or neighbor.get("port_id")
-        
-        if remote_host:
-            edges.append({
-                "source_ip": seed_ip,
-                "target_hostname": remote_host,
-                "source_port": local_port,
-                "target_port": remote_port
-            })
+
+        neighbors = device_data.get("lldp", []) or device_data.get("cdp", [])
+        for neighbor in neighbors:
+            remote_host = neighbor.get("neighbor_name") or neighbor.get("destination_host") or neighbor.get("neighbor")
+            local_port = neighbor.get("local_port") or neighbor.get("local_interface")
+            remote_port = neighbor.get("remote_port") or neighbor.get("neighbor_interface") or neighbor.get("port_id")
+
+            # Try to resolve remote IP directly from LLDP/CDP details
+            remote_ip = neighbor.get("management_ip") or neighbor.get("mgmt_address") or neighbor.get("management_address")
+
+            # Fallback: Resolve via MAC table + ARP table of the current switch
+            if not remote_ip and local_port:
+                macs_on_port = []
+                for mac_entry in device_data.get("mac", []):
+                    entry_port = mac_entry.get("interface") or mac_entry.get("destination_port") or mac_entry.get("port")
+                    if entry_port == local_port:
+                        mac_addr = mac_entry.get("mac") or mac_entry.get("destination_address") or mac_entry.get("mac_address")
+                        if mac_addr:
+                            macs_on_port.append(mac_addr.lower().replace(".", "").replace(":", "").replace("-", ""))
+
+                for arp_entry in device_data.get("arp", []):
+                    arp_mac = arp_entry.get("mac") or arp_entry.get("mac_address")
+                    if arp_mac:
+                        arp_mac_clean = arp_mac.lower().replace(".", "").replace(":", "").replace("-", "")
+                        if arp_mac_clean in macs_on_port:
+                            remote_ip = arp_entry.get("ip") or arp_entry.get("address")
+                            if remote_ip:
+                                print(f"Resolved neighbor {remote_host} IP to {remote_ip} via ARP/MAC tables.")
+                                break
+
+            if remote_host:
+                edges.append({
+                    "source_ip": ip,
+                    "target_ip": remote_ip,  # Could be None if unresolved
+                    "target_hostname": remote_host,
+                    "source_port": local_port,
+                    "target_port": remote_port
+                })
+
+                # If IP resolved, add to queue
+                if remote_ip and remote_ip not in visited:
+                    queue.append(remote_ip)
     
     return {"nodes": nodes, "edges": edges}
 

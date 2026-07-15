@@ -10,7 +10,7 @@ VENDOR_SYNTAX = {
             "interfaces": "show interfaces switchport",
             "mac": "show mac address-table",
             "arp": "show ip arp",
-            "lldp": "show cdp neighbors", # lldp pas supporté/activé
+            "lldp": "show cdp neighbors detail", # use detail to get neighbor IPs
             "routes": "show ip route",
             "poe": "show power inline",
             "port_channels": "show etherchannel summary",
@@ -40,7 +40,12 @@ VENDOR_SYNTAX = {
             "interfaces": {"interface": "interface", "access_vlan": "vlan", "admin_mode": "mode", "switchport": "enabled"},
             "mac": {"destination_address": "mac", "vlan": "vlan", "destination_port": "interface"},
             "arp": {"address": "ip", "mac": "mac", "interface": "interface"},
-        #"lldp": {"local_interface": "local_port", "neighbor": "neighbor_name", "neighbor_interface": "remote_port"},
+            "lldp": {
+                "neighbor_name": "neighbor_name",
+                "mgmt_address": "management_ip",
+                "local_interface": "local_port",
+                "neighbor_interface": "remote_port"
+            },
             "cdp": {"destination_host": "neighbor_name", "local_interface": "local_port", "neighbor_interface": "remote_port"},
             "routes": {"network": "network", "mask": "mask", "nexthop_ip": "nexthop", "protocol": "protocol"},
             "poe": {"interface": "interface", "oper": "status", "power": "watts"},
@@ -58,7 +63,7 @@ VENDOR_SYNTAX = {
             "interfaces": "show interfaces switchport",
             "mac": "show mac address-table",
             "arp": "show ip arp",
-            "lldp": "show lldp neighbors",
+            "lldp": "show lldp neighbors detail",
             "routes": "show ip route",
             "running": "show running-config"
         },
@@ -77,7 +82,15 @@ VENDOR_SYNTAX = {
             "interfaces": {"interface": "interface", "access_vlan": "vlan", "admin_mode": "mode"},
             "mac": {"mac_address": "mac", "vlan": "vlan", "port": "interface"},
             "arp": {"address": "ip", "mac_address": "mac", "interface": "interface"},
-            "lldp": {"port": "local_port", "neighbor_device": "neighbor_name", "neighbor_port": "remote_port"},
+            "lldp": {
+                "port": "local_port", 
+                "neighbor_device": "neighbor_name", 
+                "neighbor_port": "remote_port",
+                "neighbor_name": "neighbor_name",
+                "mgmt_address": "management_ip",
+                "local_interface": "local_port",
+                "neighbor_interface": "remote_port"
+            },
             "routes": {"network": "network", "nexthop_ip": "nexthop"}
         }
     },

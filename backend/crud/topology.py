@@ -97,6 +97,7 @@ class DB:
                         ip_address=ip,
                         hostname=data.get("hostname"),
                         device_type=data.get("device_type"),
+                        vendor=data.get("vendor") or data.get("device_type", "unknown").split("_")[0],
                     )
                     session.add(node)
                     session.commit()
@@ -104,6 +105,8 @@ class DB:
                 else:
                     node.hostname = data.get("hostname")
                     node.device_type = data.get("device_type")
+                    if data.get("vendor"):
+                        node.vendor = data.get("vendor")
                     session.commit()
 
                 node_map[ip] = node.id
@@ -181,29 +184,32 @@ class DB:
                         target_id = target_node.id
 
                 if source_id and target_id:
-                    link = (
-                        session.query(Link)
-                        .filter(
-                            (
-                                (Link.source_id == source_id)
-                                & (Link.target_id == target_id)
+                    source_node = session.query(Node).filter(Node.id == source_id).first()
+                    target_node = session.query(Node).filter(Node.id == target_id).first()
+                    if source_node and target_node:
+                        link = (
+                            session.query(Link)
+                            .filter(
+                                (
+                                    (Link.source_id == source_id)
+                                    & (Link.target_ip == target_node.ip_address)
+                                )
+                                | (
+                                    (Link.source_id == target_id)
+                                    & (Link.target_ip == source_node.ip_address)
+                                )
                             )
-                            | (
-                                (Link.source_id == target_id)
-                                & (Link.target_id == source_id)
-                            )
+                            .first()
                         )
-                        .first()
-                    )
 
-                    if not link:
-                        link = Link(
-                            source_id=source_id,
-                            target_id=target_id,
-                            source_interface=edge.get("source_port"),
-                            target_interface=edge.get("target_port"),
-                        )
-                        session.add(link)
+                        if not link:
+                            link = Link(
+                                source_id=source_id,
+                                target_ip=target_node.ip_address,
+                                source_interface=edge.get("source_port"),
+                                target_interface=edge.get("target_port"),
+                            )
+                            session.add(link)
             session.commit()
 
         return nodes_created
