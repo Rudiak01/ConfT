@@ -249,9 +249,13 @@ class SDNController {
 
     async rediscoverNetwork() {
         const btn = document.getElementById('discover-network-btn');
+        const logoContainer = document.getElementById('logo-container');
         btn.disabled = true;
         btn.textContent = "Découverte...";
         this.log("Début de la découverte réseau...");
+        if (logoContainer) {
+            logoContainer.classList.add('loading');
+        }
 
         // Purge example graph immediately on crawl start
         this.nodes = [];
@@ -273,6 +277,9 @@ class SDNController {
         } catch (error) {
             this.log(`Erreur de découverte : ${error.message}`);
         } finally {
+            if (logoContainer) {
+                logoContainer.classList.remove('loading');
+            }
             btn.disabled = false;
             btn.textContent = "Découvrir le réseau";
         }
@@ -280,9 +287,13 @@ class SDNController {
 
     async deployTopology() {
         const btn = document.getElementById('deploy-network-btn');
+        const logoContainer = document.getElementById('logo-container');
         btn.disabled = true;
         btn.textContent = "Envoi en cours...";
         this.log("Déploiement de la configuration au réseau...");
+        if (logoContainer) {
+            logoContainer.classList.add('loading');
+        }
 
         try {
             const response = await fetch(`${API_BASE}/db/deploy`, {
@@ -310,6 +321,9 @@ class SDNController {
             this.log(`Erreur de déploiement : ${error.message}`);
             alert(`Erreur : ${error.message}`);
         } finally {
+            if (logoContainer) {
+                logoContainer.classList.remove('loading');
+            }
             btn.disabled = false;
             btn.textContent = "Envoyer au réseau";
         }
@@ -614,6 +628,11 @@ class SDNController {
                 if (submitBtn) submitBtn.disabled = true;
                 if (spinner) spinner.style.display = 'block';
                 if (btnText) btnText.textContent = "Découverte en cours...";
+                const setupCard = document.getElementById('setup-card');
+                if (setupCard) {
+                    setupCard.classList.add('loading');
+                }
+
                 if (errorDiv) errorDiv.style.display = 'none';
 
                 try {
@@ -645,6 +664,9 @@ class SDNController {
                         errorDiv.style.display = 'block';
                     }
                 } finally {
+                    if (setupCard) {
+                        setupCard.classList.remove('loading');
+                    }
                     if (submitBtn) submitBtn.disabled = false;
                     if (spinner) spinner.style.display = 'none';
                     if (btnText) btnText.textContent = "Démarrer la découverte";

@@ -203,6 +203,7 @@ def run_discovery(credentials_host: str, credentials_data: dict):
         if not result:
             raise HTTPException(status_code=400, detail="Discovery failed")
         _db = DB()
+        _db.clear_database()  # Reset the DB before inserting the newly discovered topology to avoid conflicts
         nodes_created = _db.upsert_discovered_nodes(
             result.get("nodes", {}), result.get("edges", [])
         )

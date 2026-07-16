@@ -16,7 +16,10 @@
     <!-- Sidebar -->
     <div class="sidebar">
         <div class="header">
-            <img src="ConfT.svg" alt="ConfT Logo" class="header-logo">
+            <div class="header-logo-container" id="logo-container">
+                <img src="ConfT.svg" alt="ConfT Logo" class="header-logo">
+                <div class="header-loader"></div>
+            </div>
             <div class="header-text">
                 <h1>ConfT</h1>
                 <p>Contrôleur SDN et Automatisation Réseau</p>
@@ -65,6 +68,10 @@
                             <option value="cisco_ios">Cisco IOS</option>
                             <option value="cisco_xe">Cisco XE</option>
                             <option value="cisco_xr">Cisco XR</option>
+                            <option value="arista_eos">Arista EOS</option>
+                            <option value="hp_procurve">HP ProCurve</option>
+                            <option value="huawei">Huawei</option>
+                            <option value="juniper_junos">Juniper Junos</option>
                         </select>
                     </div>
                     <button id="save-settings-btn" class="btn-save">Enregistrer</button>
@@ -159,52 +166,63 @@
     <!-- Setup Overlay for First-time Onboarding -->
     <div id="setup-overlay" class="setup-overlay" style="display: none;">
         <div class="setup-logo-bg"></div>
-        <div class="setup-card">
-            <img src="ConfT.svg" alt="ConfT Logo" class="setup-card-logo">
-            <h2>Initialisation de ConfT</h2>
-            <p class="setup-subtitle">Entrez les identifiants de votre équipement réseau initial pour démarrer la
-                découverte automatique.</p>
-
-            <form id="setup-form">
-                <div class="form-group">
-                    <label for="setup-ip">Adresse IP initiale (Seed IP)</label>
-                    <input type="text" id="setup-ip" placeholder="ex: 192.168.1.1" required>
-                </div>
-
-                <div class="form-group">
-                    <label for="setup-username">Identifiant (SSH)</label>
-                    <input type="text" id="setup-username" placeholder="ex: admin" required>
-                </div>
-
-                <div class="form-group">
-                    <label for="setup-password">Mot de passe</label>
-                    <input type="password" id="setup-password" placeholder="••••••••" required>
-                </div>
-
-                <div class="form-group">
-                    <label for="setup-device-type">Type d'équipement</label>
-                    <select id="setup-device-type">
-                        <option value="cisco_ios">Cisco IOS</option>
-                        <option value="cisco_xe">Cisco XE</option>
-                        <option value="cisco_xr">Cisco XR</option>
-                    </select>
-                </div>
-
-                <div class="setup-error" id="setup-error" style="display: none;"></div>
-
-                <button type="submit" class="btn-setup-submit" id="btn-setup-submit">
-                    <span class="btn-text">Démarrer la découverte</span>
-                    <span class="spinner" style="display: none;"></span>
-                </button>
-            </form>
-
-            <div class="setup-divider">
-                <span>ou</span>
+        <div class="setup-card" id="setup-card">
+            <div class="setup-logo-placeholder" style="height: 100px;"></div>
+            <div class="setup-logo-container" id="setup-logo-container">
+                <img src="ConfT.svg" alt="ConfT Logo" class="setup-card-logo">
+                <div class="setup-loader"></div>
             </div>
 
-            <button class="btn-setup-demo" id="btn-setup-demo">
-                Générer une topologie de démonstration
-            </button>
+            <div class="setup-card-body" id="setup-card-body">
+                <h2>Initialisation de ConfT</h2>
+                <p class="setup-subtitle">Entrez les identifiants de votre équipement réseau initial pour démarrer la
+                    découverte automatique.</p>
+
+                <form id="setup-form">
+                    <div class="form-group">
+                        <label for="setup-ip">Adresse IP initiale (Seed IP)</label>
+                        <input type="text" id="setup-ip" placeholder="ex: 192.168.1.1" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="setup-username">Identifiant (SSH)</label>
+                        <input type="text" id="setup-username" placeholder="ex: admin" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="setup-password">Mot de passe</label>
+                        <input type="password" id="setup-password" placeholder="••••••••" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="setup-device-type">Type d'équipement</label>
+                        <select id="setup-device-type">
+                            <option value="cisco_ios">Cisco IOS</option>
+                            <option value="cisco_xe">Cisco XE</option>
+                            <option value="cisco_xr">Cisco XR</option>
+                            <option value="arista_eos">Arista EOS</option>
+                            <option value="hp_procurve">HP ProCurve</option>
+                            <option value="huawei">Huawei</option>
+                            <option value="juniper_junos">Juniper Junos</option>
+                        </select>
+                    </div>
+
+                    <div class="setup-error" id="setup-error" style="display: none;"></div>
+
+                    <button type="submit" class="btn-setup-submit" id="btn-setup-submit">
+                        <span class="btn-text">Démarrer la découverte</span>
+                        <span class="spinner" style="display: none;"></span>
+                    </button>
+                </form>
+
+                <div class="setup-divider">
+                    <span>ou</span>
+                </div>
+
+                <button class="btn-setup-demo" id="btn-setup-demo">
+                    Générer une topologie de démonstration
+                </button>
+            </div>
         </div>
     </div>
     <!-- Confirmation Modal for Reset -->

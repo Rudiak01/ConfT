@@ -8,4 +8,4 @@ $Env:IS_DEV="True"
 $Env:EXPOSE_PORT="8000"
 
 
-py -m api.main
+python -m api.main

@@ -239,6 +239,13 @@ class DB:
                                 target_interface=edge.get("target_port") or "unknown",
                             )
                             session.add(link)
+                        else:
+                            # Update interface mapping if the device moved to another port
+                            new_source_interface = edge.get("source_port") or "unknown"
+                            new_target_interface = edge.get("target_port") or "unknown"
+                            if link.source_interface != new_source_interface or link.target_interface != new_target_interface:
+                                link.source_interface = new_source_interface
+                                link.target_interface = new_target_interface
             session.commit()
 
         return nodes_created

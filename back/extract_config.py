@@ -252,6 +252,9 @@ def fetch_device_config(params):
                             raw_output = detailed_results
                         else:
                             raw_output = summary_output
+                    elif feature == "vlans" and device_type == "hp_procurve":
+                        # Skip TextFSM to avoid known state/parsing exceptions
+                        raw_output = None
                     else:
                         raw_output = connection.send_command(command, use_textfsm=True)
                 except Exception as textfsm_err:
@@ -405,6 +408,8 @@ def crawl_network(seed_ip, credentials):
     nodes = {}
     edges = []
     known_device_types = {seed_ip: credentials.get("device_type", "cisco_ios")}
+    switch_mac_tables = {}
+    switch_arp_tables = {}
 
     discovered_neighbors = {}
 
@@ -433,6 +438,9 @@ def crawl_network(seed_ip, credentials):
 
         if not device_data:
             continue
+
+        switch_mac_tables[ip] = device_data.get("mac", [])
+        switch_arp_tables[ip] = device_data.get("arp", [])
 
         hostname = "Unknown"
         running_cfg = device_data.get("running_config", "")
@@ -600,6 +608,26 @@ def crawl_network(seed_ip, credentials):
             if neighbor_mac:
                 neighbor_mac = format_mac(neighbor_mac)
 
+            # Check if the switch's MAC table lists this MAC address on a different port (stale neighbor check)
+            if neighbor_mac and local_port:
+                clean_neighbor_mac = neighbor_mac.lower().replace(":", "").replace("-", "").replace(".", "").replace(" ", "").strip()
+                mac_ports = []
+                for mac_entry in device_data.get("mac", []):
+                    mac_addr = mac_entry.get("mac") or mac_entry.get("destination_address") or mac_entry.get("mac_address")
+                    if mac_addr:
+                        clean_mac = to_str(mac_addr).lower().replace(":", "").replace("-", "").replace(".", "").replace(" ", "").strip()
+                        if clean_mac == clean_neighbor_mac:
+                            entry_port = mac_entry.get("interface") or mac_entry.get("destination_port") or mac_entry.get("port")
+                            if entry_port:
+                                mac_ports.append(normalize_port_name(entry_port))
+                
+                if mac_ports:
+                    norm_local = normalize_port_name(local_port)
+                    # If the MAC is active on a port that is NOT local_port, skip this neighbor entry as stale
+                    if norm_local not in mac_ports:
+                        print(f"Skipping stale neighbor {remote_host} on {local_port} (MAC active on {mac_ports})")
+                        continue
+
             # If still no remote_ip, use the neighbor's MAC address directly as its identifier (real data fallback)
             if not remote_ip and neighbor_mac:
                 remote_ip = neighbor_mac
@@ -650,6 +678,112 @@ def crawl_network(seed_ip, credentials):
                         known_device_types[remote_ip] = neighbor_device_type
                         queue.append(remote_ip)
                         print(f"Added switch neighbor {remote_ip} ({remote_host}) to crawl queue")
+
+    # Post-process edges to ensure each host node has at most one connection (resolving stale entries across multiple switches)
+    # 1. Identify which nodes are hosts
+    host_ips = set()
+    for remote_ip, data in discovered_neighbors.items():
+        if data.get("device_type") == "host":
+            host_ips.add(remote_ip)
+    for node_ip, data in nodes.items():
+        if data.get("device_type") == "host":
+            host_ips.add(node_ip)
+
+    # 2. Group edges by host IP
+    host_edges = {}  # host_ip -> list of edges
+    other_edges = [] # edges that don't target a host
+    for edge in edges:
+        target = edge["target_ip"]
+        if target in host_ips:
+            if target not in host_edges:
+                host_edges[target] = []
+            host_edges[target].append(edge)
+        else:
+            other_edges.append(edge)
+
+    # 3. For each host, select the best edge
+    refined_host_edges = []
+    for host_ip, edges_list in host_edges.items():
+        if len(edges_list) <= 1:
+            refined_host_edges.extend(edges_list)
+            continue
+
+        # We have multiple connections for the same host. Find the verified one.
+        verified_edges = []
+        for edge in edges_list:
+            sw_ip = edge["source_ip"]
+            sw_port = edge["source_port"]
+            mac_table = switch_mac_tables.get(sw_ip, [])
+            
+            # Retrieve the host's MAC address
+            host_mac = None
+            if is_valid_mac(host_ip):
+                host_mac = host_ip
+            else:
+                for arp_entry in switch_arp_tables.get(sw_ip, []):
+                    arp_ip = arp_entry.get("ip") or arp_entry.get("address")
+                    if arp_ip == host_ip:
+                        host_mac = arp_entry.get("mac") or arp_entry.get("mac_address")
+                        break
+            
+            if host_mac:
+                clean_host_mac = host_mac.lower().replace(":", "").replace("-", "").replace(".", "").replace(" ", "").strip()
+                is_verified = False
+                for mac_entry in mac_table:
+                    mac_addr = mac_entry.get("mac") or mac_entry.get("destination_address") or mac_entry.get("mac_address")
+                    if mac_addr:
+                        clean_mac = to_str(mac_addr).lower().replace(":", "").replace("-", "").replace(".", "").replace(" ", "").strip()
+                        if clean_mac == clean_host_mac:
+                            entry_port = mac_entry.get("interface") or mac_entry.get("destination_port") or mac_entry.get("port")
+                            if entry_port:
+                                if normalize_port_name(entry_port) == normalize_port_name(sw_port):
+                                    is_verified = True
+                                    break
+                if is_verified:
+                    verified_edges.append(edge)
+
+        if verified_edges:
+            refined_host_edges.append(verified_edges[0])
+            print(f"Kept verified connection for host {host_ip} on switch {verified_edges[0]['source_ip']} port {verified_edges[0]['source_port']}")
+        else:
+            refined_host_edges.append(edges_list[0])
+            print(f"No verified connection found for host {host_ip}. Kept fallback connection on switch {edges_list[0]['source_ip']} port {edges_list[0]['source_port']}")
+
+    edges = other_edges + refined_host_edges
+
+    # Rebuild host interfaces to match the active edges
+    for host_ip in host_ips:
+        if host_ip in discovered_neighbors:
+            active_edge = None
+            for edge in refined_host_edges:
+                if edge["target_ip"] == host_ip:
+                    active_edge = edge
+                    break
+            
+            if active_edge:
+                sw_ip = active_edge["source_ip"]
+                sw_node = nodes.get(sw_ip)
+                sw_hostname = sw_node["hostname"] if sw_node else "Switch"
+                sw_port = active_edge["source_port"]
+                
+                host_mac = None
+                if is_valid_mac(host_ip):
+                    host_mac = host_ip
+                else:
+                    for arp_entry in switch_arp_tables.get(sw_ip, []):
+                        arp_ip = arp_entry.get("ip") or arp_entry.get("address")
+                        if arp_ip == host_ip:
+                            host_mac = arp_entry.get("mac") or arp_entry.get("mac_address")
+                            break
+                if host_mac:
+                    host_mac = format_mac(host_mac)
+
+                discovered_neighbors[host_ip]["interfaces"] = [{
+                    "interface": active_edge["target_port"] or host_mac or "eth0",
+                    "description": f"Connected to {sw_hostname} ({sw_port})",
+                    "mode": "access",
+                    "mac_address": host_mac
+                }]
 
     # Add unmanaged neighbors to the nodes dictionary
     for remote_ip, data in discovered_neighbors.items():
