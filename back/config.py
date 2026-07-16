@@ -2,19 +2,28 @@
 import os
 import json
 
-SWITCH = {
+# Keep the same dictionary object if it exists to preserve references across modules
+if "SWITCH" not in globals():
+    SWITCH = {}
+
+SWITCH.clear()
+SWITCH.update({
     "device_type": "cisco_ios",
     "host": "192.168.1.2",
     "username": "admin",
     "password": "azeAZE123-",
-}
+})
 
-# Interfaces à protéger
-PROTECTED_INTERFACES = [
+# Keep the same list object for protected interfaces to preserve references
+if "PROTECTED_INTERFACES" not in globals():
+    PROTECTED_INTERFACES = []
+
+PROTECTED_INTERFACES.clear()
+PROTECTED_INTERFACES.extend([
     "GigabitEthernet0/1",
     "GigabitEthernet0/2",
     "FastEthernet0/24"
-]
+])
 
 # Override dynamically if config.json exists
 _dir = os.path.dirname(os.path.abspath(__file__))
@@ -26,6 +35,7 @@ if os.path.exists(_config_json_path):
             if "SWITCH" in _data:
                 SWITCH.update(_data["SWITCH"])
             if "PROTECTED_INTERFACES" in _data:
-                PROTECTED_INTERFACES = _data["PROTECTED_INTERFACES"]
+                PROTECTED_INTERFACES.clear()
+                PROTECTED_INTERFACES.extend(_data["PROTECTED_INTERFACES"])
     except Exception as _e:
         print(f"Warning: Failed to load config.json: {_e}")

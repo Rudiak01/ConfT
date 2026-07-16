@@ -12,6 +12,7 @@ class SDNController {
         this.nextNodeId = 1;
         this.connectionMode = false;
         this.hoveredIfaceName = null;
+        this.activeTab = 'interfaces';
 
         this.isGraphLocked = false;
         try {
@@ -66,6 +67,14 @@ class SDNController {
             this.submitAddSubInterface();
         });
 
+        document.getElementById('add-vlan-cancel-btn')?.addEventListener('click', () => {
+            this.hideAddVlanModal();
+        });
+
+        document.getElementById('add-vlan-submit-btn')?.addEventListener('click', () => {
+            this.submitAddVlan();
+        });
+
         const lockBtn = document.getElementById('lock-topology-btn');
         if (lockBtn) {
             lockBtn.addEventListener('click', () => {
@@ -98,9 +107,90 @@ class SDNController {
             }
         });
 
+        // Close multiselect options when clicking outside
+        window.addEventListener('click', (e) => {
+            if (!e.target.closest('.multiselect-dropdown')) {
+                document.querySelectorAll('.multiselect-options').forEach(el => {
+                    el.style.display = 'none';
+                });
+            }
+        });
+
         // Fetch existing topology and load configuration on load
         this.loadSettings();
         this.fetchRealTopology();
+    }
+
+    isSwitch(type) {
+        if (!type) return false;
+        const t = type.toLowerCase();
+        return t === 'switch' || ['cisco_ios', 'hp_procurve', 'arista_eos', 'huawei', 'juniper_junos', 'cisco_xe', 'cisco_xr'].includes(t);
+    }
+
+    isRouter(type) {
+        if (!type) return false;
+        const t = type.toLowerCase();
+        return t === 'router';
+    }
+
+    isHost(type) {
+        if (!type) return false;
+        const t = type.toLowerCase();
+        return t === 'host';
+    }
+
+    isExternal(type) {
+        if (!type) return false;
+        const t = type.toLowerCase();
+        return t === 'external';
+    }
+
+    isAccessMode(mode) {
+        if (!mode) return false;
+        const m = mode.toLowerCase();
+        return m === 'access' || m === 'static access' || m.endsWith('fdx') || m.endsWith('hdx');
+    }
+
+    wantsSingleVlan(mode) {
+        if (!mode) return true;
+        const m = mode.toLowerCase();
+        return m === 'access' || m === 'static access' || m === 'dot1q' || m.endsWith('fdx') || m.endsWith('hdx');
+    }
+
+    wantsAllowedVlans(mode) {
+        if (!mode) return false;
+        return mode.toLowerCase() === 'trunk';
+    }
+
+    getProposedModes(deviceType) {
+        if (!deviceType) return ["access", "trunk"];
+        const dt = deviceType.toLowerCase();
+        if (dt === 'cisco_ios' || dt === 'cisco_xe' || dt === 'cisco_xr') {
+            return ["access", "trunk", "dynamic auto", "dynamic desirable"];
+        } else if (dt === 'hp_procurve') {
+            return ["10FDX", "100FDX", "1000FDX", "trunk"];
+        } else if (dt === 'switch') {
+            return ["access", "trunk"];
+        } else if (dt === 'router') {
+            return ["routed", "dot1q"];
+        } else {
+            return ["access", "trunk"];
+        }
+    }
+
+    getCreatedVlans() {
+        if (!this.currentInterfaces) return [1];
+        const isVlanInterface = (iface) => iface.name && iface.name.toUpperCase().startsWith("VLAN") && /^\d+$/.test(iface.name.substring(4));
+        
+        const vlans = this.currentInterfaces
+            .filter(isVlanInterface)
+            .map(iface => parseInt(iface.vlan_id))
+            .filter(id => !isNaN(id));
+        
+        if (!vlans.includes(1)) {
+            vlans.unshift(1);
+        }
+        return vlans.sort((a, b) => a - b);
     }
 
     async loadSettings() {
@@ -721,7 +811,7 @@ class SDNController {
                         const dx = targetNode.x - sourceNode.x;
                         const dy = targetNode.y - sourceNode.y;
                         const dist = Math.sqrt(dx * dx + dy * dy) || 1;
-                        const offset = sourceNode.type === 'switch' ? 35 : (sourceNode.type === 'router' ? 40 : 25);
+                        const offset = this.isSwitch(sourceNode.type) ? 35 : (this.isRouter(sourceNode.type) ? 40 : 25);
                         return sourceNode.x + (dx / dist) * offset;
                     })
                     .attr("cy", d => {
@@ -730,7 +820,7 @@ class SDNController {
                         const dx = targetNode.x - sourceNode.x;
                         const dy = targetNode.y - sourceNode.y;
                         const dist = Math.sqrt(dx * dx + dy * dy) || 1;
-                        const offset = sourceNode.type === 'switch' ? 35 : (sourceNode.type === 'router' ? 40 : 25);
+                        const offset = this.isSwitch(sourceNode.type) ? 35 : (this.isRouter(sourceNode.type) ? 40 : 25);
                         return sourceNode.y + (dy / dist) * offset;
                     });
             })
@@ -753,25 +843,25 @@ class SDNController {
             .attr("stroke", d => {
                 const srcType = typeof d.source === 'object' ? d.source.type : (this.nodes.find(n => n.id === d.source)?.type);
                 const tgtType = typeof d.target === 'object' ? d.target.type : (this.nodes.find(n => n.id === d.target)?.type);
-                if (srcType === 'external' || tgtType === 'external') return "#7f8c8d";
+                if (this.isExternal(srcType) || this.isExternal(tgtType)) return "#7f8c8d";
                 return "#95a5a6";
             })
             .attr("stroke-width", d => {
                 const srcType = typeof d.source === 'object' ? d.source.type : (this.nodes.find(n => n.id === d.source)?.type);
                 const tgtType = typeof d.target === 'object' ? d.target.type : (this.nodes.find(n => n.id === d.target)?.type);
-                if (srcType === 'external' || tgtType === 'external') return 1.5;
+                if (this.isExternal(srcType) || this.isExternal(tgtType)) return 1.5;
                 return 2;
             })
             .style("stroke-dasharray", d => {
                 const srcType = typeof d.source === 'object' ? d.source.type : (this.nodes.find(n => n.id === d.source)?.type);
                 const tgtType = typeof d.target === 'object' ? d.target.type : (this.nodes.find(n => n.id === d.target)?.type);
-                if (srcType === 'external' || tgtType === 'external') return "35, 6, 4, 6, 4, 6, 4, 6, 4, 6";
+                if (this.isExternal(srcType) || this.isExternal(tgtType)) return "35, 6, 4, 6, 4, 6, 4, 6, 4, 6";
                 return "none";
             })
             .style("opacity", d => {
                 const srcType = typeof d.source === 'object' ? d.source.type : (this.nodes.find(n => n.id === d.source)?.type);
                 const tgtType = typeof d.target === 'object' ? d.target.type : (this.nodes.find(n => n.id === d.target)?.type);
-                if (srcType === 'external' || tgtType === 'external') return 0.9;
+                if (this.isExternal(srcType) || this.isExternal(tgtType)) return 0.9;
                 return 1;
             });
 
@@ -799,24 +889,24 @@ class SDNController {
 
         const nodeEnter = this.node.enter().append("g")
             .attr("class", "node")
-            .style("display", d => d.type === 'external' ? "none" : null)
+            .style("display", d => this.isExternal(d.type) ? "none" : null)
             .call(d3.drag()
                 .on("start", (event, d) => this.dragstarted(event, d))
                 .on("drag", (event, d) => this.dragged(event, d))
                 .on("end", (event, d) => this.dragended(event, d)))
             .on("click", (event, d) => {
-                if (d.type === 'external') return;
+                if (this.isExternal(d.type)) return;
                 this.selectNode(d);
             });
 
         nodeEnter.append("circle")
-            .attr("r", d => d.type === 'switch' ? 25 : (d.type === 'router' ? 30 : 15))
-            .attr("fill", d => d.type === 'switch' ? "#e74c3c" : (d.type === 'router' ? "#3498db" : "#2ecc71"))
+            .attr("r", d => this.isSwitch(d.type) ? 25 : (this.isRouter(d.type) ? 30 : 15))
+            .attr("fill", d => this.isSwitch(d.type) ? "#e74c3c" : (this.isRouter(d.type) ? "#3498db" : "#2ecc71"))
             .attr("stroke", "white")
             .attr("stroke-width", 0);
 
         nodeEnter.append("text")
-            .attr("dx", d => d.type === 'switch' ? 35 : (d.type === 'router' ? 40 : 20))
+            .attr("dx", d => this.isSwitch(d.type) ? 35 : (this.isRouter(d.type) ? 40 : 20))
             .attr("dy", ".35em")
             .text(d => d.label)
             .style("font-size", "14px")
@@ -825,7 +915,7 @@ class SDNController {
 
         // Tooltip sur les nouveaux nœuds
         nodeEnter.on("mouseover", (event, d) => {
-            if (d.type === 'external') return;
+            if (this.isExternal(d.type)) return;
             this.tooltip.style("opacity", 1);
             this.tooltip.html(`ID: ${d.id}<br>Type: ${d.type.toUpperCase()}<br>IP: ${d.ip}`);
         })
@@ -854,6 +944,16 @@ class SDNController {
         this.width = document.getElementById('graph-container').clientWidth || 800;
         this.height = document.getElementById('graph-container').clientHeight || 600;
         this.simulation.force("center", d3.forceCenter(this.width / 2, this.height / 2));
+
+        const randomMac = () => {
+            const hex = "0123456789abcdef";
+            let mac = "52:54:00:";
+            for (let i = 0; i < 3; i++) {
+                mac += hex[Math.floor(Math.random() * 16)] + hex[Math.floor(Math.random() * 16)];
+                if (i < 2) mac += ":";
+            }
+            return mac;
+        };
 
         const getNewIface = (node, type, targetNode) => {
             if (!node._ifaces) node._ifaces = [];
@@ -914,7 +1014,8 @@ class SDNController {
                 name: ifaceName,
                 description: description,
                 mode: mode,
-                vlan_id: vlan_id
+                vlan_id: vlan_id,
+                mac_address: randomMac()
             };
             if (allowed_vlans !== null && allowed_vlans !== undefined && allowed_vlans !== "") {
                 ifaceObj.allowed_vlans = allowed_vlans;
@@ -1128,6 +1229,8 @@ class SDNController {
                 const vlansToRoute = [...(switchNode._requiredVlans || new Set())];
                 if (vlansToRoute.length === 0) return;
                 // Add sub-interface for each VLAN (dot1q encapsulation)
+                const parentIface = n._ifaces && n._ifaces.find(i => i.name === physIface);
+                const parentMac = parentIface ? parentIface.mac_address : randomMac();
                 vlansToRoute.sort((a, b) => a - b).forEach(vlan => {
                     const subIfaceName = `${physIface}.${vlan}`;
                     const alreadyExists = n._ifaces && n._ifaces.find(i => i.name === subIfaceName);
@@ -1138,7 +1241,8 @@ class SDNController {
                             description: `dot1q encapsulation ${vlan} — gateway 192.168.${vlan}.1/24`,
                             mode: "dot1q",
                             vlan_id: vlan,
-                            allowed_vlans: null
+                            allowed_vlans: null,
+                            mac_address: parentMac
                         });
                     }
                 });
@@ -1319,6 +1423,18 @@ class SDNController {
         const panel = document.getElementById('bottom-panel');
         if (panel) {
             document.getElementById('panel-title').textContent = `Interfaces - ${this.selectedNode?.label || ''}`;
+            
+            const btnVlans = document.getElementById('tab-btn-vlans');
+            if (btnVlans) {
+                const isHost = this.isHost(this.selectedNode?.type) || this.isHost(this.selectedNode?.device_type);
+                btnVlans.style.display = isHost ? 'none' : 'block';
+            }
+            
+            this.activeTab = 'interfaces';
+            const btnInterfaces = document.getElementById('tab-btn-interfaces');
+            if (btnInterfaces) btnInterfaces.classList.add('active');
+            if (btnVlans) btnVlans.classList.remove('active');
+            
             panel.classList.add('open');
         }
     }
@@ -1332,23 +1448,108 @@ class SDNController {
         this.currentInterfaces = [];
         this.currentEditingInterfaceId = null;
         this.hoveredIfaceName = null;
+        this.activeTab = 'interfaces';
+        
+        const btnInterfaces = document.getElementById('tab-btn-interfaces');
+        const btnVlans = document.getElementById('tab-btn-vlans');
+        if (btnInterfaces) btnInterfaces.classList.add('active');
+        if (btnVlans) btnVlans.classList.remove('active');
+        
         this.updateLinkStyles();
+    }
+
+    switchTab(tabName) {
+        if (this.currentEditingInterfaceId) {
+            this.autoSaveInterface(this.currentEditingInterfaceId);
+        }
+        this.activeTab = tabName;
+        
+        const btnInterfaces = document.getElementById('tab-btn-interfaces');
+        const btnVlans = document.getElementById('tab-btn-vlans');
+        if (btnInterfaces && btnVlans) {
+            if (tabName === 'interfaces') {
+                btnInterfaces.classList.add('active');
+                btnVlans.classList.remove('active');
+            } else {
+                btnInterfaces.classList.remove('active');
+                btnVlans.classList.add('active');
+            }
+        }
+        
+        this.renderInterfacesPanel();
     }
 
     renderInterfacesPanel() {
         const list = document.getElementById('interfaces-list');
         if (!list) return;
         list.innerHTML = '';
-        if (!this.currentInterfaces || this.currentInterfaces.length === 0) {
+        if (!this.currentInterfaces) {
             list.innerHTML = '<p style="color: #666; text-align:center;">Aucune interface trouvée.</p>';
             return;
         }
 
-        // Grouping logic
+        const isVlanInterface = (iface) => iface.name && iface.name.toUpperCase().startsWith("VLAN") && /^\d+$/.test(iface.name.substring(4));
+
+        // Filter based on activeTab
+        const filteredInterfaces = this.currentInterfaces.filter(iface => {
+            const isV = isVlanInterface(iface);
+            return this.activeTab === 'vlans' ? isV : !isV;
+        });
+
+        // Add the "+ Créer un VLAN" button at the top if activeTab is 'vlans'
+        if (this.activeTab === 'vlans') {
+            const addVlanBtnContainer = document.createElement('div');
+            addVlanBtnContainer.style.display = 'flex';
+            addVlanBtnContainer.style.justifyContent = 'flex-end';
+            addVlanBtnContainer.style.marginBottom = '12px';
+            addVlanBtnContainer.innerHTML = `
+                <button class="btn-add-vlan" onclick="app.showAddVlanModal()" style="
+                    background-color: #10b981;
+                    color: white;
+                    border: none;
+                    padding: 8px 16px;
+                    border-radius: 6px;
+                    font-weight: 600;
+                    cursor: pointer;
+                    display: flex;
+                    align-items: center;
+                    gap: 6px;
+                    font-size: 0.9rem;
+                    transition: background-color 0.2s;
+                ">
+                    <span>+ Créer un VLAN</span>
+                </button>
+            `;
+            const btn = addVlanBtnContainer.querySelector('button');
+            btn.onmouseenter = () => btn.style.backgroundColor = '#059669';
+            btn.onmouseleave = () => btn.style.backgroundColor = '#10b981';
+            list.appendChild(addVlanBtnContainer);
+        }
+
+        if (filteredInterfaces.length === 0) {
+            if (this.activeTab === 'vlans') {
+                const emptyMsg = document.createElement('p');
+                emptyMsg.style.color = '#666';
+                emptyMsg.style.textAlign = 'center';
+                emptyMsg.style.marginTop = '20px';
+                emptyMsg.textContent = 'Aucun VLAN configuré sur cet appareil.';
+                list.appendChild(emptyMsg);
+            } else {
+                const emptyMsg = document.createElement('p');
+                emptyMsg.style.color = '#666';
+                emptyMsg.style.textAlign = 'center';
+                emptyMsg.style.marginTop = '20px';
+                emptyMsg.textContent = 'Aucune interface physique trouvée.';
+                list.appendChild(emptyMsg);
+            }
+            return;
+        }
+
+        // Grouping logic for physical interfaces (only if not vlans tab)
         const subIfaceMap = {};
         const physicalIfaces = [];
 
-        this.currentInterfaces.forEach(iface => {
+        filteredInterfaces.forEach(iface => {
             const name = iface.name || "";
             const dotIndex = name.indexOf('.');
             if (dotIndex !== -1) {
@@ -1363,21 +1564,23 @@ class SDNController {
         });
 
         // Add virtual parent if sub-interfaces exist but parent physical interface is missing
-        const physicalNames = new Set(physicalIfaces.map(i => i.name));
-        Object.keys(subIfaceMap).forEach(parentName => {
-            if (!physicalNames.has(parentName)) {
-                physicalIfaces.push({
-                    id: `virtual-${parentName}`,
-                    name: parentName,
-                    description: "Interface physique parente (Virtuelle)",
-                    mode: "routed",
-                    vlan_id: null,
-                    isVirtual: true
-                });
-            }
-        });
+        if (this.activeTab !== 'vlans') {
+            const physicalNames = new Set(physicalIfaces.map(i => i.name));
+            Object.keys(subIfaceMap).forEach(parentName => {
+                if (!physicalNames.has(parentName)) {
+                    physicalIfaces.push({
+                        id: `virtual-${parentName}`,
+                        name: parentName,
+                        description: "Interface physique parente (Virtuelle)",
+                        mode: "routed",
+                        vlan_id: null,
+                        isVirtual: true
+                    });
+                }
+            });
+        }
 
-        // Sort parent interfaces
+        // Sort parent interfaces/VLANs
         physicalIfaces.sort((a, b) => a.name.localeCompare(b.name, undefined, { numeric: true, sensitivity: 'base' }));
 
         // Helper to render a card
@@ -1390,103 +1593,192 @@ class SDNController {
                 card.style.cursor = 'default';
             }
 
-            // Mouse hover event listeners for highlighting
-            card.addEventListener('mouseenter', () => {
-                if (this.selectedNode) {
-                    this.hoveredIfaceName = iface.name;
-                    this.updateLinkStyles();
-                }
-            });
-            card.addEventListener('mouseleave', () => {
-                if (this.selectedNode) {
-                    this.hoveredIfaceName = null;
-                    this.updateLinkStyles();
-                }
-            });
+            // Mouse hover event listeners for highlighting (only for physical interfaces)
+            const isVlan = isVlanInterface(iface);
+            if (!isVlan) {
+                card.addEventListener('mouseenter', () => {
+                    if (this.selectedNode) {
+                        this.hoveredIfaceName = iface.name;
+                        this.updateLinkStyles();
+                    }
+                });
+                card.addEventListener('mouseleave', () => {
+                    if (this.selectedNode) {
+                        this.hoveredIfaceName = null;
+                        this.updateLinkStyles();
+                    }
+                });
+            }
 
             if (isEditing) {
-                card.innerHTML = `
-                    <div class="iface-field">
-                        <span class="iface-label">Nom</span>
-                        <input type="text" class="iface-input" id="edit-name-${iface.id}" value="${iface.name || ''}" ${iface.isVirtual ? 'disabled' : ''} />
-                    </div>
-                    <div class="iface-field">
-                        <span class="iface-label">Description</span>
-                        <input type="text" class="iface-input" id="edit-desc-${iface.id}" value="${iface.description || ''}" />
-                    </div>
-                    ${this.selectedNode && this.selectedNode.type !== 'host' && !iface.isVirtual ? `
-                     <div class="iface-field">
-                        <span class="iface-label" title="Access = port pour machine finale, Trunk = port entre switchs/routeurs">Mode</span>
-                        <select class="iface-input" id="edit-mode-${iface.id}" onchange="
-                            const val = this.value;
-                            document.getElementById('edit-vlan-container-${iface.id}').style.display = (val === 'access' || val === 'static access' || val === 'dot1q') ? 'flex' : 'none';
-                            document.getElementById('edit-allowed-container-${iface.id}').style.display = val === 'trunk' ? 'flex' : 'none';
-                            document.getElementById('edit-vlan-label-${iface.id}').textContent = val === 'dot1q' ? 'Encap. VLAN' : 'VLAN';
-                        ">
-                            ${(() => {
-                            const modes = ["access", "trunk", "dynamic auto", "static access", "dot1q"];
-                            if (iface.mode && !modes.includes(iface.mode)) {
-                                modes.push(iface.mode);
-                            }
-                            return modes.map(m => `<option value="${m}" ${iface.mode === m ? 'selected' : ''}>${m === 'dot1q' ? '802.1Q (dot1q)' : m.charAt(0).toUpperCase() + m.slice(1)}</option>`).join('');
-                        })()}
-                        </select>
-                    </div>
-                    <div class="iface-field" id="edit-vlan-container-${iface.id}" style="display: ${(!iface.mode || iface.mode.includes('access') || iface.mode === 'dot1q') ? 'flex' : 'none'}">
-                        <span class="iface-label" id="edit-vlan-label-${iface.id}" title="VLAN d'accès ou d'encapsulation de ce port">${iface.mode === 'dot1q' ? 'Encap. VLAN' : 'VLAN'}</span>
-                        <input type="number" class="iface-input" id="edit-vlan-${iface.id}" value="${iface.vlan_id || ''}" />
-                    </div>
-                    <div class="iface-field" id="edit-allowed-container-${iface.id}" style="display: ${iface.mode === 'trunk' ? 'flex' : 'none'}">
-                        <span class="iface-label" title="VLANs taggés autorisés sur ce trunk">Allowed VLANs</span>
-                        <input type="text" class="iface-input" id="edit-allowed-${iface.id}" value="${iface.allowed_vlans || ''}" placeholder="ex: 10,20,30" />
-                    </div>
-                    ` : ''}
-                `;
-            } else {
-                let actionBtns = '';
-                if (!isSubCard && this.selectedNode && this.selectedNode.type === 'router') {
-                    actionBtns += `
-                        <button class="btn-add-sub" onclick="event.stopPropagation(); app.showAddSubInterfaceModal('${iface.name}')">
-                            + Sous-interface
-                        </button>
+                if (isVlan) {
+                    card.innerHTML = `
+                        <div class="iface-field">
+                            <span class="iface-label">Nom VLAN (DB)</span>
+                            <input type="text" class="iface-input" id="edit-name-${iface.id}" value="${iface.name || ''}" disabled />
+                        </div>
+                        <div class="iface-field">
+                            <span class="iface-label">Nom du VLAN (Description)</span>
+                            <input type="text" class="iface-input" id="edit-desc-${iface.id}" value="${iface.description || ''}" />
+                        </div>
+                        <div class="iface-field">
+                            <span class="iface-label">ID VLAN</span>
+                            <input type="number" class="iface-input" id="edit-vlan-${iface.id}" value="${iface.vlan_id || ''}" disabled />
+                        </div>
+                    `;
+                } else {
+                    card.innerHTML = `
+                        <div class="iface-field">
+                            <span class="iface-label">Nom</span>
+                            <input type="text" class="iface-input" id="edit-name-${iface.id}" value="${iface.name || ''}" ${iface.isVirtual ? 'disabled' : ''} />
+                        </div>
+                        <div class="iface-field">
+                            <span class="iface-label">Description</span>
+                            <input type="text" class="iface-input" id="edit-desc-${iface.id}" value="${iface.description || ''}" />
+                        </div>
+                        <div class="iface-field">
+                            <span class="iface-label">Adresse MAC</span>
+                            <input type="text" class="iface-input" id="edit-mac-${iface.id}" value="${iface.mac_address || ''}" />
+                        </div>
+                        ${this.selectedNode && !this.isHost(this.selectedNode.type) && !iface.isVirtual ? `
+                         <div class="iface-field">
+                            <span class="iface-label" title="Access = port pour machine finale, Trunk = port entre switchs/routeurs">Mode</span>
+                            <select class="iface-input" id="edit-mode-${iface.id}" onchange="
+                                const val = this.value;
+                                document.getElementById('edit-vlan-container-${iface.id}').style.display = app.wantsSingleVlan(val) ? 'flex' : 'none';
+                                document.getElementById('edit-allowed-container-${iface.id}').style.display = app.wantsAllowedVlans(val) ? 'flex' : 'none';
+                                document.getElementById('edit-vlan-label-${iface.id}').textContent = val === 'dot1q' ? 'Encap. VLAN' : 'VLAN';
+                            ">
+                                ${(() => {
+                                const modes = this.getProposedModes(this.selectedNode.type);
+                                if (iface.mode && !modes.includes(iface.mode)) {
+                                    modes.push(iface.mode);
+                                }
+                                return modes.map(m => `<option value="${m}" ${iface.mode === m ? 'selected' : ''}>${m === 'dot1q' ? '802.1Q (dot1q)' : m}</option>`).join('');
+                            })()}
+                            </select>
+                        </div>
+                        <div class="iface-field" id="edit-vlan-container-${iface.id}" style="display: ${this.wantsSingleVlan(iface.mode) ? 'flex' : 'none'}">
+                            <span class="iface-label" id="edit-vlan-label-${iface.id}" title="VLAN d'accès ou d'encapsulation de ce port">${iface.mode === 'dot1q' ? 'Encap. VLAN' : 'VLAN'}</span>
+                            <select class="iface-input" id="edit-vlan-${iface.id}">
+                                ${(() => {
+                                const createdVlans = this.getCreatedVlans();
+                                let opts = createdVlans.map(v => `<option value="${v}" ${iface.vlan_id === v ? 'selected' : ''}>VLAN ${v}</option>`).join('');
+                                if (iface.vlan_id && !createdVlans.includes(iface.vlan_id)) {
+                                    opts += `<option value="${iface.vlan_id}" selected>VLAN ${iface.vlan_id}</option>`;
+                                }
+                                return opts;
+                            })()}
+                            </select>
+                        </div>
+                        <div class="iface-field" id="edit-allowed-container-${iface.id}" style="display: ${this.wantsAllowedVlans(iface.mode) ? 'flex' : 'none'}">
+                            <span class="iface-label" title="VLANs taggés autorisés sur ce trunk">Allowed VLANs</span>
+                            <div class="multiselect-dropdown">
+                                <div class="multiselect-select iface-input" onclick="app.toggleMultiselect(event, ${iface.id})">
+                                    <span class="multiselect-selected-text" id="multiselect-selected-text-${iface.id}">
+                                        ${(() => {
+                                            const allowedList = iface.allowed_vlans ? iface.allowed_vlans.split(',').map(v => parseInt(v.trim())).filter(v => !isNaN(v)) : [];
+                                            if (allowedList.length === 0) return "Aucun VLAN sélectionné";
+                                            return allowedList.map(v => `VLAN ${v}`).join(', ');
+                                        })()}
+                                    </span>
+                                    <span class="multiselect-arrow">▼</span>
+                                </div>
+                                <div id="edit-allowed-${iface.id}" class="multiselect-options">
+                                    ${(() => {
+                                    const createdVlans = this.getCreatedVlans();
+                                    const allowedList = iface.allowed_vlans ? iface.allowed_vlans.split(',').map(v => parseInt(v.trim())).filter(v => !isNaN(v)) : [];
+                                    if (createdVlans.length === 0) {
+                                        return '<span style="color: #64748b; font-size: 0.85rem; font-style: italic; padding: 4px 8px;">Aucun VLAN créé.</span>';
+                                    }
+                                    return createdVlans.map(v => {
+                                        const isChecked = allowedList.includes(v);
+                                        return `
+                                            <label class="vlan-checkbox-label">
+                                                <input type="checkbox" class="edit-allowed-checkbox-${iface.id}" value="${v}" ${isChecked ? 'checked' : ''} onchange="app.updateMultiselectText(${iface.id})" style="margin: 0;" />
+                                                VLAN ${v}
+                                            </label>
+                                        `;
+                                    }).join('');
+                                })()}
+                                </div>
+                            </div>
+                        </div>
+                        ` : ''}
                     `;
                 }
-                if (isSubCard) {
+            } else {
+                let actionBtns = '';
+                if (isVlan) {
                     actionBtns += `
                         <button class="btn-delete-sub" onclick="event.stopPropagation(); app.deleteInterface(${iface.id}, '${iface.name}')">
                             Supprimer
                         </button>
                     `;
+                } else {
+                    if (!isSubCard && this.selectedNode && this.isRouter(this.selectedNode.type)) {
+                        actionBtns += `
+                            <button class="btn-add-sub" onclick="event.stopPropagation(); app.showAddSubInterfaceModal('${iface.name}')">
+                                + Sous-interface
+                            </button>
+                        `;
+                    }
+                    if (isSubCard) {
+                        actionBtns += `
+                            <button class="btn-delete-sub" onclick="event.stopPropagation(); app.deleteInterface(${iface.id}, '${iface.name}')">
+                                Supprimer
+                            </button>
+                        `;
+                    }
                 }
 
-                card.innerHTML = `
-                    <div class="iface-status ${iface.mode ? 'active' : ''}"></div>
-                    <div class="iface-field">
-                        <span class="iface-label">Nom</span>
-                        <span class="iface-value">${iface.name || '-'}</span>
-                    </div>
-                    <div class="iface-field">
-                        <span class="iface-label">Description</span>
-                        <span class="iface-value">${iface.description || '-'}</span>
-                    </div>
-                    ${this.selectedNode && this.selectedNode.type !== 'host' && !iface.isVirtual ? `
-                    <div class="iface-field">
-                        <span class="iface-label">Mode</span>
-                        <span class="iface-value" style="${iface.mode === 'dot1q' ? 'color:#7c3aed;font-weight:600;' : iface.mode === 'trunk' ? 'color:#0369a1;font-weight:600;' : ''}">${iface.mode || '-'}${iface.mode === 'dot1q' ? ' (802.1Q)' : ''}</span>
-                    </div>
-                    ${(iface.mode === 'dot1q' || !iface.mode || iface.mode.includes('access')) ? `
-                    <div class="iface-field">
-                        <span class="iface-label">${iface.mode === 'dot1q' ? 'Encap. VLAN' : 'VLAN'}</span>
-                        <span class="iface-value" style="${iface.mode === 'dot1q' ? 'color:#7c3aed;font-weight:600;' : ''}">${iface.vlan_id || '-'}</span>
-                    </div>` : ''}
-                    ${iface.mode === 'trunk' ? `
-                    <div class="iface-field">
-                        <span class="iface-label">Allowed VLANs</span>
-                        <span class="iface-value">${iface.allowed_vlans || '-'}</span>
-                    </div>` : ''}
-                    ` : ''}
-                    ${actionBtns ? `<div class="interface-card-header-actions">${actionBtns}</div>` : ''}
-                `;
+                if (isVlan) {
+                    card.innerHTML = `
+                        <div class="iface-status active" style="background-color: #10b981;"></div>
+                        <div class="iface-field">
+                            <span class="iface-label">ID VLAN</span>
+                            <span class="iface-value" style="font-weight: 600; color: #10b981;">${iface.vlan_id || '-'}</span>
+                        </div>
+                        <div class="iface-field">
+                            <span class="iface-label">Nom du VLAN</span>
+                            <span class="iface-value">${iface.description || '-'}</span>
+                        </div>
+                        ${actionBtns ? `<div class="interface-card-header-actions">${actionBtns}</div>` : ''}
+                    `;
+                } else {
+                    card.innerHTML = `
+                        <div class="iface-status ${iface.mode ? 'active' : ''}"></div>
+                        <div class="iface-field">
+                            <span class="iface-label">Nom</span>
+                            <span class="iface-value">${iface.name || '-'}</span>
+                        </div>
+                        <div class="iface-field">
+                            <span class="iface-label">Description</span>
+                            <span class="iface-value">${iface.description || '-'}</span>
+                        </div>
+                        <div class="iface-field">
+                            <span class="iface-label">Adresse MAC</span>
+                            <span class="iface-value" style="font-family: monospace; color: #475569;">${iface.mac_address || '-'}</span>
+                        </div>
+                        ${this.selectedNode && !this.isHost(this.selectedNode.type) && !iface.isVirtual ? `
+                        <div class="iface-field">
+                            <span class="iface-label">Mode</span>
+                            <span class="iface-value" style="${iface.mode === 'dot1q' ? 'color:#7c3aed;font-weight:600;' : this.wantsAllowedVlans(iface.mode) ? 'color:#0369a1;font-weight:600;' : ''}">${iface.mode || '-'}${iface.mode === 'dot1q' ? ' (802.1Q)' : ''}</span>
+                        </div>
+                        ${(this.wantsSingleVlan(iface.mode)) ? `
+                        <div class="iface-field">
+                            <span class="iface-label">${iface.mode === 'dot1q' ? 'Encap. VLAN' : 'VLAN'}</span>
+                            <span class="iface-value" style="${iface.mode === 'dot1q' ? 'color:#7c3aed;font-weight:600;' : ''}">${iface.vlan_id || '-'}</span>
+                        </div>` : ''}
+                        ${this.wantsAllowedVlans(iface.mode) ? `
+                        <div class="iface-field">
+                            <span class="iface-label">Allowed VLANs</span>
+                            <span class="iface-value">${iface.allowed_vlans || '-'}</span>
+                        </div>` : ''}
+                        ` : ''}
+                        ${actionBtns ? `<div class="interface-card-header-actions">${actionBtns}</div>` : ''}
+                    `;
+                }
 
                 if (!iface.isVirtual) {
                     card.onclick = () => this.editInterface(iface.id);
@@ -1527,6 +1819,38 @@ class SDNController {
         });
     }
 
+    toggleMultiselect(event, id) {
+        event.stopPropagation();
+        const optionsDiv = document.getElementById(`edit-allowed-${id}`);
+        if (!optionsDiv) return;
+        const isOpen = optionsDiv.style.display === 'flex' || optionsDiv.style.display === 'block';
+        
+        // Close all other multiselects first
+        document.querySelectorAll('.multiselect-options').forEach(el => {
+            el.style.display = 'none';
+        });
+        
+        if (!isOpen) {
+            optionsDiv.style.display = 'flex';
+            optionsDiv.style.flexDirection = 'column';
+            optionsDiv.style.gap = '6px';
+        }
+    }
+
+    updateMultiselectText(id) {
+        const container = document.getElementById(`edit-allowed-${id}`);
+        const textEl = document.getElementById(`multiselect-selected-text-${id}`);
+        if (!container || !textEl) return;
+        
+        const checkedBoxes = container.querySelectorAll(`.edit-allowed-checkbox-${id}:checked`);
+        if (checkedBoxes.length === 0) {
+            textEl.textContent = "Aucun VLAN sélectionné";
+        } else {
+            const values = Array.from(checkedBoxes).map(cb => `VLAN ${cb.value}`).join(', ');
+            textEl.textContent = values;
+        }
+    }
+
     editInterface(id) {
         if (this.currentEditingInterfaceId && this.currentEditingInterfaceId !== id) {
             this.autoSaveInterface(this.currentEditingInterfaceId);
@@ -1553,6 +1877,7 @@ class SDNController {
     async autoSaveInterface(id) {
         const nameEl = document.getElementById(`edit-name-${id}`);
         const descEl = document.getElementById(`edit-desc-${id}`);
+        const macEl = document.getElementById(`edit-mac-${id}`);
         const modeEl = document.getElementById(`edit-mode-${id}`);
         const vlanEl = document.getElementById(`edit-vlan-${id}`);
         const allowedEl = document.getElementById(`edit-allowed-${id}`);
@@ -1563,12 +1888,29 @@ class SDNController {
         if (idx === -1) return;
         const existingIface = this.currentInterfaces[idx];
 
+        let allowedVlansVal = existingIface.allowed_vlans;
+        const allowedContainer = document.getElementById(`edit-allowed-${id}`);
+        if (allowedContainer) {
+            const checkedBoxes = allowedContainer.querySelectorAll(`.edit-allowed-checkbox-${id}:checked`);
+            allowedVlansVal = Array.from(checkedBoxes).map(cb => cb.value).join(',');
+        }
+
+        let finalVlanId = vlanEl ? (parseInt(vlanEl.value) || null) : existingIface.vlan_id;
+        let finalMode = modeEl ? modeEl.value : existingIface.mode;
+
+        if (finalMode && this.wantsAllowedVlans(finalMode)) {
+            finalVlanId = null;
+        } else if (finalMode && this.wantsSingleVlan(finalMode)) {
+            allowedVlansVal = null;
+        }
+
         const data = {
             name: nameEl.value,
             description: descEl ? descEl.value : existingIface.description,
-            mode: modeEl ? modeEl.value : existingIface.mode,
-            vlan_id: vlanEl ? (parseInt(vlanEl.value) || null) : existingIface.vlan_id,
-            allowed_vlans: allowedEl ? allowedEl.value : existingIface.allowed_vlans
+            mac_address: macEl ? macEl.value : existingIface.mac_address,
+            mode: finalMode,
+            vlan_id: finalVlanId,
+            allowed_vlans: allowedVlansVal
         };
 
         this.currentInterfaces[idx] = { ...this.currentInterfaces[idx], ...data };
@@ -1835,7 +2177,7 @@ class SDNController {
                         injected++;
                     }
 
-                } else if (type === 'wrong_access_vlan' && iface.mode === 'access' && n.type === 'switch' && iface.vlan_id) {
+                } else if (type === 'wrong_access_vlan' && this.isAccessMode(iface.mode) && this.isSwitch(n.type) && iface.vlan_id) {
                     // Change access VLAN to a wrong one
                     const allVlans = [10, 20, 30, 40, 50, 99];
                     const others = allVlans.filter(v => v !== iface.vlan_id);
@@ -1844,7 +2186,7 @@ class SDNController {
                     iface.vlan_id = wrongVlan;
                     injected++;
 
-                } else if (type === 'orphan_host_vlan' && iface.mode === 'access' && n.type === 'switch') {
+                } else if (type === 'orphan_host_vlan' && this.isAccessMode(iface.mode) && this.isSwitch(n.type)) {
                     // Assign a VLAN that probably doesn't exist on any trunk
                     const orphanVlan = 952;
                     iface.description = (iface.description || '') + ` [ANOMALY: orphan VLAN ${orphanVlan}]`;
@@ -1900,10 +2242,10 @@ class SDNController {
             const linkKey = `${srcNode.id}-${tgtNode.id}`;
 
             // ---- Check 1: host ↔ switch (access link) ----
-            if ((srcNode.type === 'host' || tgtNode.type === 'host')) {
-                const hostNode = srcNode.type === 'host' ? srcNode : tgtNode;
-                const switchNode = srcNode.type === 'host' ? tgtNode : srcNode;
-                const swIface = srcNode.type === 'host' ? tgtIface : srcIface;
+            if ((this.isHost(srcNode.type) || this.isHost(tgtNode.type))) {
+                const hostNode = this.isHost(srcNode.type) ? srcNode : tgtNode;
+                const switchNode = this.isHost(srcNode.type) ? tgtNode : srcNode;
+                const swIface = this.isHost(srcNode.type) ? tgtIface : srcIface;
 
                 if (swIface) {
                     const swVlan = swIface.vlan_id;
@@ -1935,7 +2277,7 @@ class SDNController {
                     const tgtAllowed = parseAllowed(tgtIface.allowed_vlans);
 
                     // Check Native VLAN Mismatch (for switch-to-switch trunks)
-                    if (srcNode.type === 'switch' && tgtNode.type === 'switch') {
+                    if (this.isSwitch(srcNode.type) && this.isSwitch(tgtNode.type)) {
                         const srcNative = srcIface.vlan_id || 1;
                         const tgtNative = tgtIface.vlan_id || 1;
                         if (srcNative !== tgtNative) {
@@ -1986,7 +2328,7 @@ class SDNController {
                         }
                     }
 
-                } else if (srcNode.type === 'switch' && tgtNode.type === 'switch' && (srcIface.mode === 'trunk' || tgtIface.mode === 'trunk')) {
+                } else if (this.isSwitch(srcNode.type) && this.isSwitch(tgtNode.type) && (srcIface.mode === 'trunk' || tgtIface.mode === 'trunk')) {
                     // Switch to switch link, but only one side is trunk!
                     errors.push({
                         type: 'critical',
@@ -1997,7 +2339,7 @@ class SDNController {
                     errorNodeIds.add(tgtNode.id);
                     errorLinkKeys.add(linkKey);
 
-                } else if (srcNode.type === 'switch' && tgtNode.type === 'switch' && srcIface.mode === 'access' && tgtIface.mode === 'access') {
+                } else if (this.isSwitch(srcNode.type) && this.isSwitch(tgtNode.type) && this.isAccessMode(srcIface.mode) && this.isAccessMode(tgtIface.mode)) {
                     // Both switches but mismatch in access VLANs
                     const srcVlan = srcIface.vlan_id || 1;
                     const tgtVlan = tgtIface.vlan_id || 1;
@@ -2199,11 +2541,16 @@ class SDNController {
     }
 
     async deleteInterface(id, name) {
-        if (!confirm(`Voulez-vous vraiment supprimer la sous-interface ${name} ?`)) {
+        const isVlan = name.toUpperCase().startsWith("VLAN") && /^\d+$/.test(name.substring(4));
+        const confirmMsg = isVlan 
+            ? `Voulez-vous vraiment supprimer le VLAN ${name.substring(4)} ?`
+            : `Voulez-vous vraiment supprimer la sous-interface ${name} ?`;
+            
+        if (!confirm(confirmMsg)) {
             return;
         }
 
-        this.log(`Suppression de la sous-interface ${name}...`);
+        this.log(isVlan ? `Suppression du VLAN ${name.substring(4)}...` : `Suppression de la sous-interface ${name}...`);
 
         try {
             const response = await fetch(`${API_BASE}/db/interface/${id}`, {
@@ -2212,10 +2559,76 @@ class SDNController {
 
             if (!response.ok) throw new Error("Échec lors de la suppression.");
 
-            this.log(`Sous-interface ${name} supprimée.`);
+            this.log(isVlan ? `VLAN ${name.substring(4)} supprimé.` : `Sous-interface ${name} supprimée.`);
             await this.fetchSelectedNode();
         } catch (error) {
             this.log(`Erreur lors de la suppression : ${error.message}`);
+            alert(`Erreur : ${error.message}`);
+        }
+    }
+
+    showAddVlanModal() {
+        const modal = document.getElementById('add-vlan-modal');
+        const deviceText = document.getElementById('add-vlan-device-text');
+        const idInput = document.getElementById('add-vlan-id');
+        const nameInput = document.getElementById('add-vlan-name');
+
+        if (deviceText) deviceText.textContent = `Équipement : ${this.selectedNode?.label || ''}`;
+        if (idInput) idInput.value = '';
+        if (nameInput) nameInput.value = '';
+
+        if (modal) modal.style.display = 'flex';
+    }
+
+    hideAddVlanModal() {
+        const modal = document.getElementById('add-vlan-modal');
+        if (modal) modal.style.display = 'none';
+    }
+
+    async submitAddVlan() {
+        if (!this.selectedNode) return;
+
+        const idInput = document.getElementById('add-vlan-id');
+        const nameInput = document.getElementById('add-vlan-name');
+        const vlanId = idInput ? parseInt(idInput.value) : null;
+        const vlanName = nameInput ? nameInput.value.trim() : '';
+
+        if (!vlanId || isNaN(vlanId) || vlanId < 2 || vlanId > 4094) {
+            alert("Veuillez entrer un numéro de VLAN valide (entre 2 et 4094).");
+            return;
+        }
+
+        const vlanNameDb = `VLAN${vlanId}`;
+        const alreadyExists = this.currentInterfaces && this.currentInterfaces.some(i => i.name.toUpperCase() === vlanNameDb.toUpperCase());
+        if (alreadyExists) {
+            alert(`Le VLAN ${vlanId} existe déjà.`);
+            return;
+        }
+
+        const payload = {
+            name: vlanNameDb,
+            description: vlanName || `VLAN_${vlanId}`,
+            mode: "access",
+            vlan_id: vlanId,
+            allowed_vlans: null
+        };
+
+        this.log(`Création du VLAN ${vlanId}...`);
+
+        try {
+            const response = await fetch(`${API_BASE}/db/node/${this.selectedNode.id}/interface`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+
+            if (!response.ok) throw new Error("Échec lors de la création du VLAN.");
+
+            this.log(`VLAN ${vlanId} créé avec succès.`);
+            this.hideAddVlanModal();
+            await this.fetchSelectedNode();
+        } catch (error) {
+            this.log(`Erreur lors de la création : ${error.message}`);
             alert(`Erreur : ${error.message}`);
         }
     }

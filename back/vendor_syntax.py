@@ -10,11 +10,15 @@ VENDOR_SYNTAX = {
             "interfaces": "show interfaces switchport",
             "mac": "show mac address-table",
             "arp": "show ip arp",
-            "lldp": "show lldp neighbors", # lldp a activer
+            "lldp": "show lldp neighbors detail",
+            "lldp_brief": "show lldp neighbors",
+            "cdp": "show cdp neighbors detail",
+            "cdp_brief": "show cdp neighbors",
             "routes": "show ip route",
             "poe": "show power inline",
             "port_channels": "show etherchannel summary",
             "stp": "show spanning-tree",
+            "phys_interfaces": "show interfaces",
             "running": "show running-config" # Toujours en dernier
         },
         "write": {
@@ -37,11 +41,43 @@ VENDOR_SYNTAX = {
         },
         "normalize_keys": {
             "vlans": {"vlan_id": "vlan_id", "vlan_name": "name", "status": "status"},
-            "interfaces": {"interface": "interface", "access_vlan": "vlan", "admin_mode": "mode", "switchport": "enabled"},
+            "interfaces": {"interface": "interface", "access_vlan": "vlan", "admin_mode": "mode", "switchport": "enabled", "trunking_vlans": "allowed_vlans"},
+            "phys_interfaces": {"interface": "interface", "mac_address": "mac_address"},
             "mac": {"destination_address": "mac", "vlan": "vlan", "destination_port": "interface"},
             "arp": {"address": "ip", "mac": "mac", "interface": "interface"},
-            "lldp": {"local_interface": "local_port", "neighbor": "neighbor_name", "neighbor_interface": "remote_port"},
-        #    "cdp": {"destination_host": "neighbor_name", "local_interface": "local_port", "neighbor_interface": "remote_port"},
+            "lldp": {
+                "neighbor_name": "neighbor_name",
+                "mgmt_address": "management_ip",
+                "local_interface": "local_port",
+                "neighbor_interface": "remote_port",
+                "platform": "platform",
+                "manufacturer": "manufacturer",
+                "neighbor_description": "neighbor_description",
+                "chassis_id": "chassis_id",
+                "mac_address": "mac_address",
+                "neighbor_port_id": "port_id"
+            },
+            "lldp_brief": {
+                "neighbor_name": "neighbor_name",
+                "local_interface": "local_port",
+                "neighbor_interface": "remote_port",
+                "capabilities": "capabilities"
+            },
+            "cdp": {
+                "neighbor_name": "neighbor_name",
+                "mgmt_address": "management_ip",
+                "local_interface": "local_port",
+                "neighbor_interface": "remote_port",
+                "platform": "platform",
+                "neighbor_description": "neighbor_description"
+            },
+            "cdp_brief": {
+                "neighbor_name": "neighbor_name",
+                "local_interface": "local_port",
+                "neighbor_interface": "remote_port",
+                "platform": "platform",
+                "capabilities": "capabilities"
+            },
             "routes": {"network": "network", "mask": "mask", "nexthop_ip": "nexthop", "protocol": "protocol"},
             "poe": {"interface": "interface", "oper": "status", "power": "watts"},
             "port_channels": {"po_name": "channel", "po_protocol": "protocol", "ports": "members"},
@@ -58,7 +94,7 @@ VENDOR_SYNTAX = {
             "interfaces": "show interfaces switchport",
             "mac": "show mac address-table",
             "arp": "show ip arp",
-            "lldp": "show lldp neighbors",
+            "lldp": "show lldp neighbors detail",
             "routes": "show ip route",
             "running": "show running-config"
         },
@@ -77,7 +113,20 @@ VENDOR_SYNTAX = {
             "interfaces": {"interface": "interface", "access_vlan": "vlan", "admin_mode": "mode"},
             "mac": {"mac_address": "mac", "vlan": "vlan", "port": "interface"},
             "arp": {"address": "ip", "mac_address": "mac", "interface": "interface"},
-            "lldp": {"port": "local_port", "neighbor_device": "neighbor_name", "neighbor_port": "remote_port"},
+            "lldp": {
+                "port": "local_port", 
+                "neighbor_device": "neighbor_name", 
+                "neighbor_port": "remote_port",
+                "neighbor_name": "neighbor_name",
+                "mgmt_address": "management_ip",
+                "local_interface": "local_port",
+                "neighbor_interface": "remote_port",
+                "platform": "platform",
+                "manufacturer": "manufacturer",
+                "neighbor_description": "neighbor_description",
+                "chassis_id": "chassis_id",
+                "mac_address": "mac_address"
+            },
             "routes": {"network": "network", "nexthop_ip": "nexthop"}
         }
     },
@@ -101,9 +150,18 @@ VENDOR_SYNTAX = {
             "mode_trunk": "tagged vlan {vlans}"
         },
         "normalize_keys": {
-            "vlans": {"vlan_id": "vlan_id", "name": "name"},
+            "vlans": {"vlan_id": "vlan_id", "name": "name", "vlan_name": "name"},
             "interfaces": {"port": "interface", "untagged": "vlan", "mode": "mode"},
-            "mac": {"mac_address": "mac", "port": "interface"}
+            "mac": {"mac_address": "mac", "port": "interface"},
+            "lldp": {
+                "neighbor_name": "neighbor_name",
+                "mgmt_address": "management_ip",
+                "local_interface": "local_port",
+                "neighbor_interface": "remote_port",
+                "neighbor_description": "neighbor_description",
+                "chassis_id": "chassis_id",
+                "mac_address": "mac_address"
+            }
         }
     },
 

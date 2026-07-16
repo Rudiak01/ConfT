@@ -140,7 +140,13 @@
         <!-- Bottom Panel for Interfaces -->
         <div id="bottom-panel" class="bottom-panel">
             <div class="panel-header">
-                <h3 id="panel-title">Interfaces</h3>
+                <div style="display: flex; align-items: center; gap: 20px; flex: 1;">
+                    <h3 id="panel-title" style="margin: 0; white-space: nowrap;">Interfaces</h3>
+                    <div class="panel-tabs">
+                        <button class="panel-tab-btn active" id="tab-btn-interfaces" onclick="app.switchTab('interfaces')">Interfaces Physiques</button>
+                        <button class="panel-tab-btn" id="tab-btn-vlans" onclick="app.switchTab('vlans')">Configuration VLANs</button>
+                    </div>
+                </div>
                 <button id="close-panel-btn" class="close-btn" onclick="app.deselectCurrentNode()">×</button>
             </div>
             <div class="panel-content" id="interfaces-list">
@@ -236,6 +242,31 @@
                 <button id="add-sub-cancel-btn" class="btn-modal-cancel">Annuler</button>
                 <button id="add-sub-submit-btn" class="btn-modal-primary"
                     style="background-color: #3b82f6; color: white; border: none; padding: 10px 20px; border-radius: 6px; font-weight: 600; cursor: pointer; transition: background-color 0.2s;">Ajouter</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add VLAN Modal -->
+    <div id="add-vlan-modal" class="confirm-modal" style="display: none;">
+        <div class="confirm-modal-card">
+            <h3>Créer un VLAN</h3>
+            <p id="add-vlan-device-text" style="font-weight: 600; color: #475569; margin: 8px 0;"></p>
+            <div class="form-group"
+                style="margin-top: 12px; display: flex; flex-direction: column; gap: 4px; text-align: left;">
+                <label for="add-vlan-id" style="font-size: 0.85rem; font-weight: 600; color: #475569;">ID du VLAN (2-4094)</label>
+                <input type="number" id="add-vlan-id" min="2" max="4094" placeholder="ex: 10"
+                    style="padding: 8px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 0.95rem;">
+            </div>
+            <div class="form-group"
+                style="margin-top: 12px; display: flex; flex-direction: column; gap: 4px; text-align: left;">
+                <label for="add-vlan-name" style="font-size: 0.85rem; font-weight: 600; color: #475569;">Nom du VLAN (optionnel)</label>
+                <input type="text" id="add-vlan-name" placeholder="ex: Marketing"
+                    style="padding: 8px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 0.95rem;">
+            </div>
+            <div class="confirm-modal-actions" style="margin-top: 20px;">
+                <button id="add-vlan-cancel-btn" class="btn-modal-cancel">Annuler</button>
+                <button id="add-vlan-submit-btn" class="btn-modal-primary"
+                    style="background-color: #10b981; color: white; border: none; padding: 10px 20px; border-radius: 6px; font-weight: 600; cursor: pointer; transition: background-color 0.2s;">Créer</button>
             </div>
         </div>
     </div>

@@ -12,5 +12,9 @@ def connect(connection_params=None):
         connection.enable()
     except Exception:
         pass
-    connection.send_command("terminal length 0")
+    if connection_params.get("device_type", "cisco_ios") == "cisco_ios":
+        try:
+            connection.send_command("terminal length 0")
+        except Exception:
+            pass
     return connection

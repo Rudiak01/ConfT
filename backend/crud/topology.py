@@ -1,3 +1,4 @@
+# pyrefly: ignore [missing-import]
 from sqlalchemy import select
 from sqlalchemy.orm import joinedload
 from backend.db import SessionLocal
@@ -62,6 +63,7 @@ class DB:
                 "mode": iface.mode,
                 "vlan_id": iface.vlan_id,
                 "allowed_vlans": iface.allowed_vlans,
+                "mac_address": iface.mac_address,
             }
 
     def update_node(self, id: int, update_data: dict):
@@ -97,6 +99,7 @@ class DB:
                         ip_address=ip,
                         hostname=data.get("hostname"),
                         device_type=data.get("device_type"),
+                        vendor=data.get("vendor") or data.get("device_type", "unknown").split("_")[0],
                     )
                     session.add(node)
                     session.commit()
@@ -104,6 +107,8 @@ class DB:
                 else:
                     node.hostname = data.get("hostname")
                     node.device_type = data.get("device_type")
+                    if data.get("vendor"):
+                        node.vendor = data.get("vendor")
                     session.commit()
 
                 node_map[ip] = node.id
@@ -138,20 +143,47 @@ class DB:
                         .first()
                     )
 
+                    allowed = phys_iface.get("allowed_vlans")
+                    if isinstance(allowed, list):
+                        allowed = ",".join(allowed)
+                    elif not allowed:
+                        allowed = None
+
+                    mode = phys_iface.get("mode")
+                    if allowed and len([v for v in allowed.split(",") if v.strip()]) > 1:
+                        mode = "trunk"
+                    elif not mode:
+                        mode = "access"
+
+                    mac = phys_iface.get("mac_address")
+
                     if not iface:
                         iface = Interface(
                             node_id=node.id,
                             name=phys_iface.get("interface", "unknown"),
                             description=phys_iface.get("description", ""),
-                            mode=phys_iface.get("mode", "access"),
+                            mode=mode,
                             vlan_id=(
                                 int(phys_iface.get("vlan", 1))
                                 if phys_iface.get("vlan")
                                 and phys_iface.get("vlan").isdigit()
                                 else None
                             ),
+                            allowed_vlans=allowed,
+                            mac_address=mac,
                         )
                         session.add(iface)
+                    else:
+                        iface.description = phys_iface.get("description", "")
+                        iface.mode = mode
+                        iface.vlan_id = (
+                            int(phys_iface.get("vlan", 1))
+                            if phys_iface.get("vlan")
+                            and phys_iface.get("vlan").isdigit()
+                            else None
+                        )
+                        iface.allowed_vlans = allowed
+                        iface.mac_address = mac
 
                 session.commit()
 
@@ -181,29 +213,32 @@ class DB:
                         target_id = target_node.id
 
                 if source_id and target_id:
-                    link = (
-                        session.query(Link)
-                        .filter(
-                            (
-                                (Link.source_id == source_id)
-                                & (Link.target_id == target_id)
+                    source_node = session.query(Node).filter(Node.id == source_id).first()
+                    target_node = session.query(Node).filter(Node.id == target_id).first()
+                    if source_node and target_node:
+                        link = (
+                            session.query(Link)
+                            .filter(
+                                (
+                                    (Link.source_id == source_id)
+                                    & (Link.target_ip == target_node.ip_address)
+                                )
+                                | (
+                                    (Link.source_id == target_id)
+                                    & (Link.target_ip == source_node.ip_address)
+                                )
                             )
-                            | (
-                                (Link.source_id == target_id)
-                                & (Link.target_id == source_id)
-                            )
+                            .first()
                         )
-                        .first()
-                    )
 
-                    if not link:
-                        link = Link(
-                            source_id=source_id,
-                            target_id=target_id,
-                            source_interface=edge.get("source_port"),
-                            target_interface=edge.get("target_port"),
-                        )
-                        session.add(link)
+                        if not link:
+                            link = Link(
+                                source_id=source_id,
+                                target_ip=target_node.ip_address,
+                                source_interface=edge.get("source_port") or "unknown",
+                                target_interface=edge.get("target_port") or "unknown",
+                            )
+                            session.add(link)
             session.commit()
 
         return nodes_created
@@ -235,6 +270,7 @@ class DB:
                         mode=iface.mode,
                         vlan_id=iface.vlan_id,
                         allowed_vlans=iface.allowed_vlans,
+                        mac_address=getattr(iface, "mac_address", None),
                         is_protected=False,
                     )
                     session.add(interface)
@@ -279,6 +315,7 @@ class DB:
         vlan_id: int = None,
         description: str = None,
         allowed_vlans: str = None,
+        mac_address: str = None,
     ):
         with SessionLocal() as session:
             iface = Interface(
@@ -288,6 +325,7 @@ class DB:
                 mode=mode,
                 vlan_id=vlan_id,
                 allowed_vlans=allowed_vlans,
+                mac_address=mac_address,
                 is_protected=False,
             )
             session.add(iface)
@@ -300,6 +338,7 @@ class DB:
                 "mode": iface.mode,
                 "vlan_id": iface.vlan_id,
                 "allowed_vlans": iface.allowed_vlans,
+                "mac_address": iface.mac_address,
             }
 
     def delete_interface(self, interface_id: int) -> bool:
