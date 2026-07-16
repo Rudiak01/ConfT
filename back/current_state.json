@@ -7,57 +7,57 @@
         },
         {
             "vlan_id": "10",
-            "name": "PRODUCTION",
+            "name": "VLAN_VLAN_VLAN_VLAN_VLAN_VLAN_PR",
             "status": "active"
         },
         {
             "vlan_id": "20",
-            "name": "DATA",
+            "name": "VLAN_VLAN_VLAN_VLAN_VLAN_VLAN_DA",
             "status": "active"
         },
         {
             "vlan_id": "25",
-            "name": "VLAN0025",
+            "name": "VLAN_VLAN_VLAN_VLAN_VLAN_VLAN_VL",
             "status": "active"
         },
         {
             "vlan_id": "30",
-            "name": "VOICE",
+            "name": "VLAN_VLAN_VLAN_VLAN_VLAN_VLAN_VO",
             "status": "active"
         },
         {
             "vlan_id": "31",
-            "name": "VLAN0031",
+            "name": "VLAN_VLAN_VLAN_VLAN_VLAN_VLAN003",
             "status": "active"
         },
         {
             "vlan_id": "41",
-            "name": "VLAN0041",
+            "name": "VLAN_VLAN_VLAN_VLAN_VLAN_VLAN004",
             "status": "active"
         },
         {
             "vlan_id": "50",
-            "name": "HR",
+            "name": "VLAN_VLAN_VLAN_VLAN_VLAN_VLAN_HR",
             "status": "active"
         },
         {
             "vlan_id": "60",
-            "name": "SERVERS",
+            "name": "VLAN_VLAN_VLAN_VLAN_VLAN_VLAN_SE",
             "status": "active"
         },
         {
             "vlan_id": "99",
-            "name": "MANAGEMENT",
+            "name": "VLAN_VLAN_VLAN_VLAN_VLAN_VLAN_MA",
             "status": "active"
         },
         {
             "vlan_id": "100",
-            "name": "VLAN0100",
+            "name": "VLAN_VLAN_VLAN_VLAN_VLAN_VLAN010",
             "status": "active"
         },
         {
             "vlan_id": "150",
-            "name": "VLAN0150",
+            "name": "VLAN_VLAN_VLAN_VLAN_VLAN_VLAN015",
             "status": "active"
         },
         {
@@ -84,159 +84,242 @@
     "interfaces": [
         {
             "interface": "Fa0/1",
-            "vlan": "10",
+            "vlan": "1005",
             "mode": "static access",
-            "enabled": "Enabled"
+            "enabled": "Enabled",
+            "allowed_vlans": [
+                "ALL"
+            ]
         },
         {
             "interface": "Fa0/2",
             "vlan": "20",
             "mode": "static access",
-            "enabled": "Enabled"
+            "enabled": "Enabled",
+            "allowed_vlans": [
+                "ALL"
+            ]
         },
         {
             "interface": "Fa0/3",
             "vlan": "50",
             "mode": "static access",
-            "enabled": "Enabled"
+            "enabled": "Enabled",
+            "allowed_vlans": [
+                "ALL"
+            ]
         },
         {
             "interface": "Fa0/4",
             "vlan": "50",
             "mode": "static access",
-            "enabled": "Enabled"
+            "enabled": "Enabled",
+            "allowed_vlans": [
+                "ALL"
+            ]
         },
         {
             "interface": "Fa0/5",
             "vlan": "1",
-            "mode": "dynamic auto",
-            "enabled": "Enabled"
+            "mode": "trunk",
+            "enabled": "Enabled",
+            "allowed_vlans": [
+                "ALL"
+            ]
         },
         {
             "interface": "Fa0/6",
             "vlan": "1",
-            "mode": "dynamic auto",
-            "enabled": "Enabled"
+            "mode": "static access",
+            "enabled": "Enabled",
+            "allowed_vlans": [
+                "ALL"
+            ]
         },
         {
             "interface": "Fa0/7",
             "vlan": "1",
-            "mode": "dynamic auto",
-            "enabled": "Enabled"
+            "mode": "static access",
+            "enabled": "Enabled",
+            "allowed_vlans": [
+                "ALL"
+            ]
         },
         {
             "interface": "Fa0/8",
             "vlan": "1",
-            "mode": "dynamic auto",
-            "enabled": "Enabled"
+            "mode": "static access",
+            "enabled": "Enabled",
+            "allowed_vlans": [
+                "ALL"
+            ]
         },
         {
             "interface": "Fa0/9",
             "vlan": "1",
-            "mode": "dynamic auto",
-            "enabled": "Enabled"
+            "mode": "static access",
+            "enabled": "Enabled",
+            "allowed_vlans": [
+                "ALL"
+            ]
         },
         {
             "interface": "Fa0/10",
             "vlan": "30",
             "mode": "static access",
-            "enabled": "Enabled"
+            "enabled": "Enabled",
+            "allowed_vlans": [
+                "ALL"
+            ]
         },
         {
             "interface": "Fa0/11",
             "vlan": "1",
-            "mode": "dynamic auto",
-            "enabled": "Enabled"
+            "mode": "static access",
+            "enabled": "Enabled",
+            "allowed_vlans": [
+                "ALL"
+            ]
         },
         {
             "interface": "Fa0/12",
             "vlan": "60",
             "mode": "static access",
-            "enabled": "Enabled"
+            "enabled": "Enabled",
+            "allowed_vlans": [
+                "ALL"
+            ]
         },
         {
             "interface": "Fa0/13",
             "vlan": "1",
-            "mode": "dynamic auto",
-            "enabled": "Enabled"
+            "mode": "static access",
+            "enabled": "Enabled",
+            "allowed_vlans": [
+                "ALL"
+            ]
         },
         {
             "interface": "Fa0/14",
             "vlan": "1",
-            "mode": "dynamic auto",
-            "enabled": "Enabled"
+            "mode": "static access",
+            "enabled": "Enabled",
+            "allowed_vlans": [
+                "ALL"
+            ]
         },
         {
             "interface": "Fa0/15",
             "vlan": "1",
-            "mode": "dynamic auto",
-            "enabled": "Enabled"
+            "mode": "static access",
+            "enabled": "Enabled",
+            "allowed_vlans": [
+                "ALL"
+            ]
         },
         {
             "interface": "Fa0/16",
             "vlan": "1",
-            "mode": "dynamic auto",
-            "enabled": "Enabled"
+            "mode": "static access",
+            "enabled": "Enabled",
+            "allowed_vlans": [
+                "ALL"
+            ]
         },
         {
             "interface": "Fa0/17",
             "vlan": "1",
-            "mode": "dynamic auto",
-            "enabled": "Enabled"
+            "mode": "static access",
+            "enabled": "Enabled",
+            "allowed_vlans": [
+                "ALL"
+            ]
         },
         {
             "interface": "Fa0/18",
             "vlan": "1",
-            "mode": "dynamic auto",
-            "enabled": "Enabled"
+            "mode": "static access",
+            "enabled": "Enabled",
+            "allowed_vlans": [
+                "ALL"
+            ]
         },
         {
             "interface": "Fa0/19",
             "vlan": "1",
-            "mode": "dynamic auto",
-            "enabled": "Enabled"
+            "mode": "static access",
+            "enabled": "Enabled",
+            "allowed_vlans": [
+                "ALL"
+            ]
         },
         {
             "interface": "Fa0/20",
             "vlan": "1",
-            "mode": "dynamic auto",
-            "enabled": "Enabled"
+            "mode": "static access",
+            "enabled": "Enabled",
+            "allowed_vlans": [
+                "ALL"
+            ]
         },
         {
             "interface": "Fa0/21",
             "vlan": "1",
-            "mode": "dynamic auto",
-            "enabled": "Enabled"
+            "mode": "static access",
+            "enabled": "Enabled",
+            "allowed_vlans": [
+                "ALL"
+            ]
         },
         {
             "interface": "Fa0/22",
             "vlan": "1",
-            "mode": "dynamic auto",
-            "enabled": "Enabled"
+            "mode": "static access",
+            "enabled": "Enabled",
+            "allowed_vlans": [
+                "ALL"
+            ]
         },
         {
             "interface": "Fa0/23",
             "vlan": "1",
             "mode": "trunk",
-            "enabled": "Enabled"
+            "enabled": "Enabled",
+            "allowed_vlans": [
+                "10",
+                "20",
+                "30",
+                "50",
+                "60"
+            ]
         },
         {
             "interface": "Fa0/24",
             "vlan": "1",
-            "mode": "dynamic auto",
-            "enabled": "Enabled"
+            "mode": "static access",
+            "enabled": "Enabled",
+            "allowed_vlans": [
+                "ALL"
+            ]
         },
         {
             "interface": "Gi0/1",
             "vlan": "1",
-            "mode": "dynamic auto",
-            "enabled": "Enabled"
+            "mode": "static access",
+            "enabled": "Enabled",
+            "allowed_vlans": [
+                "ALL"
+            ]
         },
         {
             "interface": "Gi0/2",
             "vlan": "1",
-            "mode": "dynamic auto",
-            "enabled": "Enabled"
+            "mode": "trunk",
+            "enabled": "Enabled",
+            "allowed_vlans": [
+                "10",
+                "20"
+            ]
         }
     ],
     "mac": [
@@ -361,7 +444,13 @@
             ]
         },
         {
-            "mac": "201f.3b8f.2a77",
+            "mac": "00e0.4c68.0108",
+            "interface": [
+                "Fa0/24"
+            ]
+        },
+        {
+            "mac": "7c10.c948.d171",
             "interface": [
                 "Gi0/1"
             ]
@@ -369,31 +458,7 @@
         {
             "mac": "345a.60ff.28c7",
             "interface": [
-                "Fa0/24"
-            ]
-        },
-        {
-            "mac": "3807.161a.8576",
-            "interface": [
-                "Gi0/1"
-            ]
-        },
-        {
-            "mac": "5ed3.2051.236e",
-            "interface": [
-                "Gi0/1"
-            ]
-        },
-        {
-            "mac": "70ee.5072.f6ea",
-            "interface": [
-                "Gi0/1"
-            ]
-        },
-        {
-            "mac": "ec53.8282.3cf7",
-            "interface": [
-                "Gi0/1"
+                "Fa0/4"
             ]
         }
     ],
@@ -405,10 +470,72 @@
             "interface": "Vlan1"
         },
         {
+            "interface": "Vlan1"
+        },
+        {
             "interface": "Vlan69"
         }
     ],
-    "lldp": [],
+    "lldp": [
+        {
+            "neighbor_name": "",
+            "management_ip": "",
+            "local_port": "",
+            "remote_port": "",
+            "platform": "",
+            "manufacturer": "",
+            "neighbor_description": "",
+            "chassis_id": "LAPTOP-SNRQEIBT",
+            "mac_address": "",
+            "port_id": "00e0.4c68.0108"
+        },
+        {
+            "neighbor_name": "Switch-HP-48",
+            "management_ip": "192.168.50.14",
+            "local_port": "",
+            "remote_port": "1",
+            "platform": "",
+            "manufacturer": "",
+            "neighbor_description": "ProCurve j9020a Switch 2510-48, revision U.11.67, ROM R.10.06 (/sw/code/build/dosx)",
+            "chassis_id": "001f.285c.0680",
+            "mac_address": "",
+            "port_id": "1"
+        },
+        {
+            "neighbor_name": "",
+            "management_ip": "",
+            "local_port": "",
+            "remote_port": "",
+            "platform": "",
+            "manufacturer": "",
+            "neighbor_description": "",
+            "chassis_id": "DESKTOP-5J5BI3M",
+            "mac_address": "",
+            "port_id": "345a.60ff.28c7"
+        }
+    ],
+    "lldp_brief": [
+        {
+            "neighbor_name": "LAPTOP-SNRQEIBT",
+            "local_port": "Fa0/24",
+            "remote_port": "00e0.4c68.0108",
+            "capabilities": ""
+        },
+        {
+            "neighbor_name": "Switch-HP-48",
+            "local_port": "Gi0/2",
+            "remote_port": "1",
+            "capabilities": "B"
+        },
+        {
+            "neighbor_name": "DESKTOP-5J5BI3M",
+            "local_port": "Fa0/4",
+            "remote_port": "345a.60ff.28c7",
+            "capabilities": ""
+        }
+    ],
+    "cdp": [],
+    "cdp_brief": [],
     "poe": [],
     "port_channels": [],
     "stp": [
@@ -417,7 +544,130 @@
         },
         {
             "vlan": "1"
+        },
+        {
+            "vlan": "10"
+        },
+        {
+            "vlan": "20"
+        },
+        {
+            "vlan": "50"
         }
     ],
-    "running_config": "Building configuration...\n\nCurrent configuration : 3881 bytes\n!\n! Last configuration change at 04:40:18 UTC Mon Mar 1 1993 by admin\n!\nversion 15.0\nno service pad\nservice timestamps debug datetime msec\nservice timestamps log datetime msec\nno service password-encryption\n!\nhostname Switch\n!\nboot-start-marker\nboot-end-marker\n!\n!\nusername admin privilege 15 secret 5 $1$tZfC$eayoF7u.ZTtBjwLhilHPO.\nno aaa new-model\nsystem mtu routing 1500\n!\n!\nip domain-name domain.local\n!\n!\ncrypto pki trustpoint TP-self-signed-1334470144\n enrollment selfsigned\n subject-name cn=IOS-Self-Signed-Certificate-1334470144\n revocation-check none\n rsakeypair TP-self-signed-1334470144\n!\n!\ncrypto pki certificate chain TP-self-signed-1334470144\n certificate self-signed 01\n  3082022B 30820194 A0030201 02020101 300D0609 2A864886 F70D0101 05050030 \n  31312F30 2D060355 04031326 494F532D 53656C66 2D536967 6E65642D 43657274 \n  69666963 6174652D 31333334 34373031 3434301E 170D3933 30333031 30303031 \n  30325A17 0D323030 31303130 30303030 305A3031 312F302D 06035504 03132649 \n  4F532D53 656C662D 5369676E 65642D43 65727469 66696361 74652D31 33333434 \n  37303134 3430819F 300D0609 2A864886 F70D0101 01050003 818D0030 81890281 \n  8100C613 A2217CEE 17DA74B6 8B94EAEC 68F267B7 2899256A FEFE50A4 CD95B7B5 \n  4A399674 E3BDBA60 971BEB86 D1A41AC1 9D988E04 EBEAA7C1 48347A1B F9AF8868 \n  7DF11672 01C0E5D9 5A899E5D BB8FC627 D3972E67 186F6DFC 0895EBF9 0ACFD2ED \n  5BE9DBA7 43FB8E1E 2827D8B0 B7A2ED10 E7F0ECCA 1A80EBDA AA550397 EE5FA7CD \n  78770203 010001A3 53305130 0F060355 1D130101 FF040530 030101FF 301F0603 \n  551D2304 18301680 14945CE0 059488DF 7064879C 0D90AE9E BA1DA607 14301D06 \n  03551D0E 04160414 945CE005 9488DF70 64879C0D 90AE9EBA 1DA60714 300D0609 \n  2A864886 F70D0101 05050003 81810062 139E38AE 7834D4C1 C7393D99 77DE9F85 \n  7513E8B0 A95DE75C FDB3503B 1E050FCA F5694E89 BEAC3D56 741DD23C D0552D6C \n  90DB6297 7919FEB7 B04D1C39 DC24B0F6 2B2A238E 45882611 70617E7D 9182E3FD \n  71A8F2D9 A6145147 6B7E5FDC F1834877 00B0E0A1 F7D72FBC A1D8626D B02B0518 \n  704DDBBC 1398C854 2BC21F5A 57BE86\n  \tquit\n!\n!\n!\n!\n!\nspanning-tree mode pvst\nspanning-tree extend system-id\n!\nvlan internal allocation policy ascending\n!\nip ssh version 2\n!\n!\n!\n!\n!\ninterface FastEthernet0/1\n description Poste_Compta_01\n switchport access vlan 10\n switchport mode access\n spanning-tree portfast\n!\ninterface FastEthernet0/2\n description Poste_IT_01\n switchport access vlan 20\n switchport mode access\n spanning-tree portfast\n!\ninterface FastEthernet0/3\n description Poste_RH_01\n switchport access vlan 50\n switchport mode access\n spanning-tree portfast\n!\ninterface FastEthernet0/4\n description Poste_RH_02\n switchport access vlan 50\n switchport mode access\n spanning-tree portfast\n!\ninterface FastEthernet0/5\n!\ninterface FastEthernet0/6\n!\ninterface FastEthernet0/7\n!\ninterface FastEthernet0/8\n!\ninterface FastEthernet0/9\n!\ninterface FastEthernet0/10\n description Telephone_IP\n switchport access vlan 30\n switchport mode access\n switchport voice vlan 30\n spanning-tree portfast\n!\ninterface FastEthernet0/11\n!\ninterface FastEthernet0/12\n description Serveur_Local\n switchport access vlan 60\n switchport mode access\n!\ninterface FastEthernet0/13\n!\ninterface FastEthernet0/14\n!\ninterface FastEthernet0/15\n!\ninterface FastEthernet0/16\n!\ninterface FastEthernet0/17\n!\ninterface FastEthernet0/18\n!\ninterface FastEthernet0/19\n!\ninterface FastEthernet0/20\n!\ninterface FastEthernet0/21\n!\ninterface FastEthernet0/22\n!\ninterface FastEthernet0/23\n description Uplink_Distribution\n switchport trunk allowed vlan 10,20,30,50,60\n switchport mode trunk\n!\ninterface FastEthernet0/24\n!\ninterface GigabitEthernet0/1\n!\ninterface GigabitEthernet0/2\n!\ninterface Vlan1\n ip address 192.168.1.2 255.255.255.0\n!\ninterface Vlan69\n ip address 192.168.69.1 255.255.255.0\n!\nip default-gateway 192.168.1.1\nip http server\nip http secure-server\n!\nvstack\n!\nline con 0\nline vty 0 4\n login local\n transport input ssh\nline vty 5 15\n login\n!\nend\n"
+    "phys_interfaces": [
+        {
+            "interface": "Vlan1",
+            "mac_address": "8cb6.4f8a.6640"
+        },
+        {
+            "interface": "Vlan69",
+            "mac_address": "8cb6.4f8a.6641"
+        },
+        {
+            "interface": "FastEthernet0/1",
+            "mac_address": "8cb6.4f8a.6601"
+        },
+        {
+            "interface": "FastEthernet0/2",
+            "mac_address": "8cb6.4f8a.6602"
+        },
+        {
+            "interface": "FastEthernet0/3",
+            "mac_address": "8cb6.4f8a.6603"
+        },
+        {
+            "interface": "FastEthernet0/4",
+            "mac_address": "8cb6.4f8a.6604"
+        },
+        {
+            "interface": "FastEthernet0/5",
+            "mac_address": "8cb6.4f8a.6605"
+        },
+        {
+            "interface": "FastEthernet0/6",
+            "mac_address": "8cb6.4f8a.6606"
+        },
+        {
+            "interface": "FastEthernet0/7",
+            "mac_address": "8cb6.4f8a.6607"
+        },
+        {
+            "interface": "FastEthernet0/8",
+            "mac_address": "8cb6.4f8a.6608"
+        },
+        {
+            "interface": "FastEthernet0/9",
+            "mac_address": "8cb6.4f8a.6609"
+        },
+        {
+            "interface": "FastEthernet0/10",
+            "mac_address": "8cb6.4f8a.660a"
+        },
+        {
+            "interface": "FastEthernet0/11",
+            "mac_address": "8cb6.4f8a.660b"
+        },
+        {
+            "interface": "FastEthernet0/12",
+            "mac_address": "8cb6.4f8a.660c"
+        },
+        {
+            "interface": "FastEthernet0/13",
+            "mac_address": "8cb6.4f8a.660d"
+        },
+        {
+            "interface": "FastEthernet0/14",
+            "mac_address": "8cb6.4f8a.660e"
+        },
+        {
+            "interface": "FastEthernet0/15",
+            "mac_address": "8cb6.4f8a.660f"
+        },
+        {
+            "interface": "FastEthernet0/16",
+            "mac_address": "8cb6.4f8a.6610"
+        },
+        {
+            "interface": "FastEthernet0/17",
+            "mac_address": "8cb6.4f8a.6611"
+        },
+        {
+            "interface": "FastEthernet0/18",
+            "mac_address": "8cb6.4f8a.6612"
+        },
+        {
+            "interface": "FastEthernet0/19",
+            "mac_address": "8cb6.4f8a.6613"
+        },
+        {
+            "interface": "FastEthernet0/20",
+            "mac_address": "8cb6.4f8a.6614"
+        },
+        {
+            "interface": "FastEthernet0/21",
+            "mac_address": "8cb6.4f8a.6615"
+        },
+        {
+            "interface": "FastEthernet0/22",
+            "mac_address": "8cb6.4f8a.6616"
+        },
+        {
+            "interface": "FastEthernet0/23",
+            "mac_address": "8cb6.4f8a.6617"
+        },
+        {
+            "interface": "FastEthernet0/24",
+            "mac_address": "8cb6.4f8a.6618"
+        },
+        {
+            "interface": "GigabitEthernet0/1",
+            "mac_address": "8cb6.4f8a.6619"
+        },
+        {
+            "interface": "GigabitEthernet0/2",
+            "mac_address": "8cb6.4f8a.661a"
+        }
+    ],
+    "running_config": "Building configuration...\n\nCurrent configuration : 4392 bytes\n!\n! Last configuration change at 01:27:01 UTC Mon Mar 1 1993 by admin\n!\nversion 15.0\nno service pad\nservice timestamps debug datetime msec\nservice timestamps log datetime msec\nno service password-encryption\n!\nhostname Switch-Cisco\n!\nboot-start-marker\nboot-end-marker\n!\n!\nusername admin privilege 15 secret 5 $1$tZfC$eayoF7u.ZTtBjwLhilHPO.\nno aaa new-model\nsystem mtu routing 1500\n!\n!\nip domain-name domain.local\n!\n!\ncrypto pki trustpoint TP-self-signed-1334470144\n enrollment selfsigned\n subject-name cn=IOS-Self-Signed-Certificate-1334470144\n revocation-check none\n rsakeypair TP-self-signed-1334470144\n!\n!\ncrypto pki certificate chain TP-self-signed-1334470144\n certificate self-signed 01\n  3082022B 30820194 A0030201 02020101 300D0609 2A864886 F70D0101 05050030 \n  31312F30 2D060355 04031326 494F532D 53656C66 2D536967 6E65642D 43657274 \n  69666963 6174652D 31333334 34373031 3434301E 170D3933 30333031 30303031 \n  30325A17 0D323030 31303130 30303030 305A3031 312F302D 06035504 03132649 \n  4F532D53 656C662D 5369676E 65642D43 65727469 66696361 74652D31 33333434 \n  37303134 3430819F 300D0609 2A864886 F70D0101 01050003 818D0030 81890281 \n  8100C613 A2217CEE 17DA74B6 8B94EAEC 68F267B7 2899256A FEFE50A4 CD95B7B5 \n  4A399674 E3BDBA60 971BEB86 D1A41AC1 9D988E04 EBEAA7C1 48347A1B F9AF8868 \n  7DF11672 01C0E5D9 5A899E5D BB8FC627 D3972E67 186F6DFC 0895EBF9 0ACFD2ED \n  5BE9DBA7 43FB8E1E 2827D8B0 B7A2ED10 E7F0ECCA 1A80EBDA AA550397 EE5FA7CD \n  78770203 010001A3 53305130 0F060355 1D130101 FF040530 030101FF 301F0603 \n  551D2304 18301680 14945CE0 059488DF 7064879C 0D90AE9E BA1DA607 14301D06 \n  03551D0E 04160414 945CE005 9488DF70 64879C0D 90AE9EBA 1DA60714 300D0609 \n  2A864886 F70D0101 05050003 81810062 139E38AE 7834D4C1 C7393D99 77DE9F85 \n  7513E8B0 A95DE75C FDB3503B 1E050FCA F5694E89 BEAC3D56 741DD23C D0552D6C \n  90DB6297 7919FEB7 B04D1C39 DC24B0F6 2B2A238E 45882611 70617E7D 9182E3FD \n  71A8F2D9 A6145147 6B7E5FDC F1834877 00B0E0A1 F7D72FBC A1D8626D B02B0518 \n  704DDBBC 1398C854 2BC21F5A 57BE86\n  \tquit\n!\n!\n!\n!\n!\nspanning-tree mode pvst\nspanning-tree extend system-id\n!\nvlan internal allocation policy ascending\nlldp run\n!\nip ssh version 2\n!\n!\n!\n!\n!\ninterface FastEthernet0/1\n description Poste_Compta_01\n switchport access vlan 1005\n switchport mode access\n spanning-tree portfast\n!\ninterface FastEthernet0/2\n description Poste_IT_01\n switchport access vlan 20\n switchport mode access\n spanning-tree portfast\n!\ninterface FastEthernet0/3\n description Poste_RH_01\n switchport access vlan 50\n switchport mode access\n spanning-tree portfast\n!\ninterface FastEthernet0/4\n description Poste_RH_02\n switchport access vlan 50\n switchport mode access\n spanning-tree portfast\n!\ninterface FastEthernet0/5\n switchport mode trunk\n!\ninterface FastEthernet0/6\n switchport mode access\n!\ninterface FastEthernet0/7\n switchport mode access\n!\ninterface FastEthernet0/8\n switchport mode access\n!\ninterface FastEthernet0/9\n switchport mode access\n!\ninterface FastEthernet0/10\n description Telephone_IP\n switchport access vlan 30\n switchport mode access\n switchport voice vlan 30\n spanning-tree portfast\n!\ninterface FastEthernet0/11\n switchport mode access\n!\ninterface FastEthernet0/12\n description Serveur_Local\n switchport access vlan 60\n switchport mode access\n!\ninterface FastEthernet0/13\n switchport mode access\n!\ninterface FastEthernet0/14\n switchport mode access\n!\ninterface FastEthernet0/15\n switchport mode access\n!\ninterface FastEthernet0/16\n switchport mode access\n!\ninterface FastEthernet0/17\n switchport mode access\n!\ninterface FastEthernet0/18\n switchport mode access\n!\ninterface FastEthernet0/19\n switchport mode access\n!\ninterface FastEthernet0/20\n switchport mode access\n!\ninterface FastEthernet0/21\n switchport mode access\n!\ninterface FastEthernet0/22\n switchport mode access\n!\ninterface FastEthernet0/23\n description Uplink_Distribution\n switchport trunk allowed vlan 10,20,30,50,60\n switchport mode trunk\n!\ninterface FastEthernet0/24\n switchport mode access\n!\ninterface GigabitEthernet0/1\n switchport mode access\n!\ninterface GigabitEthernet0/2\n switchport trunk allowed vlan 10,20\n switchport mode trunk\n!\ninterface Vlan1\n ip address 192.168.50.13 255.255.255.0\n!\ninterface Vlan69\n ip address 192.168.69.1 255.255.255.0\n!\nip default-gateway 192.168.50.1\nip http server\nip http secure-server\n!\nvstack\n!\nline con 0\nline vty 0 4\n login local\n transport input ssh\nline vty 5 15\n login\n!\nend\n"
 }

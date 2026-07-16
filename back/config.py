@@ -20,9 +20,9 @@ if "PROTECTED_INTERFACES" not in globals():
 
 PROTECTED_INTERFACES.clear()
 PROTECTED_INTERFACES.extend([
-    "GigabitEthernet0/1",
-    "GigabitEthernet0/2",
-    "FastEthernet0/24"
+    # "GigabitEthernet0/1",
+    # "GigabitEthernet0/2",
+    # "FastEthernet0/24"
 ])
 
 # Override dynamically if config.json exists
@@ -38,4 +38,4 @@ if os.path.exists(_config_json_path):
                 PROTECTED_INTERFACES.clear()
                 PROTECTED_INTERFACES.extend(_data["PROTECTED_INTERFACES"])
     except Exception as _e:
-        print(f"Warning: Failed to load config.json: {_e}")
+        print(f"Warning: Failed to load config.json: {_e}")

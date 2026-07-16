@@ -6,6 +6,7 @@ from netmiko.exceptions import NetmikoTimeoutException, NetmikoAuthenticationExc
 from .ssh_connect import connect
 from .config import SWITCH
 from .vendor_syntax import VENDOR_SYNTAX
+from .apply_config import normalize_interface_name
 
 class DeviceUnreachableError(Exception):
     pass
@@ -16,6 +17,10 @@ class DeviceAuthenticationError(Exception):
 def autodetect_device_type(params):
     detect_params = params.copy()
     detect_params["device_type"] = "autodetect"
+    if "read_timeout_override" not in detect_params:
+        detect_params["read_timeout_override"] = 60
+    if "conn_timeout" not in detect_params:
+        detect_params["conn_timeout"] = 20
     try:
         guesser = SSHDetect(**detect_params)
         best_match = guesser.autodetect()
@@ -198,7 +203,7 @@ def normalize_data(raw_data, template_mapping):
 
 def fetch_device_config(params):
     device_type = params.get("device_type", "cisco_ios")
-    if device_type == "cisco_ios":
+    if device_type in ["autodetect", "switch"]:
         print(f"Checking device type for {params.get('host')}...")
         try:
             detected_type = autodetect_device_type(params)
@@ -220,7 +225,27 @@ def fetch_device_config(params):
     extracted_data = {}
 
     try:
-        connection = connect(params)
+        try:
+            connection = connect(params)
+        except Exception as e:
+            err_msg = str(e)
+            if "Pattern not detected" in err_msg and params.get("device_type") != "autodetect":
+                print(f"Pattern detection failed for {params.get('host')} using device_type '{params.get('device_type')}'. Attempting autodetection fallback...")
+                try:
+                    detected_type = autodetect_device_type(params)
+                    if detected_type:
+                        device_type = map_device_type(detected_type)
+                        print(f"Autodetection fallback succeeded: {detected_type} (mapped to: {device_type})")
+                        params["device_type"] = device_type
+                        syntax = VENDOR_SYNTAX.get(device_type, VENDOR_SYNTAX["cisco_ios"])
+                        connection = connect(params)
+                    else:
+                        raise e
+                except Exception as fallback_err:
+                    print(f"Fallback autodetection failed for {params.get('host')}: {fallback_err}")
+                    raise e
+            else:
+                raise e
         
         # BOUCLE DYNAMIQUE : On parcourt toutes les commandes de lecture prévues
         for feature, command in syntax["read"].items():
@@ -464,13 +489,14 @@ def crawl_network(seed_ip, credentials):
             name = pi.get("interface")
             mac = pi.get("mac_address")
             if name and mac:
-                mac_mapping[name] = mac
+                mac_mapping[normalize_interface_name(name)] = mac
 
         # Associate MAC address with normalized interfaces
         for iface in interfaces:
             iface_name = iface.get("interface")
-            if iface_name in mac_mapping:
-                iface["mac_address"] = mac_mapping[iface_name]
+            norm_iface_name = normalize_interface_name(iface_name)
+            if norm_iface_name in mac_mapping:
+                iface["mac_address"] = mac_mapping[norm_iface_name]
 
         nodes[ip] = {
             "hostname": hostname,
@@ -784,6 +810,21 @@ def crawl_network(seed_ip, credentials):
                     "mode": "access",
                     "mac_address": host_mac
                 }]
+
+    # Merge learned MAC addresses from discovered_neighbors into successfully crawled nodes
+    for ip, data in discovered_neighbors.items():
+        if ip in nodes:
+            # Supplement crawled node interfaces with MAC addresses learned via LLDP/CDP
+            for learned_iface in data.get("interfaces", []):
+                learned_name = learned_iface.get("interface")
+                learned_mac = learned_iface.get("mac_address")
+                if learned_name and learned_mac:
+                    norm_learned = normalize_interface_name(learned_name)
+                    for crawled_iface in nodes[ip].get("interfaces", []):
+                        crawled_name = crawled_iface.get("interface")
+                        if crawled_name and normalize_interface_name(crawled_name) == norm_learned:
+                            if not crawled_iface.get("mac_address"):
+                                crawled_iface["mac_address"] = learned_mac
 
     # Add unmanaged neighbors to the nodes dictionary
     for remote_ip, data in discovered_neighbors.items():

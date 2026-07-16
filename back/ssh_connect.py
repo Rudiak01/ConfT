@@ -7,12 +7,19 @@ except ImportError:
 def connect(connection_params=None):
     if connection_params is None:
         connection_params = SWITCH
-    connection = ConnectHandler(**connection_params)
+    
+    params = connection_params.copy()
+    if "read_timeout_override" not in params:
+        params["read_timeout_override"] = 60
+    if "conn_timeout" not in params:
+        params["conn_timeout"] = 20
+
+    connection = ConnectHandler(**params)
     try:
         connection.enable()
     except Exception:
         pass
-    if connection_params.get("device_type", "cisco_ios") == "cisco_ios":
+    if params.get("device_type", "cisco_ios") == "cisco_ios":
         try:
             connection.send_command("terminal length 0")
         except Exception:
