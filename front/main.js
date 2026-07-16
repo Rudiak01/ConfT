@@ -119,6 +119,121 @@ class SDNController {
         // Fetch existing topology and load configuration on load
         this.loadSettings();
         this.fetchRealTopology();
+
+        // Initialize panel resizers and layout change listeners
+        this.initResizers();
+        window.addEventListener('resize', () => {
+            this.handleResize();
+        });
+    }
+
+    handleResize() {
+        const container = document.getElementById('graph-container');
+        if (!container) return;
+        this.width = container.clientWidth;
+        this.height = container.clientHeight;
+
+        if (this.simulation) {
+            this.simulation.force("center", d3.forceCenter(this.width / 2, this.height / 2));
+            this.simulation.alpha(0.1).restart();
+        }
+    }
+
+    initResizers() {
+        const sidebar = document.querySelector('.sidebar');
+        const sidebarResizer = document.getElementById('sidebar-resizer');
+        const bottomPanel = document.getElementById('bottom-panel');
+        const bottomResizer = document.getElementById('bottom-panel-resizer');
+
+        // Restore sizes from localStorage
+        const savedSidebarWidth = localStorage.getItem('conft_sidebar_width');
+        if (savedSidebarWidth && sidebar) {
+            sidebar.style.width = savedSidebarWidth + 'px';
+        }
+
+        const savedBottomHeight = localStorage.getItem('conft_bottom_panel_height');
+        if (savedBottomHeight && bottomPanel) {
+            bottomPanel.style.height = savedBottomHeight + 'px';
+        }
+
+        // Trigger an initial resize calculation after the DOM settles
+        setTimeout(() => this.handleResize(), 100);
+
+        // --- Sidebar Resizer Drag Logic ---
+        if (sidebarResizer && sidebar) {
+            sidebarResizer.addEventListener('mousedown', (e) => {
+                e.preventDefault();
+                document.body.classList.add('dragging-v');
+                sidebarResizer.classList.add('dragging');
+
+                const startX = e.clientX;
+                const startWidth = sidebar.offsetWidth;
+
+                const onMouseMove = (moveEvent) => {
+                    const deltaX = moveEvent.clientX - startX;
+                    let newWidth = startWidth + deltaX;
+
+                    // Set bounds
+                    const minWidth = 280;
+                    const maxWidth = Math.min(800, window.innerWidth * 0.6);
+                    if (newWidth < minWidth) newWidth = minWidth;
+                    if (newWidth > maxWidth) newWidth = maxWidth;
+
+                    sidebar.style.width = newWidth + 'px';
+                    this.handleResize();
+                };
+
+                const onMouseUp = () => {
+                    document.body.classList.remove('dragging-v');
+                    sidebarResizer.classList.remove('dragging');
+                    localStorage.setItem('conft_sidebar_width', sidebar.offsetWidth);
+
+                    document.removeEventListener('mousemove', onMouseMove);
+                    document.removeEventListener('mouseup', onMouseUp);
+                };
+
+                document.addEventListener('mousemove', onMouseMove);
+                document.addEventListener('mouseup', onMouseUp);
+            });
+        }
+
+        // --- Bottom Panel Resizer Drag Logic ---
+        if (bottomResizer && bottomPanel) {
+            bottomResizer.addEventListener('mousedown', (e) => {
+                e.preventDefault();
+                document.body.classList.add('dragging-h');
+                bottomResizer.classList.add('dragging');
+
+                const startY = e.clientY;
+                const startHeight = bottomPanel.offsetHeight;
+
+                const onMouseMove = (moveEvent) => {
+                    const deltaY = moveEvent.clientY - startY;
+                    let newHeight = startHeight - deltaY; // Dragging up (negative deltaY) increases height
+
+                    // Set bounds
+                    const minHeight = 150;
+                    const maxHeight = Math.min(window.innerHeight * 0.8, window.innerHeight - 100);
+                    if (newHeight < minHeight) newHeight = minHeight;
+                    if (newHeight > maxHeight) newHeight = maxHeight;
+
+                    bottomPanel.style.height = newHeight + 'px';
+                    this.handleResize();
+                };
+
+                const onMouseUp = () => {
+                    document.body.classList.remove('dragging-h');
+                    bottomResizer.classList.remove('dragging');
+                    localStorage.setItem('conft_bottom_panel_height', bottomPanel.offsetHeight);
+
+                    document.removeEventListener('mousemove', onMouseMove);
+                    document.removeEventListener('mouseup', onMouseUp);
+                };
+
+                document.addEventListener('mousemove', onMouseMove);
+                document.addEventListener('mouseup', onMouseUp);
+            });
+        }
     }
 
     isSwitch(type) {
