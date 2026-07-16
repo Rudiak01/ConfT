@@ -81,8 +81,21 @@ def get_nodes():
     _db = DB()
     nodes = _db.get_nodes()
     routers = [n for n in nodes if "router" in (n.device_type or "").lower()]
-    switches = [n for n in nodes if "switch" in (n.device_type or "").lower()]
-    hosts = []  # À compléter selon votre logique métier
+    hosts = [
+        TopologyNode(
+            id=n.id,
+            ip_address=n.ip_address,
+            hostname=n.hostname or "",
+            device_type=n.device_type or "",
+        )
+        for n in nodes if "host" in (n.device_type or "").lower()
+    ]
+    switches = []
+    for n in nodes:
+        dt_lower = (n.device_type or "").lower()
+        if "router" in dt_lower or "host" in dt_lower or "external" in dt_lower:
+            continue
+        switches.append(n)
 
     return {
         "Routers": [
@@ -122,6 +135,7 @@ def get_node_interfaces(id: int):
             mode=i.mode,
             vlan_id=i.vlan_id,
             allowed_vlans=i.allowed_vlans,
+            mac_address=i.mac_address,
         )
         for i in node.interfaces
     ]
@@ -150,6 +164,7 @@ def create_interface(node_id: int, data):
             vlan_id=data.vlan_id,
             description=data.description,
             allowed_vlans=data.allowed_vlans,
+            mac_address=data.mac_address,
         )
         return {
             "status": "success",
@@ -192,6 +207,9 @@ def run_discovery(credentials_host: str, credentials_data: dict):
             result.get("nodes", {}), result.get("edges", [])
         )
 
+        # Update connection settings to persist discovery credentials
+        update_settings(credentials_data)
+
         return {
             "status": "success",
             "nodes_discovered": len(nodes_created),
@@ -221,7 +239,9 @@ def get_settings():
 def update_settings(settings: dict):
 
 
-    config_json_path = os.path.join("back", "config.json")
+    import back.config
+    _dir = os.path.dirname(os.path.abspath(back.config.__file__))
+    config_json_path = os.path.join(_dir, "config.json")
     data = {}
     if os.path.exists(config_json_path):
         try:
@@ -290,6 +310,10 @@ def deploy_topology_to_network():
                     "message": "Configuration simulée avec succès (nœud de démonstration).",
                 }
             )
+            continue
+
+        if node.device_type == "host" or node.vendor == "host" or (node.device_type or "").lower() == "host":
+            # Skip host nodes since they are unmanaged endpoints and don't accept configuration
             continue
 
         vlans = []

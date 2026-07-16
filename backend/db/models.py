@@ -43,6 +43,7 @@ class Interface(Base):
     allowed_vlans: Mapped[str] = mapped_column(
         Text, nullable=True
     )  # JSON list or comma-separated
+    mac_address: Mapped[str] = mapped_column(String(50), nullable=True)
     is_protected: Mapped[bool] = mapped_column(Boolean, default=False)
 
     node = relationship("Node", back_populates="interfaces")
@@ -65,3 +66,12 @@ class Link(Base):
 
 
 Base.metadata.create_all(engine)
+
+# Safely add mac_address column to interfaces if it is missing
+from sqlalchemy import text
+with engine.begin() as conn:
+    try:
+        conn.execute(text("ALTER TABLE interfaces ADD COLUMN mac_address VARCHAR(50) NULL;"))
+    except Exception:
+        pass
+

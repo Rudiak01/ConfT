@@ -3,6 +3,23 @@ from .ssh_connect import connect
 from .config import SWITCH, PROTECTED_INTERFACES
 from .vendor_syntax import VENDOR_SYNTAX
 
+def normalize_interface_name(name):
+    if not name:
+        return ""
+    name_lower = name.lower()
+    replacements = [
+        ("fastethernet", "fa"),
+        ("gigabitethernet", "gi"),
+        ("tenethernet", "te"),
+        ("ethernet", "eth"),
+        ("vlan", "vl"),
+    ]
+    res = name_lower
+    for long_form, short_form in replacements:
+        res = res.replace(long_form, short_form)
+    res = res.replace(" ", "")
+    return res
+
 def build_commands(data, device_type):
     commands = []
     syntax = VENDOR_SYNTAX.get(device_type, VENDOR_SYNTAX["cisco_ios"])["write"]
@@ -24,42 +41,96 @@ def build_commands(data, device_type):
 
     # 3. INTERFACES
     for iface in data.get("interfaces", []):
-        iface_name = iface["interface"]
+        iface_name = iface.get("interface")
+        if not iface_name:
+            continue
 
-        if iface_name in PROTECTED_INTERFACES:
+        # Normaliser le nom de l'interface pour comparaison
+        norm_name = normalize_interface_name(iface_name)
+        is_protected = False
+        for protected in PROTECTED_INTERFACES:
+            if normalize_interface_name(protected) == norm_name:
+                is_protected = True
+                break
+
+        if is_protected:
             print(f"Attention : Interface protégée ignorée : {iface_name}")
             continue
 
-        commands.append(syntax["interface"].format(iface=iface_name))
+        # Déterminer le mode (access / trunk / unknown)
+        mode_val = iface.get("mode") or ""
+        mode_lower = mode_val.lower()
 
-        if "description" in iface and "desc" in syntax:
-            commands.append(syntax["desc"].format(desc=iface['description']))
+        is_access = False
+        is_trunk = False
 
-        mode = iface.get("mode")
-        if mode == "access" and "mode_access" in syntax:
-            commands.append(syntax["mode_access"])
-            if "access_vlan" in syntax:
-                commands.append(syntax["access_vlan"].format(vlan=iface['vlan']))
+        if "access" in mode_lower:
+            is_access = True
+        elif "trunk" in mode_lower:
+            is_trunk = True
+        elif mode_lower.endswith("fdx") or mode_lower.endswith("hdx"):
+            is_access = True
+
+        # Obtenir les valeurs de VLAN
+        vlan_val = iface.get("vlan") or iface.get("vlan_id")
+        vlan_str = str(vlan_val).strip() if vlan_val is not None else ""
+        if vlan_str == "None":
+            vlan_str = ""
+
+        allowed_vlans_val = iface.get("allowed_vlans")
+        allowed_vlans_str = str(allowed_vlans_val).strip() if allowed_vlans_val is not None else ""
+        if allowed_vlans_str == "None":
+            allowed_vlans_str = ""
+
+        # Si le mode n'est pas explicite, on le déduit des attributs
+        if not (is_access or is_trunk):
+            if vlan_str:
+                is_access = True
+            elif allowed_vlans_str:
+                is_trunk = True
+
+        # Générer les commandes pour cette interface s'il y a des modifs à faire
+        iface_commands = []
+
+        # Description
+        desc_val = iface.get("description")
+        if desc_val:  # Ne pas ajouter de description si elle est vide
+            iface_commands.append(syntax["desc"].format(desc=desc_val))
+
+        # Mode accès
+        if is_access:
+            if "mode_access" in syntax:
+                if "{vlan}" in syntax["mode_access"]:
+                    if vlan_str:
+                        iface_commands.append(syntax["mode_access"].format(vlan=vlan_str))
+                else:
+                    iface_commands.append(syntax["mode_access"])
+
+            if vlan_str and "access_vlan" in syntax:
+                iface_commands.append(syntax["access_vlan"].format(vlan=vlan_str))
+
             if iface.get("voice_vlan") and "voice_vlan" in syntax:
-                commands.append(syntax["voice_vlan"].format(vlan=iface['voice_vlan']))
+                iface_commands.append(syntax["voice_vlan"].format(vlan=iface["voice_vlan"]))
+
             if iface.get("portfast") and "portfast" in syntax:
-                commands.append(syntax["portfast"])
+                iface_commands.append(syntax["portfast"])
 
-        elif mode == "trunk" and "mode_trunk" in syntax:
-            commands.append(syntax["mode_trunk"])
-            if iface.get("allowed_vlans") and "trunk_allowed" in syntax:
-                commands.append(syntax["trunk_allowed"].format(vlans=iface['allowed_vlans']))
+        # Mode trunk
+        elif is_trunk:
+            if "mode_trunk" in syntax:
+                if "{vlans}" in syntax["mode_trunk"]:
+                    if allowed_vlans_str:
+                        iface_commands.append(syntax["mode_trunk"].format(vlans=allowed_vlans_str))
+                else:
+                    iface_commands.append(syntax["mode_trunk"])
 
-    # 4. ROUTAGE STATIQUE
-    for route in data.get("routes", []):
-        if "route" in syntax:
-            commands.append(syntax["route"].format(
-                network=route["network"], 
-                mask=route.get("mask", ""), # Arista utilise parfois le CIDR, donc mask peut être vide
-                nexthop=route["nexthop"]
-            ))
+            if allowed_vlans_str and "trunk_allowed" in syntax:
+                iface_commands.append(syntax["trunk_allowed"].format(vlans=allowed_vlans_str))
 
-    return commands
+        # S'il y a des commandes générées pour cette interface, on ajoute l'interface
+        if iface_commands:
+            commands.append(syntax["interface"].format(iface=iface_name))
+            commands.extend(iface_commands)
 
 def apply_device_config(connection_params, config_data): # readded
     import os

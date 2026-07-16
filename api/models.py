@@ -15,6 +15,7 @@ class InterfaceCreate(BaseModel):
     mode: Optional[str] = None  # access/trunk
     vlan_id: Optional[int] = None
     allowed_vlans: Optional[str] = None
+    mac_address: Optional[str] = None
 
 
 class InterfaceUpdate(BaseModel):
@@ -23,6 +24,7 @@ class InterfaceUpdate(BaseModel):
     mode: Optional[str] = None
     vlan_id: Optional[int] = None
     allowed_vlans: Optional[str] = None
+    mac_address: Optional[str] = None
 
 
 class TopologyNode(BaseModel):
@@ -44,6 +46,7 @@ class InterfaceSchema(BaseModel):
     mode: Optional[str]
     vlan_id: Optional[int]
     allowed_vlans: Optional[str]
+    mac_address: Optional[str] = None
 
 
 class TopologyLink(BaseModel):
@@ -64,6 +67,8 @@ class MockInterface(BaseModel):
     mode: Optional[str] = None
     vlan_id: Optional[int] = None
     allowed_vlans: Optional[str] = None
+    mac_address: Optional[str] = None
+
 
 
 class MockNode(BaseModel):
