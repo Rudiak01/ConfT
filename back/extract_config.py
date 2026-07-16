@@ -65,7 +65,7 @@ def is_valid_mac(mac_str):
     if not mac_str:
         return False
     mac_str = to_str(mac_str)
-    cleaned = mac_str.replace(":", "").replace("-", "").replace(".", "").strip()
+    cleaned = mac_str.replace(":", "").replace("-", "").replace(".", "").replace(" ", "").strip()
     if len(cleaned) == 12 and all(c in "0123456789abcdefABCDEF" for c in cleaned):
         return True
     return False
@@ -74,7 +74,7 @@ def format_mac(mac_str):
     if not mac_str:
         return None
     mac_str = to_str(mac_str)
-    cleaned = mac_str.replace(":", "").replace("-", "").replace(".", "").strip().lower()
+    cleaned = mac_str.replace(":", "").replace("-", "").replace(".", "").replace(" ", "").strip().lower()
     if len(cleaned) != 12:
         return mac_str
     return ":".join(cleaned[i:i+2] for i in range(0, 12, 2))
@@ -525,6 +525,8 @@ def crawl_network(seed_ip, credentials):
 
             local_port = to_str(neighbor.get("local_port") or neighbor.get("local_interface"))
             remote_port = to_str(neighbor.get("remote_port") or neighbor.get("neighbor_interface") or neighbor.get("port_id"))
+            if is_valid_mac(remote_port):
+                remote_port = format_mac(remote_port)
 
             # Try to resolve remote IP directly from LLDP/CDP details
             remote_ip = neighbor.get("management_ip") or neighbor.get("mgmt_address") or neighbor.get("management_address")

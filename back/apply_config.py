@@ -34,10 +34,14 @@ def build_commands(data, device_type):
 
     # 2. VLANs
     for vlan in data.get("vlans", []):
+        vlan_id = int(vlan.get('vlan_id'))
+        if vlan_id in [1, 1002, 1003, 1004, 1005]:
+            continue
         if "vlan_create" in syntax:
-            commands.append(syntax["vlan_create"].format(id=vlan['vlan_id']))
+            commands.append(syntax["vlan_create"].format(id=vlan_id))
         if "vlan_name" in syntax:
-            commands.append(syntax["vlan_name"].format(name=vlan['name']))
+            clean_name = vlan.get('name', '').replace(" ", "_")[:32]
+            commands.append(syntax["vlan_name"].format(name=clean_name))
 
     # 3. INTERFACES
     for iface in data.get("interfaces", []):
@@ -131,6 +135,8 @@ def build_commands(data, device_type):
         if iface_commands:
             commands.append(syntax["interface"].format(iface=iface_name))
             commands.extend(iface_commands)
+
+    return commands
 
 def apply_device_config(connection_params, config_data): # readded
     import os

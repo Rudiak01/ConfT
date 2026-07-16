@@ -96,10 +96,10 @@ class SDNController {
             }
         });
 
-        // Collapsible sidebar sections (Paramètres, Démo & Simulation, Configuration Réseau)
+        // Collapsible sidebar sections (Paramètres, Démo & Simulation, Configuration Réseau, Console)
         document.querySelectorAll('.sidebar-section').forEach(section => {
             const h3 = section.querySelector('h3');
-            if (h3 && (h3.textContent.includes('Paramètres') || h3.textContent.includes('Démo') || h3.textContent.includes('Configuration'))) {
+            if (h3 && (h3.textContent.includes('Paramètres') || h3.textContent.includes('Démo') || h3.textContent.includes('Configuration') || h3.textContent.includes('Console') || h3.textContent.includes('Logs'))) {
                 h3.classList.add('collapsible');
                 h3.addEventListener('click', () => {
                     section.classList.toggle('collapsed');
@@ -1546,13 +1546,19 @@ class SDNController {
         }
 
         // Grouping logic for physical interfaces (only if not vlans tab)
+        const isMacAddress = (str) => {
+            if (!str) return false;
+            const cleaned = str.replace(/[:.-]/g, "").replace(/\s+/g, "");
+            return cleaned.length === 12 && /^[0-9a-fA-F]{12}$/.test(cleaned);
+        };
+
         const subIfaceMap = {};
         const physicalIfaces = [];
 
         filteredInterfaces.forEach(iface => {
             const name = iface.name || "";
             const dotIndex = name.indexOf('.');
-            if (dotIndex !== -1) {
+            if (dotIndex !== -1 && !isMacAddress(name)) {
                 const parentName = name.substring(0, dotIndex);
                 if (!subIfaceMap[parentName]) {
                     subIfaceMap[parentName] = [];
